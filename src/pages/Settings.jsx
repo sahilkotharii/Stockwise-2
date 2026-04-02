@@ -183,8 +183,6 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
         </div>}
     </div>}
 
-    </div>}
-
     {tab === "sessions" && isAdmin && <div className="glass" style={{ padding: 20, borderRadius: T.radius }}>
       <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 4 }}>Login History</div>
       <div style={{ fontSize: 12, color: T.textMuted, marginBottom: 16 }}>All login events across users, most recent first.</div>
