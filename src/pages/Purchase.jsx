@@ -82,7 +82,7 @@ export default function Purchase({ ctx }) {
     </div>
     <div className="chart-row" style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 14 }}>
       <div className="glass" style={{ padding: "18px 18px 10px", borderRadius: T.radius }}>
-        <div style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 14 }}>Monthly Purchase Trend</div>
+        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 14 }}>Monthly Purchase Trend</div>
         <ResponsiveContainer width="100%" height={180}>
           <BarChart data={monthly}>
             <CartesianGrid strokeDasharray="3 3" stroke={T.isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"} />
@@ -94,7 +94,7 @@ export default function Purchase({ ctx }) {
         </ResponsiveContainer>
       </div>
       <div className="glass" style={{ padding: 18, borderRadius: T.radius }}>
-        <div style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 14 }}>Vendor Spend</div>
+        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 14 }}>Vendor Spend</div>
         {vendorSpend.length === 0 ? <div style={{ height: 140, display: "flex", alignItems: "center", justifyContent: "center", color: T.textMuted, fontSize: 13 }}>No data</div> :
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>{vendorSpend.slice(0, 5).map((v, i) => <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
             <div style={{ flex: 1, minWidth: 0 }}>
@@ -107,7 +107,7 @@ export default function Purchase({ ctx }) {
     </div>
     <div className="glass" style={{ padding: 18, borderRadius: T.radius }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, flexWrap: "wrap", gap: 10 }}>
-        <div style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, fontSize: 15, color: T.text }}>Purchase Bills</div>
+        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text }}>Purchase Bills</div>
       </div>
       <div className="filter-wrap" style={{ marginBottom: 12 }}>
         <div style={{ position: "relative", flex: "1 1 160px" }}>
