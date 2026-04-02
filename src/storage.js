@@ -10,7 +10,8 @@ export const SK = {
   seeded: "sw_ok",
   theme: "sw_th",
   changeReqs: "sw_cr",
-  actLog: "sw_al"
+  actLog: "sw_al",
+  session: "sw_sess"
 };
 
 export const lsGet = async (k, fb) => {
