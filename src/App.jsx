@@ -58,7 +58,7 @@ export default function App() {
   useEffect(() => {
     const lnk = document.createElement("link");
     lnk.rel = "stylesheet";
-    lnk.href = "https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Syne:wght@600;700;800&display=swap";
+    lnk.href = "https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700;800&display=swap";
     document.head.appendChild(lnk);
 
     (async () => {
@@ -79,6 +79,18 @@ export default function App() {
       setChannels(fch); setTransactions(ft); setBills(b || []);
       setSheetsUrl(sUrl || DEFAULT_SHEETS_URL); setIsDark(dp || false);
       setChangeReqs(cr || []); setActLog(al || []);
+
+      // ── Restore saved session (stays logged in for 24h) ────────────────────
+      const savedSession = await lsGet(SK.session, null);
+      if (savedSession && savedSession.userId && savedSession.ts) {
+        const age = Date.now() - savedSession.ts;
+        if (age < 24 * 60 * 60 * 1000) {
+          const sessionUser = (fu).find(x => x.id === savedSession.userId);
+          if (sessionUser) setUser(sessionUser);
+        } else {
+          await lsSet(SK.session, null); // expired — clear it
+        }
+      }
 
       if (!ok) await Promise.all([
         lsSet(SK.users, fu), lsSet(SK.products, fp), lsSet(SK.categories, fc),
@@ -216,10 +228,26 @@ export default function App() {
   );
 
   // ── Login ─────────────────────────────────────────────────────────────────
+  const handleLogin = async (u) => {
+    setUser(u);
+    // Save session for 24h persistence
+    await lsSet(SK.session, { userId: u.id, ts: Date.now() });
+    // Log the login event into actLog
+    const entry = { id: uid(), ts: new Date().toISOString(), userId: u.id, userName: u.name, role: u.role, action: "login", entity: "session", entityName: u.name, details: "" };
+    const updated = [entry, ...actLog].slice(0, 500);
+    setActLog(updated);
+    await lsSet(SK.actLog, updated);
+  };
+
+  const handleLogout = async () => {
+    setUser(null);
+    await lsSet(SK.session, null);
+  };
+
   if (!user) return (
     <ThemeCtx.Provider value={T}>
       <style>{makeCSS(T)}</style>
-      <Login users={users} onLogin={setUser} />
+      <Login users={users} onLogin={handleLogin} />
     </ThemeCtx.Provider>
   );
 
@@ -230,7 +258,7 @@ export default function App() {
       {toast && <Toast msg={toast.msg} type={toast.type} />}
 
       <Sidebar
-        page={actualPage} setPage={setPage} user={user} onLogout={() => setUser(null)}
+        page={actualPage} setPage={setPage} user={user} onLogout={handleLogout}
         col={col} setCol={setCol} syncSt={syncSt} lastSync={lastSync}
         onSync={() => pull(sheetsUrl)} toggleTheme={toggleTheme} isDark={isDark}
         pendingCnt={changeReqs.filter(r => r.status === "pending").length}
