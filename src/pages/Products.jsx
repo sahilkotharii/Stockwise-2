@@ -193,29 +193,36 @@ export default function Products({ ctx }) {
           <div style={{ display: "flex", justifyContent: "flex-end" }}>
             <GBtn onClick={() => { setCatForm({ name: "", color: "#C05C1E" }); setCatEdit(null); setCatModal(true); }} icon={<Plus size={14} />}>Add Category</GBtn>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(200px,1fr))", gap: 14 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 12 }}>
             {categories.map(c => {
               const cnt = products.filter(p => p.categoryId === c.id).length;
+              const col = c.color || "#C05C1E";
               return (
-                <div key={c.id} className="glass" style={{ padding: 18, borderRadius: T.radius }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                    <div style={{ width: 44, height: 44, borderRadius: 12, background: (c.color || "#C05C1E") + "18", border: "2px solid " + (c.color || "#C05C1E") + "28", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                      <Tag size={20} color={c.color || "#C05C1E"} />
+                <div key={c.id} className="glass" style={{ padding: 16, borderRadius: T.radius, display: "flex", flexDirection: "column", gap: 10 }}>
+                  {/* icon row */}
+                  <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+                    <div style={{ width: 40, height: 40, borderRadius: 10, background: col + "18", border: "2px solid " + col + "28", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      <Tag size={18} color={col} />
                     </div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 700, color: T.text, fontSize: 14 }}>{c.name}</div>
-                      <div style={{ fontSize: 12, color: T.textMuted, marginTop: 2 }}>{cnt} product{cnt !== 1 ? "s" : ""}</div>
-                    </div>
-                    <div style={{ display: "flex", gap: 5 }}>
-                      <button className="btn-ghost" onClick={() => { setCatForm({ name: c.name, color: c.color || "#C05C1E" }); setCatEdit(c.id); setCatModal(true); }} style={{ padding: "4px 7px" }}>
-                        <Edit2 size={12} />
+                    <div style={{ display: "flex", gap: 4 }}>
+                      <button className="btn-ghost" onClick={() => { setCatForm({ name: c.name, color: col }); setCatEdit(c.id); setCatModal(true); }} style={{ padding: "3px 6px" }}>
+                        <Edit2 size={11} />
                       </button>
                       {isAdmin && (
-                        <button className="btn-danger" onClick={() => { if (cnt > 0) { alert("Remove products first."); return; } if (window.confirm("Delete?")) saveCategories(categories.filter(x => x.id !== c.id)); }} style={{ padding: "4px 7px" }}>
-                          <Trash2 size={12} />
+                        <button className="btn-danger" onClick={() => { if (cnt > 0) { alert("Remove products first."); return; } if (window.confirm("Delete?")) saveCategories(categories.filter(x => x.id !== c.id)); }} style={{ padding: "3px 6px" }}>
+                          <Trash2 size={11} />
                         </button>
                       )}
                     </div>
+                  </div>
+                  {/* name + count */}
+                  <div>
+                    <div style={{ fontWeight: 700, color: T.text, fontSize: 13, lineHeight: 1.3 }}>{c.name}</div>
+                    <div style={{ fontSize: 11, color: T.textMuted, marginTop: 3 }}>{cnt} product{cnt !== 1 ? "s" : ""}</div>
+                  </div>
+                  {/* color bar */}
+                  <div style={{ height: 3, borderRadius: 99, background: col + "40", overflow: "hidden" }}>
+                    <div style={{ height: "100%", width: cnt > 0 ? "100%" : "20%", background: col, borderRadius: 99, opacity: cnt > 0 ? 1 : 0.3 }} />
                   </div>
                 </div>
               );
