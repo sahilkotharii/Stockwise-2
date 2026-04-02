@@ -87,7 +87,12 @@ export default function App() {
       ]);
 
       setReady(true);
-      if (sUrl || DEFAULT_SHEETS_URL) pull(sUrl || DEFAULT_SHEETS_URL);
+      const url = sUrl || DEFAULT_SHEETS_URL;
+      if (url) pull(url);
+
+      // ── Auto-sync every 4 minutes ──────────────────────────────────────────
+      const interval = setInterval(() => pull(url), 4 * 60 * 1000);
+      return () => clearInterval(interval);
     })();
   }, []);
 
