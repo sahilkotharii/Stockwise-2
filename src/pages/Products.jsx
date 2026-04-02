@@ -77,7 +77,6 @@ export default function Products({ ctx }) {
     setCatModal(false);
   };
 
-  // Keep footer as a variable — same pattern as original
   const footer = isManager
     ? <><GBtn v="ghost" onClick={() => setModal(false)}>Cancel</GBtn><GBtn v="green" onClick={doSubmit} icon={<Send size={13} />}>{editId ? "Submit Edit" : "Submit Add"}</GBtn></>
     : <><GBtn v="ghost" onClick={() => setModal(false)}>Cancel</GBtn><GBtn onClick={doSave}>{editId ? "Save Changes" : "Add Product"}</GBtn></>;
@@ -148,7 +147,7 @@ export default function Products({ ctx }) {
                     <td className="td"><StChip stock={stock} min={Number(p.minStock || 0)} /></td>
                     <td className="td">
                       <div style={{ display: "flex", gap: 5 }}>
-                        <button className="btn-ghost" onClick={() => { setForm({ ...p, gstRate: p.gstRate || "0" }); setEditId(p.id); setModal(true); }} style={{ padding: "4px 8px" }}><Edit2 size={12} /></button>
+                        <button className="btn-ghost" onClick={() => { setForm({ ...p }); setEditId(p.id); setModal(true); }} style={{ padding: "4px 8px" }}><Edit2 size={12} /></button>
                         {isAdmin && <button className="btn-danger" onClick={() => { if (window.confirm("Delete product?")) saveProducts(products.filter(x => x.id !== p.id)); }} style={{ padding: "4px 7px" }}><Trash2 size={12} /></button>}
                       </div>
                     </td>
@@ -219,9 +218,8 @@ export default function Products({ ctx }) {
             <option value="28">28%</option>
           </GS>
         </Field>
-        <Field label="MRP (₹) — GST Incl." req><GIn type="number" value={form.mrp || ""} onChange={e => ff("mrp", parseFloat(e.target.value) || 0)} /></Field>
-        <Field label="Purchase Price (₹) — Ex-GST" req><GIn type="number" value={form.purchasePrice || ""} onChange={e => ff("purchasePrice", parseFloat(e.target.value) || 0)} /></Field>
-        <Field label="GST Rate on Purchase"><GIn value={form.gstRate ? `${form.gstRate}% → +${fmtCur(Number(form.purchasePrice || 0) * Number(form.gstRate) / 100)} GST = ${fmtCur(Number(form.purchasePrice || 0) * (1 + Number(form.gstRate) / 100))} total` : "—"} readOnly /></Field>
+        <Field label="MRP (₹)" req><GIn type="number" value={form.mrp || ""} onChange={e => ff("mrp", parseFloat(e.target.value) || 0)} /></Field>
+        <Field label="Purchase Price (₹)" req><GIn type="number" value={form.purchasePrice || ""} onChange={e => ff("purchasePrice", parseFloat(e.target.value) || 0)} /></Field>
         <Field label="Margin %"><GIn value={form.margin ? form.margin + "%" : "—"} readOnly /></Field>
         <Field label="Min Stock Alert"><GIn type="number" value={form.minStock || ""} onChange={e => ff("minStock", parseInt(e.target.value) || 0)} /></Field>
         <Field label="Unit"><GIn value={form.unit || ""} onChange={e => ff("unit", e.target.value)} placeholder="pcs / set / kg" /></Field>
