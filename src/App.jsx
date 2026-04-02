@@ -132,7 +132,14 @@ export default function App() {
       if (data.users?.length) { setUsers(data.users); lsSet(SK.users, data.users); }
       if (data.bills?.length) { setBills(data.bills); lsSet(SK.bills, data.bills); }
       if (data.changeReqs?.length) { setChangeReqs(data.changeReqs); lsSet(SK.changeReqs, data.changeReqs); }
-      if (data.actLog?.length) { setActLog(data.actLog); lsSet(SK.actLog, data.actLog); }
+      // Merge actLog: keep local entries (like login events) not yet in Sheets
+      if (data.actLog?.length) {
+        const localLog = await lsGet(SK.actLog, []);
+        const sheetsIds = new Set(data.actLog.map(e => e.id));
+        const localOnly = localLog.filter(e => !sheetsIds.has(e.id));
+        const merged = [...data.actLog, ...localOnly].sort((a, b) => new Date(b.ts) - new Date(a.ts)).slice(0, 500);
+        setActLog(merged); lsSet(SK.actLog, merged);
+      }
       setSyncSt("success");
       setLastSync(new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }));
       setTimeout(() => setSyncSt("idle"), 3000);
