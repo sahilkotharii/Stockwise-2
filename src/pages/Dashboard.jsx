@@ -71,7 +71,7 @@ export default function Dashboard({ ctx }) {
     </div>
     <div className="chart-row" style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 14 }}>
       <div className="glass" style={{ padding: "18px 18px 10px", borderRadius: T.radius }}>
-        <div style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 14 }}>Revenue vs Purchase</div>
+        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 14 }}>Revenue vs Purchase</div>
         <ResponsiveContainer width="100%" height={190}>
           <BarChart data={dailyRev}>
             <CartesianGrid strokeDasharray="3 3" stroke={T.isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"} />
@@ -84,7 +84,7 @@ export default function Dashboard({ ctx }) {
         </ResponsiveContainer>
       </div>
       <div className="glass" style={{ padding: 18, borderRadius: T.radius }}>
-        <div style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 14 }}>🏆 Top Products</div>
+        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 14 }}>🏆 Top Products</div>
         {topProds.length === 0 ? <div style={{ height: 160, display: "flex", alignItems: "center", justifyContent: "center", color: T.textMuted, fontSize: 13 }}>No sales yet</div> :
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>{topProds.map((item, i) => {
             const pct = (item.units / topProds[0].units) * 100;
@@ -100,7 +100,7 @@ export default function Dashboard({ ctx }) {
       </div>
     </div>
     <div className="glass" style={{ padding: 18, borderRadius: T.radius }}>
-      <div style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 14 }}>Recent Bills</div>
+      <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 14 }}>Recent Bills</div>
       {recentBills.length === 0 ? <div style={{ padding: "20px 0", textAlign: "center", color: T.textMuted, fontSize: 13 }}>No bills yet</div> :
         <div style={{ overflowX: "auto" }}><table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
           <thead><tr>{["Bill No", "Date", "Type", "Items", "Total", "Channel/Vendor"].map(h => <th key={h} className="th" style={{ textAlign: h === "Total" ? "right" : "left" }}>{h.toUpperCase()}</th>)}</tr></thead>
