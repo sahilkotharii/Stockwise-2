@@ -58,7 +58,7 @@ export default function App() {
   useEffect(() => {
     const lnk = document.createElement("link");
     lnk.rel = "stylesheet";
-    lnk.href = "https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700;800&display=swap";
+    lnk.href = "https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap";
     document.head.appendChild(lnk);
 
     (async () => {
