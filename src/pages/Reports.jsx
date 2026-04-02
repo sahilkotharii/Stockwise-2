@@ -128,7 +128,7 @@ export default function Reports({ ctx }) {
       <KCard label="Purchase Cost" value={fmtCur(pc)} icon={ShoppingCart} color={T.blue} />
     </div>
     <div className="glass" style={{ padding: "18px 18px 10px", borderRadius: T.radius }}>
-      <div style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 14 }}>12-Month Trend: Net Revenue vs Purchase vs Profit</div>
+      <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 14 }}>12-Month Trend: Net Revenue vs Purchase vs Profit</div>
       <ResponsiveContainer width="100%" height={200}>
         <LineChart data={monthly12}>
           <CartesianGrid strokeDasharray="3 3" stroke={T.isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"} />
@@ -143,7 +143,7 @@ export default function Reports({ ctx }) {
     </div>
     <div className="chart-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
       <div className="glass" style={{ padding: 18, borderRadius: T.radius }}>
-        <div style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 14 }}>Net Channel Performance</div>
+        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 14 }}>Net Channel Performance</div>
         <div style={{ overflowX: "auto" }}><table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
           <thead><tr>{["Channel", "Net Orders", "Net Revenue", "Avg Order"].map(h => <th key={h} className="th" style={{ textAlign: h === "Channel" ? "left" : "right" }}>{h.toUpperCase()}</th>)}</tr></thead>
           <tbody>{chPerf.map((c, i) => <tr key={i} className="trow"><td className="td"><span className="tag" style={{ background: c.color + "18", color: c.color }}>{c.name}</span></td><td className="td r">{c.orders}</td><td className="td r" style={{ fontWeight: 600, color: T.green }}>{fmtCur(c.revenue)}</td><td className="td r m">{fmtCur(c.avgOrder)}</td></tr>)}
@@ -152,7 +152,7 @@ export default function Reports({ ctx }) {
         </table></div>
       </div>
       <div className="glass" style={{ padding: 18, borderRadius: T.radius }}>
-        <div style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 14 }}>Net Category Performance</div>
+        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 14 }}>Net Category Performance</div>
         <div style={{ overflowX: "auto" }}><table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
           <thead><tr>{["Category", "Net Units", "Net Revenue", "Profit", "Margin"].map(h => <th key={h} className="th" style={{ textAlign: h === "Category" ? "left" : "right" }}>{h.toUpperCase()}</th>)}</tr></thead>
           <tbody>{catPerf.map((c, i) => <tr key={i} className="trow"><td className="td"><span className="tag" style={{ background: c.color + "18", color: c.color }}>{c.name}</span></td><td className="td r">{c.units}</td><td className="td r" style={{ color: T.green, fontWeight: 600 }}>{fmtCur(c.revenue)}</td><td className="td r" style={{ color: T.accent, fontWeight: 600 }}>{fmtCur(c.profit)}</td><td className="td r" style={{ color: T.purple }}>{c.margin}%</td></tr>)}
@@ -162,7 +162,7 @@ export default function Reports({ ctx }) {
       </div>
     </div>
     <div className="glass" style={{ padding: 18, borderRadius: T.radius }}>
-      <div style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 14 }}>Product Performance — Full Breakdown</div>
+      <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 14 }}>Product Performance — Full Breakdown</div>
       <div style={{ overflowX: "auto" }}><table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
         <thead><tr>{["Rank", "Product", "SKU", "Net Units", "Net Revenue", "Net COGS", "Gross Profit", "Margin", "Avg Price", "Current Stock"].map(h => <th key={h} className="th" style={{ textAlign: ["Net Units", "Net Revenue", "Net COGS", "Gross Profit", "Margin", "Avg Price", "Current Stock"].includes(h) ? "right" : "left" }}>{h.toUpperCase()}</th>)}</tr></thead>
         <tbody>
@@ -183,7 +183,7 @@ export default function Reports({ ctx }) {
       </table></div>
     </div>
     {deadStock.length > 0 && <div className="glass" style={{ padding: 18, borderRadius: T.radius, borderLeft: `4px solid ${T.red}` }}>
-      <div style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, fontSize: 15, color: T.red, marginBottom: 14 }}>⚠️ Dead Stock — No Sales in Period ({deadStock.length} products)</div>
+      <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.red, marginBottom: 14 }}>⚠️ Dead Stock — No Sales in Period ({deadStock.length} products)</div>
       <div style={{ overflowX: "auto" }}><table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
         <thead><tr>{["Product", "SKU", "Category", "Stock", "Value", "MRP", "Purchase Price"].map(h => <th key={h} className="th" style={{ textAlign: ["Stock", "Value", "MRP", "Purchase Price"].includes(h) ? "right" : "left" }}>{h.toUpperCase()}</th>)}</tr></thead>
         <tbody>{deadStock.map(p => {
