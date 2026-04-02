@@ -1,0 +1,248 @@
+import React, { useState, useMemo, useEffect } from "react";
+import { Plus, Search, Edit2, Trash2, Package, Tag, Send, X } from "lucide-react";
+import { useT } from "../theme";
+import { GBtn, GIn, GS, GTa, Field, Modal, StChip, Pager } from "../components/UI";
+import { uid, fmtCur, calcMgn } from "../utils";
+
+export default function Products({ ctx }) {
+  const T = useT();
+  const { products, categories, getStock, saveProducts, saveCategories, user, addChangeReq, addLog } = ctx;
+  const isAdmin = user.role === "admin";
+  const isManager = user.role === "manager";
+
+  const [tab, setTab] = useState("products");
+  const [search, setSearch] = useState("");
+  const [cf, setCf] = useState("");
+  const [modal, setModal] = useState(false);
+  const [editId, setEditId] = useState(null);
+  const [lb, setLb] = useState(null);
+  const [form, setForm] = useState({});
+  const [pg, setPg] = useState(1);
+  const [ps, setPs] = useState(20);
+  const [catModal, setCatModal] = useState(false);
+  const [catEdit, setCatEdit] = useState(null);
+  const [catForm, setCatForm] = useState({ name: "", color: "#C05C1E" });
+
+  useEffect(() => setPg(1), [search, cf, ps]);
+
+  const ff = (k, v) => setForm(p => {
+    const n = { ...p, [k]: v };
+    n.margin = calcMgn(n.mrp || 0, n.purchasePrice || 0);
+    return n;
+  });
+
+  const filtered = useMemo(() => products.filter(p => {
+    if (cf && p.categoryId !== cf) return false;
+    const q = search.toLowerCase();
+    return (
+      (p.name || "").toLowerCase().includes(q) ||
+      (p.sku || "").toLowerCase().includes(q) ||
+      (p.alias || "").toLowerCase().includes(q) ||
+      (p.hsn || "").toLowerCase().includes(q)
+    );
+  }), [products, search, cf]);
+
+  const doSave = () => {
+    if (!form.name || !form.sku) return;
+    const margin = calcMgn(form.mrp, form.purchasePrice);
+    const d = { ...form, margin };
+    if (editId) {
+      saveProducts(products.map(p => p.id === editId ? d : p));
+      addLog("updated", "product", form.name);
+    } else {
+      saveProducts([...products, { ...d, id: uid() }]);
+      addLog("created", "product", form.name);
+    }
+    setModal(false);
+  };
+
+  const doSubmit = () => {
+    if (!form.name || !form.sku) return;
+    const margin = calcMgn(form.mrp, form.purchasePrice);
+    addChangeReq({
+      entity: "product",
+      action: editId ? "update" : "create",
+      entityId: editId || null,
+      entityName: form.name,
+      currentData: editId ? products.find(p => p.id === editId) : null,
+      proposedData: { ...form, margin }
+    });
+    setModal(false);
+  };
+
+  const saveCat = () => {
+    if (!catForm.name) return;
+    if (catEdit) saveCategories(categories.map(c => c.id === catEdit ? { ...c, ...catForm } : c));
+    else saveCategories([...categories, { id: uid(), ...catForm }]);
+    setCatModal(false);
+  };
+
+  // Keep footer as a variable — same pattern as original
+  const footer = isManager
+    ? <><GBtn v="ghost" onClick={() => setModal(false)}>Cancel</GBtn><GBtn v="green" onClick={doSubmit} icon={<Send size={13} />}>{editId ? "Submit Edit" : "Submit Add"}</GBtn></>
+    : <><GBtn v="ghost" onClick={() => setModal(false)}>Cancel</GBtn><GBtn onClick={doSave}>{editId ? "Save Changes" : "Add Product"}</GBtn></>;
+
+  return <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+
+    {/* Tab switcher */}
+    <div style={{ display: "flex", gap: 6 }}>
+      {["products", "categories"].map(t => (
+        <button key={t} onClick={() => setTab(t)} style={{ padding: "8px 18px", borderRadius: 10, border: `1px solid ${tab === t ? T.accent : T.borderSubtle}`, cursor: "pointer", fontWeight: 600, fontSize: 13, background: tab === t ? T.accent : "transparent", color: tab === t ? "#fff" : T.textSub, transition: "all .15s" }}>
+          {t.charAt(0).toUpperCase() + t.slice(1)}
+        </button>
+      ))}
+    </div>
+
+    {/* ── PRODUCTS TAB ── */}
+    {tab === "products" && <>
+      {isManager && <div style={{ padding: "10px 14px", borderRadius: 12, background: T.amberBg, border: `1px solid ${T.amber}30`, fontSize: 12, color: T.amber, fontWeight: 600 }}>⚠️ Product changes require admin approval</div>}
+      <div className="filter-wrap">
+        <div style={{ position: "relative", flex: "1 1 200px" }}>
+          <Search size={13} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: T.textMuted }} />
+          <input className="inp" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search name, SKU, alias, HSN…" style={{ paddingLeft: 34 }} />
+        </div>
+        <GS value={cf} onChange={e => setCf(e.target.value)} placeholder="All Categories">
+          {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+        </GS>
+        <GBtn onClick={() => { setForm({ unit: "pcs", minStock: 10, gstRate: "0", hsn: "" }); setEditId(null); setModal(true); }} icon={<Plus size={14} />}>Add Product</GBtn>
+      </div>
+
+      <div className="glass" style={{ borderRadius: T.radius, overflow: "hidden" }}>
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+            <thead>
+              <tr style={{ background: T.isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.025)" }}>
+                {["Product", "SKU / HSN", "Category", "MRP", "Cost", "Margin", "Stock", "Status", ""].map(h => (
+                  <th key={h} className="th" style={{ textAlign: ["MRP", "Cost", "Margin", "Stock"].includes(h) ? "right" : "left" }}>
+                    {h.toUpperCase()}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.slice((pg - 1) * ps, pg * ps).map(p => {
+                const stock = getStock(p.id);
+                const cat = categories.find(c => c.id === p.categoryId);
+                return (
+                  <tr key={p.id} className="trow">
+                    <td className="td">
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <div style={{ width: 34, height: 34, borderRadius: 8, overflow: "hidden", background: T.isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,.05)", cursor: "pointer", flexShrink: 0 }} onClick={() => p.imageUrl && setLb(p.imageUrl)}>
+                          {p.imageUrl ? <img src={p.imageUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <Package size={13} style={{ margin: "11px auto", display: "block", color: T.textMuted }} />}
+                        </div>
+                        <div>
+                          <div style={{ fontWeight: 600, color: T.text, fontSize: 12 }}>{p.name}</div>
+                          <div style={{ color: T.textMuted, fontSize: 10 }}>{p.alias}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="td">
+                      <div style={{ fontFamily: "monospace", fontSize: 10, color: T.textSub, fontWeight: 600 }}>{p.sku}</div>
+                      {p.hsn && <div style={{ fontFamily: "monospace", fontSize: 10, color: T.textMuted }}>HSN {p.hsn}</div>}
+                    </td>
+                    <td className="td">{cat && <span className="tag" style={{ background: cat.color + "18", color: cat.color }}>{cat.name}</span>}</td>
+                    <td className="td r" style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, color: T.accent, fontSize: 13 }}>{fmtCur(p.mrp)}</td>
+                    <td className="td r" style={{ color: T.textSub }}>{fmtCur(p.purchasePrice)}</td>
+                    <td className="td r" style={{ color: T.green, fontWeight: 600 }}>{p.margin || 0}%</td>
+                    <td className="td r" style={{ fontWeight: 700, color: stock <= 0 ? T.red : stock <= Number(p.minStock || 0) ? T.amber : T.text }}>{stock}</td>
+                    <td className="td"><StChip stock={stock} min={Number(p.minStock || 0)} /></td>
+                    <td className="td">
+                      <div style={{ display: "flex", gap: 5 }}>
+                        <button className="btn-ghost" onClick={() => { setForm({ ...p, gstRate: p.gstRate || "0" }); setEditId(p.id); setModal(true); }} style={{ padding: "4px 8px" }}><Edit2 size={12} /></button>
+                        {isAdmin && <button className="btn-danger" onClick={() => { if (window.confirm("Delete product?")) saveProducts(products.filter(x => x.id !== p.id)); }} style={{ padding: "4px 7px" }}><Trash2 size={12} /></button>}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+          {filtered.length === 0 && <div style={{ padding: "40px 0", textAlign: "center", color: T.textMuted }}>No products</div>}
+        </div>
+        <Pager total={filtered.length} page={pg} ps={ps} setPage={setPg} setPs={setPs} />
+      </div>
+    </>}
+
+    {/* ── CATEGORIES TAB ── */}
+    {tab === "categories" && <>
+      <div style={{ display: "flex", justifyContent: "flex-end" }}>
+        <GBtn onClick={() => { setCatForm({ name: "", color: "#C05C1E" }); setCatEdit(null); setCatModal(true); }} icon={<Plus size={14} />}>Add Category</GBtn>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(200px,1fr))", gap: 14 }}>
+        {categories.map(c => {
+          const cnt = products.filter(p => p.categoryId === c.id).length;
+          return (
+            <div key={c.id} className="glass" style={{ padding: 18, borderRadius: T.radius }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{ width: 44, height: 44, borderRadius: 12, background: `${c.color}18`, border: `2px solid ${c.color}28`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Tag size={20} color={c.color} /></div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 700, color: T.text, fontSize: 14 }}>{c.name}</div>
+                  <div style={{ fontSize: 12, color: T.textMuted, marginTop: 2 }}>{cnt} product{cnt !== 1 ? "s" : ""}</div>
+                </div>
+                <div style={{ display: "flex", gap: 5 }}>
+                  <button className="btn-ghost" onClick={() => { setCatForm({ name: c.name, color: c.color }); setCatEdit(c.id); setCatModal(true); }} style={{ padding: "4px 7px" }}><Edit2 size={12} /></button>
+                  {isAdmin && <button className="btn-danger" onClick={() => { if (cnt > 0) { alert("Remove products first."); return; } if (window.confirm("Delete?")) saveCategories(categories.filter(x => x.id !== c.id)); }} style={{ padding: "4px 7px" }}><Trash2 size={12} /></button>}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </>}
+
+    {/* Lightbox */}
+    {lb && <div onClick={() => setLb(null)} style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(0,0,0,.78)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+      <div style={{ position: "relative", maxWidth: 500, width: "100%" }} onClick={e => e.stopPropagation()}>
+        <img src={lb} alt="" style={{ width: "100%", borderRadius: 18 }} />
+        <button onClick={() => setLb(null)} style={{ position: "absolute", top: -12, right: -12, width: 30, height: 30, borderRadius: "50%", background: T.surfaceStrong, border: `1px solid ${T.border}`, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><X size={14} color={T.text} /></button>
+      </div>
+    </div>}
+
+    {/* Product modal */}
+    <Modal open={modal} onClose={() => setModal(false)} title={editId ? "Edit Product" : "Add Product"} width={540} footer={footer}>
+      <div className="fgrid">
+        <Field label="Product Name" req><GIn value={form.name || ""} onChange={e => ff("name", e.target.value)} placeholder="Copper Water Bottle 1L" /></Field>
+        <Field label="Alias"><GIn value={form.alias || ""} onChange={e => ff("alias", e.target.value)} placeholder="Copper Bottle" /></Field>
+        <Field label="SKU" req><GIn value={form.sku || ""} onChange={e => ff("sku", e.target.value)} placeholder="PH-CU-001" /></Field>
+        <Field label="HSN Code"><GIn value={form.hsn || ""} onChange={e => ff("hsn", e.target.value)} placeholder="e.g. 74182090" /></Field>
+        <Field label="Category">
+          <GS value={form.categoryId || ""} onChange={e => ff("categoryId", e.target.value)} placeholder="Select">
+            {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </GS>
+        </Field>
+        <Field label="GST Rate (%)">
+          <GS value={form.gstRate || "0"} onChange={e => ff("gstRate", e.target.value)}>
+            <option value="0">0%</option>
+            <option value="5">5%</option>
+            <option value="12">12%</option>
+            <option value="18">18%</option>
+            <option value="28">28%</option>
+          </GS>
+        </Field>
+        <Field label="MRP (₹) — GST Incl." req><GIn type="number" value={form.mrp || ""} onChange={e => ff("mrp", parseFloat(e.target.value) || 0)} /></Field>
+        <Field label="Purchase Price (₹) — Ex-GST" req><GIn type="number" value={form.purchasePrice || ""} onChange={e => ff("purchasePrice", parseFloat(e.target.value) || 0)} /></Field>
+        <Field label="GST Rate on Purchase"><GIn value={form.gstRate ? `${form.gstRate}% → +${fmtCur(Number(form.purchasePrice || 0) * Number(form.gstRate) / 100)} GST = ${fmtCur(Number(form.purchasePrice || 0) * (1 + Number(form.gstRate) / 100))} total` : "—"} readOnly /></Field>
+        <Field label="Margin %"><GIn value={form.margin ? form.margin + "%" : "—"} readOnly /></Field>
+        <Field label="Min Stock Alert"><GIn type="number" value={form.minStock || ""} onChange={e => ff("minStock", parseInt(e.target.value) || 0)} /></Field>
+        <Field label="Unit"><GIn value={form.unit || ""} onChange={e => ff("unit", e.target.value)} placeholder="pcs / set / kg" /></Field>
+        <Field label="Image URL"><GIn value={form.imageUrl || ""} onChange={e => ff("imageUrl", e.target.value)} placeholder="https://…" /></Field>
+        <Field label="Description" cl="s2"><GTa value={form.description || ""} onChange={e => ff("description", e.target.value)} rows={2} /></Field>
+        {form.imageUrl && <div className="s2" style={{ display: "flex", justifyContent: "center" }}><img src={form.imageUrl} alt="" style={{ width: 80, height: 80, objectFit: "cover", borderRadius: 12 }} onError={e => e.target.style.display = "none"} /></div>}
+      </div>
+    </Modal>
+
+    {/* Category modal */}
+    <Modal open={catModal} onClose={() => setCatModal(false)} title={catEdit ? "Edit Category" : "Add Category"} width={340} footer={<><GBtn v="ghost" onClick={() => setCatModal(false)}>Cancel</GBtn><GBtn onClick={saveCat}>{catEdit ? "Save" : "Add"}</GBtn></>}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        <Field label="Name" req><GIn value={catForm.name} onChange={e => setCatForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Copper" /></Field>
+        <Field label="Color">
+          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+            <input type="color" value={catForm.color} onChange={e => setCatForm(p => ({ ...p, color: e.target.value }))} style={{ width: 42, height: 38, borderRadius: 8, border: `1.5px solid ${T.borderSubtle}`, padding: 3, background: "transparent", cursor: "pointer" }} />
+            <GIn value={catForm.color} onChange={e => setCatForm(p => ({ ...p, color: e.target.value }))} />
+          </div>
+        </Field>
+      </div>
+    </Modal>
+
+  </div>;
+}
