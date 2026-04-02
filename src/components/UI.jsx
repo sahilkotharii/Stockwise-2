@@ -70,7 +70,7 @@ export function Modal({ open, onClose, title, children, footer, width = 520 }) {
       <div style={{ minHeight: "100%", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "5vh 16px 60px", boxSizing: "border-box" }}>
         <div className="glass-strong fade-up" onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: width, borderRadius: T.radiusXl, overflow: "hidden", boxShadow: T.shadowXl, flexShrink: 0, alignSelf: "flex-start" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: `1px solid ${T.borderSubtle}`, background: T.surfaceStrong }}>
-            <div style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, fontSize: 16, color: T.text, letterSpacing: "-0.01em" }}>{title}</div>
+            <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 16, color: T.text, letterSpacing: "-0.01em" }}>{title}</div>
             <button onClick={onClose} className="btn-ghost" style={{ padding: "5px", borderRadius: 8, flexShrink: 0 }}><X size={15} /></button>
           </div>
           <div style={{ padding: 20 }}>{children}</div>
@@ -89,7 +89,7 @@ export function KCard({ label, value, sub, icon: Icon, color, delta }) {
       <div style={{ width: 40, height: 40, borderRadius: 12, background: `${color}1A`, display: "flex", alignItems: "center", justifyContent: "center" }}><Icon size={19} color={color} /></div>
       {delta !== undefined && <span className="badge" style={{ background: delta >= 0 ? T.greenBg : T.redBg, color: delta >= 0 ? T.green : T.red }}>{delta >= 0 ? "↑" : "↓"}{Math.abs(delta).toFixed(1)}%</span>}
     </div>
-    <div style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, fontSize: 24, color: T.text, letterSpacing: "-0.03em" }}>{value}</div>
+    <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 24, color: T.text, letterSpacing: "-0.03em" }}>{value}</div>
     <div style={{ fontSize: 12, fontWeight: 600, color: T.textSub, marginTop: 2 }}>{label}</div>
     {sub && <div style={{ fontSize: 11, color: T.textMuted, marginTop: 4 }}>{sub}</div>}
   </div>;
