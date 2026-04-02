@@ -38,7 +38,7 @@ export default function App() {
   const [channels, setChannels] = useState([]);
   const [bills, setBills] = useState([]);
 
-  const [sheetsUrl, setSheetsUrl] = useState("");
+  const [sheetsUrl, setSheetsUrl] = useState(DEFAULT_SHEETS_URL);
   const [syncSt, setSyncSt] = useState("idle");
   const [lastSync, setLastSync] = useState(null);
   const [testStatus, setTestStatus] = useState(null);
@@ -123,10 +123,11 @@ export default function App() {
   }
 
   async function push(entity, rows) {
-    if (!sheetsUrl) return;
+    const url = sheetsUrl || DEFAULT_SHEETS_URL;
+    if (!url) return;
     setSyncSt("syncing");
     try {
-      await syncEnt(sheetsUrl, entity, rows);
+      await syncEnt(url, entity, rows);
       setSyncSt("success");
       setLastSync(new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }));
       setTimeout(() => setSyncSt("idle"), 2500);
