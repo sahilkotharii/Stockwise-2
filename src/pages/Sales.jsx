@@ -98,7 +98,7 @@ export default function Sales({ ctx }) {
       <KCard label="Gross Profit (Month)" value={fmtCur(thisMonth.profit)} sub={thisMonth.net > 0 ? `${((thisMonth.profit / thisMonth.net) * 100).toFixed(1)}% margin` : ""} icon={Star} color={T.purple} />
     </div>
     <div className="glass" style={{ padding: "18px 18px 10px", borderRadius: T.radius }}>
-      <div style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 14 }}>Monthly Sales Trend (12 months)</div>
+      <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 14 }}>Monthly Sales Trend (12 months)</div>
       <ResponsiveContainer width="100%" height={180}>
         <BarChart data={monthly}>
           <CartesianGrid strokeDasharray="3 3" stroke={T.isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)"} />
@@ -111,7 +111,7 @@ export default function Sales({ ctx }) {
       </ResponsiveContainer>
     </div>
     <div className="glass" style={{ padding: 18, borderRadius: T.radius }}>
-      <div style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 14 }}>Monthly Totals</div>
+      <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 14 }}>Monthly Totals</div>
       <div style={{ overflowX: "auto" }}><table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
         <thead><tr>{["Month", "Orders", "Revenue", "Returns", "Net Revenue", "Net COGS", "Gross Profit", "Margin"].map(h => <th key={h} className="th" style={{ textAlign: ["Orders"].includes(h) ? "center" : "right", paddingLeft: "14px" }}>{h.toUpperCase()}</th>)}</tr></thead>
         <tbody>{[...monthly].reverse().map((m, i) => <tr key={m.key} className="trow" style={{ fontWeight: i === 0 ? 700 : 400 }}>
@@ -139,7 +139,7 @@ export default function Sales({ ctx }) {
     </div>
     <div className="glass" style={{ padding: 18, borderRadius: T.radius }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, flexWrap: "wrap", gap: 10 }}>
-        <div style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, fontSize: 15, color: T.text }}>Sales Bills</div>
+        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text }}>Sales Bills</div>
       </div>
       <div className="filter-wrap" style={{ marginBottom: 12 }}>
         <div style={{ position: "relative", flex: "1 1 160px" }}><Search size={13} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: T.textMuted }} /><input className="inp" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search bill no, product…" style={{ paddingLeft: 30 }} /></div>
