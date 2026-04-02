@@ -19,7 +19,7 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
   const T = useT();
   const { users, saveUsers, channels, saveChannels, user, actLog } = ctx;
   const isAdmin = user.role === "admin";
-  const tabs = isAdmin ? ["profile", "users", "channels", "access", "export", "activity", "sheets"] : ["profile"];
+  const tabs = isAdmin ? ["profile", "users", "channels", "access", "export", "activity", "sessions", "sheets"] : ["profile"];
   const [tab, setTab] = useState("profile");
   const [localUrl, setLocalUrl] = useState(sheetsUrl || "");
 
@@ -62,7 +62,7 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
     saveUsers(users.map(x => x.id === uid2 ? { ...x, lockedPages: lk.includes(pid) ? lk.filter(p => p !== pid) : [...lk, pid] } : x));
   };
 
-  const tlbls = { profile: "Profile", users: "Users", channels: "Channels", access: "Access Control", export: "Export", activity: "Activity Log", sheets: "Google Sheets" };
+  const tlbls = { profile: "Profile", users: "Users", channels: "Channels", access: "Access Control", export: "Export", activity: "Activity Log", sessions: "Login History", sheets: "Google Sheets" };
   const myLog = isAdmin ? actLog : actLog.filter(l => l.userId === user.id);
 
   return <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -81,7 +81,7 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
 
     {tab === "users" && isAdmin && <div className="glass" style={{ padding: 20, borderRadius: T.radius }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-        <div style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, fontSize: 15, color: T.text }}>User Accounts</div>
+        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text }}>User Accounts</div>
         <GBtn sz="sm" onClick={() => { setUForm({ role: "manager" }); setEu(null); setUModal(true); }} icon={<Plus size={13} />}>Add User</GBtn>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -107,7 +107,7 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
 
     {tab === "channels" && isAdmin && <div className="glass" style={{ padding: 20, borderRadius: T.radius }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-        <div style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, fontSize: 15, color: T.text }}>Sales Channels</div>
+        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text }}>Sales Channels</div>
         <GBtn sz="sm" onClick={() => { setChForm({ name: "", color: "#C05C1E", logoUrl: "" }); setEch(null); setChModal(true); }} icon={<Plus size={13} />}>Add Channel</GBtn>
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
@@ -123,7 +123,7 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
     </div>}
 
     {tab === "access" && isAdmin && <div className="glass" style={{ padding: 20, borderRadius: T.radius }}>
-      <div style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 4 }}>Page Access Control</div>
+      <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 4 }}>Page Access Control</div>
       <div style={{ fontSize: 12, color: T.textMuted, marginBottom: 16 }}>Lock/unlock pages per manager. Dashboard always accessible.</div>
       {users.filter(u => u.role === "manager").map(u => {
         const lk = u.lockedPages || [];
@@ -147,7 +147,7 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
     </div>}
 
     {tab === "export" && isAdmin && <div className="glass" style={{ padding: 20, borderRadius: T.radius }}>
-      <div style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 16 }}>Export Data</div>
+      <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 16 }}>Export Data</div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(180px,1fr))", gap: 12 }}>
         {[
           { l: "Products", fn: () => dlCSV(toCSV(ctx.products, ["id", "name", "alias", "sku", "hsn", "mrp", "purchasePrice", "margin", "gstRate", "unit", "minStock", "categoryId", "description"]), "products") },
@@ -165,7 +165,7 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
     </div>}
 
     {tab === "activity" && <div className="glass" style={{ padding: 20, borderRadius: T.radius }}>
-      <div style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 16 }}>Activity Log</div>
+      <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 16 }}>Activity Log</div>
       {myLog.length === 0
         ? <div style={{ padding: "32px 0", textAlign: "center", color: T.textMuted }}>No activity yet</div>
         : <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
@@ -183,9 +183,35 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
         </div>}
     </div>}
 
+    </div>}
+
+    {tab === "sessions" && isAdmin && <div className="glass" style={{ padding: 20, borderRadius: T.radius }}>
+      <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 4 }}>Login History</div>
+      <div style={{ fontSize: 12, color: T.textMuted, marginBottom: 16 }}>All login events across users, most recent first.</div>
+      {actLog.filter(l => l.action === "login").length === 0
+        ? <div style={{ padding: "32px 0", textAlign: "center", color: T.textMuted }}>No login history yet</div>
+        : <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          {actLog.filter(l => l.action === "login").slice(0, 100).map((l, i) => (
+            <div key={l.id || i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderRadius: 10, background: T.isDark ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.6)", border: `1px solid ${T.borderSubtle}` }}>
+              <div style={{ width: 34, height: 34, borderRadius: 9, background: l.role === "admin" ? `${T.accent}18` : `${T.blue}18`, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 13, color: l.role === "admin" ? T.accent : T.blue, flexShrink: 0 }}>
+                {(l.userName || "?")[0]}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{l.userName}</div>
+                <div style={{ fontSize: 11, color: T.textMuted, marginTop: 1, textTransform: "capitalize" }}>{l.role}</div>
+              </div>
+              <div style={{ textAlign: "right", flexShrink: 0 }}>
+                <div style={{ fontSize: 11, color: T.textSub }}>{fmtTs(l.ts)}</div>
+                <div style={{ fontSize: 10, color: T.textMuted, marginTop: 1 }}>{new Date(l.ts).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</div>
+              </div>
+            </div>
+          ))}
+        </div>}
+    </div>}
+
     {tab === "sheets" && isAdmin && <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       <div className="glass" style={{ padding: 20, borderRadius: T.radius, background: T.isDark ? "rgba(37,99,235,0.07)" : "rgba(37,99,235,0.05)", borderColor: "rgba(37,99,235,0.18)" }}>
-        <div style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, fontSize: 15, color: T.blue, marginBottom: 12 }}>📊 Google Sheets Sync</div>
+        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.blue, marginBottom: 12 }}>📊 Google Sheets Sync</div>
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {[
             { n: "1", t: "Create a Google Sheet", d: 'sheets.google.com → New → name "StockWise"' },
@@ -200,7 +226,7 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
         </div>
       </div>
       <div className="glass" style={{ padding: 20, borderRadius: T.radius }}>
-        <div style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, fontSize: 14, color: T.text, marginBottom: 12 }}>Web App URL</div>
+        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 14, color: T.text, marginBottom: 12 }}>Web App URL</div>
         <input className="inp" value={localUrl} onChange={e => setLocalUrl(e.target.value)} placeholder="https://script.google.com/macros/s/…/exec" />
         <div style={{ display: "flex", gap: 10, marginTop: 12, flexWrap: "wrap" }}>
           <GBtn v="ghost" onClick={() => onTest(localUrl)} icon={<Wifi size={14} />}>Test Connection</GBtn>
