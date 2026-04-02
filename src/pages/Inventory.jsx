@@ -107,7 +107,7 @@ export default function Inventory({ ctx }) {
     {/* Charts */}
     <div className="chart-row" style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 14 }}>
       <div className="glass" style={{ padding: "18px 18px 10px", borderRadius: T.radius }}>
-        <div style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 14 }}>Stock Levels by Product</div>
+        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 14 }}>Stock Levels by Product</div>
         <ResponsiveContainer width="100%" height={200}>
           <BarChart data={filtered.slice(0, 10)} layout="vertical" margin={{ left: 100 }}>
             <XAxis type="number" tick={{ fontSize: 10, fill: T.textMuted }} axisLine={false} tickLine={false} />
@@ -118,7 +118,7 @@ export default function Inventory({ ctx }) {
         </ResponsiveContainer>
       </div>
       <div className="glass" style={{ padding: 18, borderRadius: T.radius }}>
-        <div style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 14 }}>Value by Category</div>
+        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 14 }}>Value by Category</div>
         <ResponsiveContainer width="100%" height={140}>
           <PieChart>
             <Pie data={catBreakdown} cx="50%" cy="50%" outerRadius={60} dataKey="value" paddingAngle={3}>
@@ -145,7 +145,7 @@ export default function Inventory({ ctx }) {
     <div className="glass" style={{ borderRadius: T.radius, overflow: "hidden" }}>
       <div style={{ padding: "18px 18px 12px", borderBottom: `1px solid ${T.borderSubtle}` }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, flexWrap: "wrap", gap: 10 }}>
-          <div style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, fontSize: 15, color: T.text }}>Stock Register</div>
+          <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text }}>Stock Register</div>
           <div style={{ display: "flex", gap: 8 }}>
             <GBtn sz="sm" onClick={() => setOsModal(true)} icon={<Layers size={13} />}>Opening Stock</GBtn>
             <GBtn v="ghost" sz="sm" onClick={() => dlCSV(toCSV(filtered, ["name", "sku", "opening", "purchased", "sold", "returned", "damaged", "stock", "value"]), "inventory")} icon={<Download size={13} />}>Export CSV</GBtn>
