@@ -30,7 +30,7 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
 
   const [chModal, setChModal] = useState(false);
   const [ech, setEch] = useState(null);
-  const [chForm, setChForm] = useState({ name: "", color: "#C05C1E" });
+  const [chForm, setChForm] = useState({ name: "", color: "#C05C1E", logoUrl: "" });
 
   const [pForm, setPForm] = useState({ name: user.name, newPass: "", confirmPass: "" });
   const pf = (k, v) => setPForm(p => ({ ...p, [k]: v }));
@@ -227,19 +227,22 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
       </div>
     </Modal>
 
-    <Modal open={chModal} onClose={() => setChModal(false)} title={ech ? "Edit Channel" : "Add Channel"} width={340}
+    <Modal open={chModal} onClose={() => setChModal(false)} title={ech ? "Edit Channel" : "Add Channel"} width={400}
       footer={<><GBtn v="ghost" onClick={() => setChModal(false)}>Cancel</GBtn><GBtn onClick={saveCh}>{ech ? "Save" : "Add"}</GBtn></>}>
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-        <Field label="Channel Name" req><GIn value={chForm.name} onChange={e => setChForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Meesho" /></Field>
-        <Field label="Logo URL">
-          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-            {chForm.logoUrl
-              ? <img src={chForm.logoUrl} alt="" style={{ width: 36, height: 36, borderRadius: 8, objectFit: "contain", border: `1px solid ${T.borderSubtle}`, padding: 3, background: T.isDark ? "rgba(255,255,255,0.06)" : "#fff", flexShrink: 0 }} onError={e => { e.target.style.display = "none"; }} />
-              : <div style={{ width: 36, height: 36, borderRadius: 8, border: `1px dashed ${T.borderSubtle}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><span style={{ fontSize: 18 }}>🖼</span></div>}
-            <GIn value={chForm.logoUrl || ""} onChange={e => setChForm(p => ({ ...p, logoUrl: e.target.value }))} placeholder="https://… (image URL)" />
-          </div>
+        <Field label="Channel Name" req>
+          <GIn value={chForm.name} onChange={e => setChForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Meesho" />
         </Field>
-        <Field label="Color">
+        <Field label="Logo URL (optional)">
+          <GIn value={chForm.logoUrl || ""} onChange={e => setChForm(p => ({ ...p, logoUrl: e.target.value }))} placeholder="https://example.com/logo.png" />
+          {chForm.logoUrl ? (
+            <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 8 }}>
+              <img src={chForm.logoUrl} alt="preview" style={{ width: 32, height: 32, borderRadius: 6, objectFit: "contain", background: "#fff", border: `1px solid ${T.borderSubtle}`, padding: 2 }} onError={e => { e.target.style.display = "none"; }} />
+              <span style={{ fontSize: 11, color: T.textMuted }}>Logo preview</span>
+            </div>
+          ) : null}
+        </Field>
+        <Field label="Brand Color">
           <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
             <input type="color" value={chForm.color} onChange={e => setChForm(p => ({ ...p, color: e.target.value }))} style={{ width: 42, height: 38, borderRadius: 8, border: `1.5px solid ${T.borderSubtle}`, padding: 3, background: "transparent", cursor: "pointer" }} />
             <GIn value={chForm.color} onChange={e => setChForm(p => ({ ...p, color: e.target.value }))} />
