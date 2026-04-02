@@ -108,13 +108,15 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
     {tab === "channels" && isAdmin && <div className="glass" style={{ padding: 20, borderRadius: T.radius }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
         <div style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, fontSize: 15, color: T.text }}>Sales Channels</div>
-        <GBtn sz="sm" onClick={() => { setChForm({ name: "", color: "#C05C1E" }); setEch(null); setChModal(true); }} icon={<Plus size={13} />}>Add Channel</GBtn>
+        <GBtn sz="sm" onClick={() => { setChForm({ name: "", color: "#C05C1E", logoUrl: "" }); setEch(null); setChModal(true); }} icon={<Plus size={13} />}>Add Channel</GBtn>
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
         {channels.map(c => <div key={c.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 14px", borderRadius: 99, background: `${c.color}12`, border: `1.5px solid ${c.color}32` }}>
-          <div style={{ width: 9, height: 9, borderRadius: "50%", background: c.color }} />
+          {c.logoUrl
+            ? <img src={c.logoUrl} alt="" style={{ width: 18, height: 18, borderRadius: 4, objectFit: "contain" }} onError={e => { e.target.style.display = "none"; }} />
+            : <div style={{ width: 9, height: 9, borderRadius: "50%", background: c.color }} />}
           <span style={{ fontSize: 13, fontWeight: 600, color: c.color }}>{c.name}</span>
-          <button onClick={() => { setChForm(c); setEch(c.id); setChModal(true); }} style={{ border: "none", background: "none", cursor: "pointer", color: c.color, opacity: .6, padding: 0, display: "flex" }}><Edit2 size={11} /></button>
+          <button onClick={() => { setChForm({ name: c.name, color: c.color, logoUrl: c.logoUrl || "" }); setEch(c.id); setChModal(true); }} style={{ border: "none", background: "none", cursor: "pointer", color: c.color, opacity: .6, padding: 0, display: "flex" }}><Edit2 size={11} /></button>
           <button onClick={() => { if (window.confirm("Delete?")) saveChannels(channels.filter(x => x.id !== c.id)); }} style={{ border: "none", background: "none", cursor: "pointer", color: T.red, opacity: .6, padding: 0, display: "flex" }}><X size={11} /></button>
         </div>)}
       </div>
@@ -229,6 +231,14 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
       footer={<><GBtn v="ghost" onClick={() => setChModal(false)}>Cancel</GBtn><GBtn onClick={saveCh}>{ech ? "Save" : "Add"}</GBtn></>}>
       <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
         <Field label="Channel Name" req><GIn value={chForm.name} onChange={e => setChForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Meesho" /></Field>
+        <Field label="Logo URL">
+          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+            {chForm.logoUrl
+              ? <img src={chForm.logoUrl} alt="" style={{ width: 36, height: 36, borderRadius: 8, objectFit: "contain", border: `1px solid ${T.borderSubtle}`, padding: 3, background: T.isDark ? "rgba(255,255,255,0.06)" : "#fff", flexShrink: 0 }} onError={e => { e.target.style.display = "none"; }} />
+              : <div style={{ width: 36, height: 36, borderRadius: 8, border: `1px dashed ${T.borderSubtle}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><span style={{ fontSize: 18 }}>🖼</span></div>}
+            <GIn value={chForm.logoUrl || ""} onChange={e => setChForm(p => ({ ...p, logoUrl: e.target.value }))} placeholder="https://… (image URL)" />
+          </div>
+        </Field>
         <Field label="Color">
           <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
             <input type="color" value={chForm.color} onChange={e => setChForm(p => ({ ...p, color: e.target.value }))} style={{ width: 42, height: 38, borderRadius: 8, border: `1.5px solid ${T.borderSubtle}`, padding: 3, background: "transparent", cursor: "pointer" }} />
