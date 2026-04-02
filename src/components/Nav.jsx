@@ -32,7 +32,7 @@ export function Sidebar({ page, setPage, user, onLogout, col, setCol, syncSt, la
   return <div className="desktop-sidebar glass" style={{ position: "fixed", left: 12, top: 12, bottom: 12, width: col ? T.sidebarC : T.sidebarW, borderRadius: 20, display: "flex", flexDirection: "column", zIndex: 50, transition: "width .2s", overflow: "hidden" }}>
     <div style={{ padding: col ? "14px 10px" : "18px 16px", display: "flex", alignItems: "center", gap: 10, borderBottom: `1px solid ${T.borderSubtle}`, minHeight: 70 }}>
       <div style={{ width: 36, height: 36, borderRadius: 10, background: `linear-gradient(135deg,${T.accent},${T.accentDark})`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: `0 4px 12px ${T.accent}45` }}><Layers size={18} color="#fff" /></div>
-      {!col && <div><div style={{ fontFamily: "Syne,sans-serif", fontWeight: 800, fontSize: 15, color: T.text, letterSpacing: "-0.02em" }}>StockWise</div><div style={{ fontSize: 10, color: T.textMuted, fontWeight: 500, marginTop: 1 }}>Pipal Home</div></div>}
+      {!col && <div><div style={{ fontFamily: T.displayFont, fontWeight: 800, fontSize: 15, color: T.text, letterSpacing: "-0.02em" }}>StockWise</div><div style={{ fontSize: 10, color: T.textMuted, fontWeight: 500, marginTop: 1 }}>Pipal Home</div></div>}
     </div>
     <nav style={{ flex: 1, padding: "10px 8px", display: "flex", flexDirection: "column", gap: 2, overflowY: "auto" }}>
       {items.map(n => <button key={n.id} onClick={() => setPage(n.id)} className={`nav-item${page === n.id ? " active" : ""}`} title={col ? n.label : ""} style={{ justifyContent: col ? "center" : "flex-start", padding: col ? "10px" : "9px 12px", position: "relative" }}>
@@ -74,7 +74,7 @@ export function TopBar({ page, user, syncSt, lastSync, onSync, toggleTheme, isDa
   return <div style={{ position: "sticky", top: 12, zIndex: 40, marginBottom: 20 }}>
     <div className="glass" style={{ borderRadius: 14, padding: "12px 20px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
       <div>
-        <h2 style={{ fontFamily: "Syne,sans-serif", fontWeight: 800, fontSize: 21, color: T.text, letterSpacing: "-0.03em" }}>{titles[page] || "StockWise"}</h2>
+        <h2 style={{ fontFamily: T.displayFont, fontWeight: 800, fontSize: 21, color: T.text, letterSpacing: "-0.03em" }}>{titles[page] || "StockWise"}</h2>
         <div style={{ fontSize: 11, color: T.textMuted, marginTop: 1 }}>{new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</div>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
