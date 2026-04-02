@@ -148,7 +148,7 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
       <div style={{ fontFamily: "Syne,sans-serif", fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 16 }}>Export Data</div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(180px,1fr))", gap: 12 }}>
         {[
-          { l: "Products", fn: () => dlCSV(toCSV(ctx.products, ["id", "name", "alias", "sku", "mrp", "purchasePrice", "margin", "unit", "minStock"]), "products") },
+          { l: "Products", fn: () => dlCSV(toCSV(ctx.products, ["id", "name", "alias", "sku", "hsn", "mrp", "purchasePrice", "margin", "gstRate", "unit", "minStock", "categoryId", "description"]), "products") },
           { l: "Sales Bills", fn: () => dlCSV(toCSV(ctx.bills.filter(b => b.type === "sale").map(b => ({ ...b, itemsSummary: b.items.map(i => `${i.productName} x${i.qty}`).join("|") })), ["billNo", "date", "channelId", "itemsSummary", "subtotal", "discAmount", "total", "notes"]), "sales_bills") },
           { l: "Purchase Bills", fn: () => dlCSV(toCSV(ctx.bills.filter(b => b.type === "purchase").map(b => ({ ...b, itemsSummary: b.items.map(i => `${i.productName} x${i.qty}`).join("|") })), ["billNo", "date", "vendorId", "itemsSummary", "total", "notes"]), "purchase_bills") },
           { l: "Transactions", fn: () => dlCSV(toCSV(ctx.transactions, ["date", "type", "productId", "qty", "price", "vendorId", "channelId", "userName", "billId", "notes"]), "transactions") },
