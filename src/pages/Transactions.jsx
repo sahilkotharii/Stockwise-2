@@ -6,7 +6,7 @@ import { fmtCur, fmtDate, inRange, toCSV, dlCSV } from "../utils";
 
 export default function Transactions({ ctx }) {
   const T = useT();
-  const { transactions, products, vendors, channels, saveTransactions, user } = ctx;
+  const { transactions, products, vendors, saveTransactions, user } = ctx;
   const [tab, setTab] = useState("all");
   const [search, setSearch] = useState("");
   const [df, setDf] = useState("");
@@ -17,12 +17,13 @@ export default function Transactions({ ctx }) {
   useEffect(() => { setPg(1); setSel(new Set()); }, [tab, search, df, dt, ps]);
 
   const TT = [
-    { id: "all", label: "All" },
-    { id: "opening", label: "Opening", color: "#7C3AED" },
-    { id: "purchase", label: "Purchase", color: T.blue },
-    { id: "sale", label: "Sale", color: T.green },
-    { id: "return", label: "Return", color: T.amber },
-    { id: "damaged", label: "Damaged", color: T.red }
+    { id: "all",             label: "All" },
+    { id: "opening",         label: "Opening",          color: "#7C3AED" },
+    { id: "purchase",        label: "Purchase",         color: T.blue },
+    { id: "sale",            label: "Sale",             color: T.green },
+    { id: "return",          label: "Sales Return",     color: T.amber },
+    { id: "purchase_return", label: "Purchase Return",  color: T.cyan },
+    { id: "damaged",         label: "Damaged",          color: T.red },
   ];
 
   const fil = useMemo(() => transactions.filter(t => {
@@ -37,25 +38,44 @@ export default function Transactions({ ctx }) {
   const allSel = paged.length > 0 && paged.every(t => sel.has(t.id));
   const tgSel = id => setSel(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
   const tgAll = () => setSel(allSel ? new Set() : new Set(paged.map(t => t.id)));
-  const tiMap = { opening: "#7C3AED", purchase: T.blue, sale: T.green, return: T.amber, damaged: T.red };
+  const tiMap = { opening: "#7C3AED", purchase: T.blue, sale: T.green, return: T.amber, purchase_return: T.cyan, damaged: T.red };
+
+  const exportCSV = () => dlCSV(toCSV(fil.map(t => ({
+    date: t.date,
+    type: t.type,
+    product: products.find(p => p.id === t.productId)?.name || t.productId,
+    sku: products.find(p => p.id === t.productId)?.sku || "",
+    qty: t.qty,
+    price: t.price,
+    effectivePrice: t.effectivePrice || t.price,
+    gstRate: t.gstRate || "",
+    gstAmount: t.gstAmount || "",
+    value: Number(t.qty) * Number(t.effectivePrice || t.price),
+    vendor: vendors?.find(v => v.id === t.vendorId)?.name || "",
+    notes: t.notes || "",
+    by: t.userName || "",
+    billRef: t.billId || "",
+  })), ["date","type","product","sku","qty","price","effectivePrice","gstRate","gstAmount","value","vendor","notes","by","billRef"]), "transactions");
 
   return <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
-      <div className="glass" style={{ padding: "10px 14px", borderRadius: 12, fontSize: 12, color: T.textSub }}>📋 Raw transaction log — add Sales and Purchases from the dedicated pages for multi-product bills</div>
-      <div style={{ display: "flex", gap: 10 }}>
-        {sel.size > 0 && user.role === "admin" && (
-          <GBtn v="danger" sz="sm" icon={<Trash2 size={12} />} onClick={() => {
-            if (window.confirm(`Delete these ${sel.size} transactions?`)) {
-              saveTransactions(transactions.filter(t => !sel.has(t.id)));
-              setSel(new Set());
-            }
-          }}>Delete Selected ({sel.size})</GBtn>
-        )}
-      </div>
+      <div className="glass" style={{ padding: "10px 14px", borderRadius: 12, fontSize: 12, color: T.textSub }}>📋 Raw transaction log — add Sales and Purchases from their dedicated pages</div>
+      {sel.size > 0 && user.role === "admin" && (
+        <GBtn v="danger" sz="sm" icon={<Trash2 size={12} />} onClick={() => {
+          if (window.confirm(`Delete ${sel.size} transactions?`)) {
+            saveTransactions(transactions.filter(t => !sel.has(t.id)));
+            setSel(new Set());
+          }
+        }}>Delete Selected ({sel.size})</GBtn>
+      )}
     </div>
+
     <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-      {TT.map(t => <button key={t.id} onClick={() => setTab(t.id)} style={{ padding: "6px 14px", borderRadius: 99, fontSize: 12, fontWeight: 600, cursor: "pointer", background: tab === t.id ? (t.color || T.accent) + "1C" : "transparent", color: tab === t.id ? (t.color || T.accent) : T.textMuted, border: `1px solid ${tab === t.id ? (t.color || T.accent) + "44" : T.borderSubtle}`, transition: "all .15s" }}>{t.label}</button>)}
+      {TT.map(t => (
+        <button key={t.id} onClick={() => setTab(t.id)} style={{ padding: "6px 14px", borderRadius: 99, fontSize: 12, fontWeight: 600, cursor: "pointer", background: tab === t.id ? (t.color || T.accent) + "1C" : "transparent", color: tab === t.id ? (t.color || T.accent) : T.textMuted, border: `1px solid ${tab === t.id ? (t.color || T.accent) + "44" : T.borderSubtle}`, transition: "all .15s" }}>{t.label}</button>
+      ))}
     </div>
+
     <div className="filter-wrap">
       <div style={{ position: "relative", flex: "1 1 160px" }}>
         <Search size={13} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: T.textMuted }} />
@@ -65,35 +85,61 @@ export default function Transactions({ ctx }) {
       <span style={{ fontSize: 12, color: T.textMuted }}>→</span>
       <input type="date" className="inp" value={dt} onChange={e => setDt(e.target.value)} style={{ flex: "0 1 120px" }} />
       {(df || dt || search) && <GBtn v="ghost" sz="sm" onClick={() => { setDf(""); setDt(""); setSearch(""); }} icon={<X size={12} />}>Clear</GBtn>}
-      <GBtn v="ghost" sz="sm" onClick={() => dlCSV(toCSV(fil, ["date", "type", "productId", "qty", "price", "vendorId", "channelId", "notes", "userName", "billId"]), "transactions")} icon={<Download size={12} />}>Export</GBtn>
+      <GBtn v="ghost" sz="sm" onClick={exportCSV} icon={<Download size={12} />}>Export</GBtn>
     </div>
+
     <div className="glass" style={{ overflow: "hidden", borderRadius: T.radius }}>
-      <div style={{ overflowX: "auto" }}><table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
-        <thead><tr style={{ background: T.isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.025)" }}>
-          <th className="th" style={{ width: 36 }}><input type="checkbox" className="cb" checked={allSel} onChange={tgAll} /></th>
-          {["Date", "Product", "Type", "Qty", "Price", "Value", "Source", "By", "Ref"].map((h, i) => <th key={i} className="th" style={{ textAlign: ["Qty", "Price", "Value"].includes(h) ? "right" : "left" }}>{h.toUpperCase()}</th>)}
-          {user.role === "admin" && <th className="th" />}
-        </tr></thead>
-        <tbody>{paged.map(t => {
-          const p = products.find(pr => pr.id === t.productId);
-          const vc = vendors.find(v => v.id === t.vendorId) || channels.find(c => c.id === t.channelId);
-          const tc = tiMap[t.type] || T.textMuted;
-          const isSel = sel.has(t.id);
-          return <tr key={t.id} className={`trow${isSel ? " sel" : ""}`}>
-            <td className="td"><input type="checkbox" className="cb" checked={isSel} onChange={() => tgSel(t.id)} /></td>
-            <td className="td m" style={{ whiteSpace: "nowrap", fontSize: 11 }}>{fmtDate(t.date)}</td>
-            <td className="td"><div style={{ fontWeight: 600, color: T.text, fontSize: 12 }}>{p?.name || "—"}</div><div style={{ fontSize: 10, color: T.textMuted, fontFamily: "monospace" }}>{p?.sku}</div></td>
-            <td className="td"><span className="badge" style={{ background: `${tc}18`, color: tc, textTransform: "capitalize" }}>{t.type} {t.isDamaged ? <span style={{ color: T.red }}>⚠</span> : ""}</span></td>
-            <td className="td r" style={{ fontWeight: 700 }}>{t.qty}</td>
-            <td className="td r m">{fmtCur(t.price)}</td>
-            <td className="td r" style={{ fontWeight: 600, color: t.type === "sale" ? T.green : t.type === "purchase" ? T.blue : T.textSub }}>{fmtCur(Number(t.qty) * Number(t.effectivePrice || t.price))}</td>
-            <td className="td m" style={{ fontSize: 11 }}>{vc?.name || "—"}</td>
-            <td className="td m" style={{ fontSize: 10 }}>{t.userName || "—"}</td>
-            <td className="td m" style={{ fontSize: 10, fontFamily: "monospace" }}>{t.billId ? "📄" : "—"}</td>
-            {user.role === "admin" && <td className="td"><button className="btn-danger" onClick={() => { if (window.confirm("Delete?")) saveTransactions(transactions.filter(x => x.id !== t.id)); }} style={{ padding: "3px 7px" }}><Trash2 size={11} /></button></td>}
-          </tr>;
-        })}</tbody>
-      </table>
+      <div style={{ overflowX: "auto" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+          <thead>
+            <tr style={{ background: T.isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.025)" }}>
+              <th className="th" style={{ width: 36 }}><input type="checkbox" className="cb" checked={allSel} onChange={tgAll} /></th>
+              {["Date", "Product", "Type", "Qty", "Price", "Value", "Vendor", "By", "Bill Ref"].map((h, i) => (
+                <th key={i} className="th" style={{ textAlign: ["Qty", "Price", "Value"].includes(h) ? "right" : "left" }}>{h.toUpperCase()}</th>
+              ))}
+              {user.role === "admin" && <th className="th" />}
+            </tr>
+          </thead>
+          <tbody>
+            {paged.map(t => {
+              const p = products.find(pr => pr.id === t.productId);
+              const v = vendors?.find(vn => vn.id === t.vendorId);
+              const tc = tiMap[t.type] || T.textMuted;
+              const isSel = sel.has(t.id);
+              const typeLabel = t.type === "purchase_return" ? "Pur. Return" : t.type === "return" ? "Sale Return" : t.type;
+              return (
+                <tr key={t.id} className={`trow${isSel ? " sel" : ""}`}>
+                  <td className="td"><input type="checkbox" className="cb" checked={isSel} onChange={() => tgSel(t.id)} /></td>
+                  <td className="td m" style={{ whiteSpace: "nowrap", fontSize: 11 }}>{fmtDate(t.date)}</td>
+                  <td className="td">
+                    <div style={{ fontWeight: 600, color: T.text, fontSize: 12 }}>{p?.name || "—"}</div>
+                    <div style={{ fontSize: 10, color: T.textMuted, fontFamily: "monospace" }}>{p?.sku}</div>
+                  </td>
+                  <td className="td">
+                    <span className="badge" style={{ background: `${tc}18`, color: tc, textTransform: "capitalize" }}>
+                      {typeLabel} {t.isDamaged ? "⚠" : ""}
+                    </span>
+                  </td>
+                  <td className="td r" style={{ fontWeight: 700 }}>{t.qty}</td>
+                  <td className="td r m">{fmtCur(t.price)}</td>
+                  <td className="td r" style={{ fontWeight: 600, color: t.type === "sale" ? T.green : t.type === "purchase" ? T.blue : T.textSub }}>
+                    {fmtCur(Number(t.qty) * Number(t.effectivePrice || t.price))}
+                  </td>
+                  <td className="td m" style={{ fontSize: 11 }}>{v?.name || "—"}</td>
+                  <td className="td m" style={{ fontSize: 10 }}>{t.userName || "—"}</td>
+                  <td className="td m" style={{ fontSize: 10, fontFamily: "monospace" }}>{t.billId ? "📄" : "—"}</td>
+                  {user.role === "admin" && (
+                    <td className="td">
+                      <button className="btn-danger" onClick={() => { if (window.confirm("Delete?")) saveTransactions(transactions.filter(x => x.id !== t.id)); }} style={{ padding: "3px 7px" }}>
+                        <Trash2 size={11} />
+                      </button>
+                    </td>
+                  )}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
         {fil.length === 0 && <div style={{ padding: "40px 0", textAlign: "center", color: T.textMuted }}>No transactions found</div>}
       </div>
       <Pager total={fil.length} page={pg} ps={ps} setPage={setPg} setPs={setPs} />
