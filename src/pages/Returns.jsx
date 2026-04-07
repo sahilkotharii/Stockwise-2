@@ -22,7 +22,7 @@ function getPresetDate(preset) {
 
 export default function Returns({ ctx }) {
   const T = useT();
-  const { transactions, saveTransactions, products, vendors, channels, getStock, user, addLog } = ctx;
+  const { transactions, saveTransactions, products, vendors, getStock, user, addLog } = ctx;
   const isAdmin = user.role === "admin";
 
   const [modal, setModal] = useState(false);
@@ -43,11 +43,12 @@ export default function Returns({ ctx }) {
     date: today(),
     channelId: "",
     vendorId: "",
+    gstType: "cgst_sgst",
     notes: "",
     items: [{ id: uid(), productId: "", qty: 1, price: "", isDamaged: false }]
   });
 
-  const resetForm = () => setForm({ date: today(), channelId: "", vendorId: "", notes: "", items: [{ id: uid(), productId: "", qty: 1, price: "", isDamaged: false }] });
+  const resetForm = () => setForm({ date: today(), channelId: "", vendorId: "", gstType: "cgst_sgst", notes: "", items: [{ id: uid(), productId: "", qty: 1, price: "", isDamaged: false }] });
   const addItem = () => setForm(f => ({ ...f, items: [...f.items, { id: uid(), productId: "", qty: 1, price: "", isDamaged: false }] }));
   const remItem = id => setForm(f => ({ ...f, items: f.items.filter(i => i.id !== id) }));
   const upItem = (id, k, v) => setForm(f => ({
@@ -67,8 +68,8 @@ export default function Returns({ ctx }) {
 
   const handleSave = () => {
     if (valid.length === 0) { alert("Add at least one product"); return; }
-    if (returnType === "sales_return" && !form.channelId) { alert("Select a channel"); return; }
-    if (returnType === "purchase_return" && !form.vendorId) { alert("Select a vendor"); return; }
+    if (!form.vendorId) { alert("Select a vendor"); return; }
+
 
     const newTxns = valid.map(item => {
       const pr = products.find(p => p.id === item.productId);
@@ -92,7 +93,8 @@ export default function Returns({ ctx }) {
         userId: user.id, userName: user.name,
         billId: null,
         isDamaged: item.isDamaged,
-        returnType
+        returnType,
+        gstType: form.gstType || "cgst_sgst"
       };
     });
     saveTransactions([...newTxns, ...transactions]);
@@ -178,7 +180,7 @@ export default function Returns({ ctx }) {
     </div>
 
     {/* KPI Cards */}
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
+    <div className="kgrid" style={{ gridTemplateColumns: "repeat(3,1fr)", gap: 14 }}>
       <div className="kcard glass" style={{ cursor: "pointer" }} onClick={() => setTypeFilter(typeFilter === "sales_return" ? "all" : "sales_return")}>
         <div style={{ position: "absolute", top: -20, right: -20, width: 70, height: 70, borderRadius: "50%", background: `${T.red}12` }} />
         <div style={{ width: 36, height: 36, borderRadius: 10, background: `${T.red}1A`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 12 }}><RotateCcw size={17} color={T.red} /></div>
@@ -246,7 +248,7 @@ export default function Returns({ ctx }) {
           <tbody>
             {allReturns.slice((pg - 1) * ps, pg * ps).map(t => {
               const pr = products.find(p => p.id === t.productId);
-              const ch = channels.find(c => c.id === t.channelId);
+
               const v = vendors.find(x => x.id === t.vendorId);
               const typeColor = t.type === "return" ? T.red : t.type === "purchase_return" ? T.blue : T.amber;
               const typeLabel = t.type === "return" ? "Sales Return" : t.type === "purchase_return" ? "Purchase Return" : "Damaged";
@@ -264,7 +266,7 @@ export default function Returns({ ctx }) {
                   <td className="td r m">{fmtCur(t.price || 0)}</td>
                   <td className="td r" style={{ fontWeight: 600, color: t.type === "return" ? T.red : T.blue }}>{fmtCur(Number(t.qty) * Number(t.price || 0))}</td>
                   <td className="td m">
-                    {ch ? <span style={{ color: ch.color, fontWeight: 600 }}>{ch.name}</span> : v?.name || "—"}
+                    {v?.name || "—"}
                   </td>
                   <td className="td">
                     {t.isDamaged ? <span style={{ fontSize: 10, fontWeight: 700, color: T.amber }}>⚠ YES</span> : <span style={{ color: T.textMuted, fontSize: 10 }}>—</span>}
@@ -315,10 +317,28 @@ export default function Returns({ ctx }) {
         {/* Date + Channel/Vendor */}
         <div className="fgrid">
           <Field label="Date" req><GIn type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} /></Field>
-          {returnType === "sales_return"
-            ? <Field label="Sales Channel" req><GS value={form.channelId} onChange={e => setForm(f => ({ ...f, channelId: e.target.value }))} placeholder="Select channel">{channels.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</GS></Field>
-            : <Field label="Vendor" req><GS value={form.vendorId} onChange={e => setForm(f => ({ ...f, vendorId: e.target.value }))} placeholder="Select vendor">{vendors.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}</GS></Field>
-          }
+          <Field label="Vendor" req><GS value={form.vendorId} onChange={e => setForm(f => ({ ...f, vendorId: e.target.value }))} placeholder="Select vendor">{vendors.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}</GS></Field>
+        </div>
+
+        {/* GST Type */}
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, marginBottom: 8, letterSpacing: "0.05em" }}>GST TYPE</div>
+          <div style={{ display: "flex", gap: 8 }}>
+            {[
+              { k: "cgst_sgst", l: "CGST + SGST", sub: "Intra-state (within same state)" },
+              { k: "igst",      l: "IGST",         sub: "Inter-state / Import / Export" }
+            ].map(g => (
+              <button key={g.k} onClick={() => setForm(f => ({ ...f, gstType: g.k }))} style={{
+                flex: 1, padding: "10px 14px", borderRadius: 10,
+                border: `2px solid ${form.gstType === g.k ? T.accent : T.borderSubtle}`,
+                cursor: "pointer", background: form.gstType === g.k ? T.accentBg : "transparent",
+                textAlign: "left", transition: "all .15s"
+              }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: form.gstType === g.k ? T.accent : T.text }}>{g.l}</div>
+                <div style={{ fontSize: 10, color: T.textMuted, marginTop: 2 }}>{g.sub}</div>
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Products */}
@@ -347,9 +367,17 @@ export default function Returns({ ctx }) {
                     {item.price && pr?.gstRate > 0 && (() => {
                       const rate = Number(pr.gstRate);
                       const price = Number(item.price);
+                      if (price <= 0) return null;
                       if (returnType === "sales_return") {
-                        const gst = price * rate / (100 + rate);
-                        return <div style={{ fontSize: 9, color: T.textMuted, marginTop: 2 }}>GST: {fmtCur(gst)} · Net: {fmtCur(price - gst)}</div>;
+                        const totalGst = price * rate / (100 + rate);
+                        const net = price - totalGst;
+                        return (
+                          <div style={{ fontSize: 9, color: T.textMuted, marginTop: 2 }}>
+                            {form.gstType === "igst"
+                              ? `Net: ${fmtCur(net)} · IGST @${rate}%: ${fmtCur(totalGst)}`
+                              : `Net: ${fmtCur(net)} · CGST: ${fmtCur(totalGst/2)} · SGST: ${fmtCur(totalGst/2)}`}
+                          </div>
+                        );
                       }
                       return null;
                     })()}
