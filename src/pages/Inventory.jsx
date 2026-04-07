@@ -1,10 +1,8 @@
-import React, { useState, useMemo } from "react";
-import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
-import { Box, CheckCircle, AlertTriangle, AlertOctagon, Download, Search, Edit2, X, Plus, Layers } from "lucide-react";
+import React, { useState, useMemo, useRef } from "react";
+import { Box, CheckCircle, AlertTriangle, AlertOctagon, Download, Search, Edit2, X, Plus, Layers, Upload, DollarSign } from "lucide-react";
 import { useT } from "../theme";
-import { PC } from "../theme";
 import { KCard, GBtn, GS, GIn, Field, Modal, StChip } from "../components/UI";
-import { fmtCur, toCSV, dlCSV, uid, today } from "../utils";
+import { fmtCur, toCSV, dlCSV, uid, today, calcMgn } from "../utils";
 
 export default function Inventory({ ctx }) {
   const T = useT();
@@ -14,6 +12,62 @@ export default function Inventory({ ctx }) {
   const [catF, setCatF] = useState("");
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState("stock");
+
+  // ── Bulk Opening Stock CSV ──────────────────────────────────────────────
+  const csvRef = useRef(null);
+  const handleOsCsvFile = e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const lines = ev.target.result.split("\n").map(l => l.trim()).filter(Boolean);
+      if (lines.length < 2) { alert("File empty"); return; }
+      const hasHeader = lines[0].toLowerCase().includes("sku") || lines[0].toLowerCase().includes("name");
+      const headers = hasHeader ? lines[0].toLowerCase().split(",").map(h => h.trim().replace(/[^a-z]/g,"")) : ["name","sku","qty","date"];
+      const dataLines = hasHeader ? lines.slice(1) : lines;
+      const skuIdx = headers.indexOf("sku"); const nameIdx = headers.indexOf("name");
+      const qtyIdx = headers.indexOf("qty"); const dateIdx = headers.indexOf("date");
+
+      let updated = 0;
+      const newTxns = [...transactions.filter(t => t.type !== "opening")]; // strip all existing opening
+      // Re-add all existing non-matching
+      const existingOpening = transactions.filter(t => t.type === "opening");
+      dataLines.forEach(line => {
+        const cols = line.split(",").map(c => c.trim().replace(/^"|"$/g,""));
+        const skuVal = skuIdx >= 0 ? cols[skuIdx] : "";
+        const nameVal = nameIdx >= 0 ? cols[nameIdx] : "";
+        const qty = parseInt(qtyIdx >= 0 ? cols[qtyIdx] : cols[2]) || 0;
+        const dt = dateIdx >= 0 ? cols[dateIdx] : today();
+        if (qty <= 0) return;
+        const pr = products.find(p =>
+          (skuVal && p.sku?.toLowerCase() === skuVal.toLowerCase()) ||
+          (nameVal && p.name?.toLowerCase() === nameVal.toLowerCase())
+        );
+        if (!pr) return;
+        newTxns.push({ id: uid(), productId: pr.id, type: "opening", qty, price: Number(pr.purchasePrice||0), effectivePrice: Number(pr.purchasePrice||0), gstRate:0, gstAmount:0, vendorId:null, channelId:null, date: dt||today(), notes:"Bulk opening stock import", userId:user.id, userName:user.name, billId:null, isDamaged:false });
+        updated++;
+      });
+      // Keep opening txns for products not in CSV
+      existingOpening.forEach(t => {
+        if (!newTxns.find(x => x.productId === t.productId && x.type === "opening")) newTxns.push(t);
+      });
+      saveTransactions(newTxns);
+      addLog("bulk import", "opening stock", `${updated} products`);
+      alert(`✅ Updated opening stock for ${updated} products`);
+      e.target.value = "";
+    };
+    reader.readAsText(file);
+  };
+
+  const exportOsTemplate = () => {
+    const header = "name,sku,qty,date";
+    const rows = products.slice(0, 3).map(p => {
+      const stock = transactions.filter(t=>t.productId===p.id&&t.type==="opening").reduce((s,t)=>s+Number(t.qty),0);
+      return `"${p.name}",${p.sku},${stock},${today()}`;
+    });
+    const csv = [header, ...rows, ...products.slice(3).map(p=>`"${p.name}",${p.sku},0,${today()}`)].join("\n");
+    const a = document.createElement("a"); a.href = "data:text/csv;charset=utf-8,"+encodeURIComponent(csv); a.download = "opening_stock_template.csv"; a.click();
+  };
 
   // ── Edit Opening Stock modal ─────────────────────────────────────────────
   const [editOsModal, setEditOsModal] = useState(false);
@@ -92,63 +146,32 @@ export default function Inventory({ ctx }) {
   const low = filtered.filter(p => p.stock > 0 && p.stock <= Number(p.minStock || 0));
   const healthy = filtered.filter(p => p.stock > Number(p.minStock || 0));
 
-  const catBreakdown = useMemo(() => {
-    const m = {};
-    productStats.forEach(p => {
-      const cat = categories.find(c => c.id === p.categoryId);
-      const n = cat?.name || "Other";
-      const col = cat?.color || T.textMuted;
-      if (!m[n]) m[n] = { name: n, value: 0, units: 0, color: col };
-      m[n].value += p.value;
-      m[n].units += p.stock;
-    });
-    return Object.values(m).sort((a, b) => b.value - a.value);
-  }, [productStats, categories]);
 
   return <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 
     {/* KPIs */}
     <div className="kgrid" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14 }}>
-      <KCard label="Inventory Value" value={fmtCur(totalValue)} sub={`ex-GST · ${filtered.length} products`} icon={Box} color={T.accent} />
+      <KCard label="Inventory Value" value={fmtCur(totalValue)} sub={`ex-GST · ${filtered.length} products`} icon={Box} color={T.accent} delta={`${filtered.length} SKUs in stock`} />
       <KCard label="Healthy Stock" value={healthy.length.toString()} sub="Above min level" icon={CheckCircle} color={T.green} />
       <KCard label="Low Stock" value={low.length.toString()} sub="Below min level" icon={AlertTriangle} color={T.amber} />
       <KCard label="Out of Stock" value={oos.length.toString()} sub="Needs restocking" icon={AlertOctagon} color={T.red} />
     </div>
 
-    {/* Charts */}
-    <div className="chart-row" style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 14 }}>
-      <div className="glass" style={{ padding: "18px 18px 10px", borderRadius: T.radius }}>
-        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 14 }}>Stock Levels by Product</div>
-        <ResponsiveContainer width="100%" height={200}>
-          <BarChart data={filtered.slice(0, 10)} layout="vertical" margin={{ left: 100 }}>
-            <XAxis type="number" tick={{ fontSize: 10, fill: T.textMuted }} axisLine={false} tickLine={false} />
-            <YAxis type="category" dataKey="alias" tick={{ fontSize: 10, fill: T.textMuted }} width={100} axisLine={false} tickLine={false} />
-            <Tooltip formatter={(v) => v} contentStyle={{ background: T.surfaceStrong, border: `1px solid ${T.border}`, borderRadius: 10, fontSize: 11 }} />
-            <Bar dataKey="stock" name="Stock" fill={T.accent} radius={[0, 4, 4, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-      <div className="glass" style={{ padding: 18, borderRadius: T.radius }}>
-        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 14 }}>Value by Category (ex-GST)</div>
-        <ResponsiveContainer width="100%" height={140}>
-          <PieChart>
-            <Pie data={catBreakdown} cx="50%" cy="50%" outerRadius={60} dataKey="value" paddingAngle={3}>
-              {catBreakdown.map((_, i) => <Cell key={i} fill={catBreakdown[i].color || PC[i % PC.length]} />)}
-            </Pie>
-            <Tooltip formatter={v => fmtCur(v)} contentStyle={{ background: T.surfaceStrong, border: `1px solid ${T.border}`, borderRadius: 10, fontSize: 11 }} />
-          </PieChart>
-        </ResponsiveContainer>
-        <div style={{ display: "flex", flexDirection: "column", gap: 5, marginTop: 8 }}>
-          {catBreakdown.map((c, i) => (
-            <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: 11 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <div style={{ width: 8, height: 8, borderRadius: "50%", background: c.color || PC[i % PC.length] }} />
-                <span style={{ color: T.textSub }}>{c.name}</span>
-              </div>
-              <span style={{ fontWeight: 600, color: T.text }}>{fmtCur(c.value)}</span>
-            </div>
-          ))}
+
+
+    {/* Total Inventory Value Banner */}
+    <div className="glass" style={{ padding: "14px 20px", borderRadius: 14, background: `linear-gradient(135deg, ${T.accentBg}, ${T.accent}10)`, border: `1px solid ${T.accent}30`, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{ width: 40, height: 40, borderRadius: 12, background: `linear-gradient(135deg,${T.accent},${T.accentDark})`, display: "flex", alignItems: "center", justifyContent: "center" }}><DollarSign size={18} color="#fff" /></div>
+        <div>
+          <div style={{ fontFamily: T.displayFont, fontWeight: 800, fontSize: 22, color: T.accent }}>{fmtCur(totalValue)}</div>
+          <div style={{ fontSize: 12, color: T.textSub, marginTop: 1 }}>Total Inventory Value in Hand <span style={{ color: T.textMuted }}>(ex-GST · at purchase price)</span></div>
         </div>
+      </div>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <div style={{ padding: "6px 14px", borderRadius: 99, background: T.greenBg, border: `1px solid ${T.green}25`, fontSize: 12 }}><span style={{ color: T.green, fontWeight: 700 }}>{healthy.length}</span><span style={{ color: T.textMuted }}> healthy</span></div>
+        <div style={{ padding: "6px 14px", borderRadius: 99, background: T.amberBg, border: `1px solid ${T.amber}25`, fontSize: 12 }}><span style={{ color: T.amber, fontWeight: 700 }}>{low.length}</span><span style={{ color: T.textMuted }}> low</span></div>
+        <div style={{ padding: "6px 14px", borderRadius: 99, background: T.redBg, border: `1px solid ${T.red}25`, fontSize: 12 }}><span style={{ color: T.red, fontWeight: 700 }}>{oos.length}</span><span style={{ color: T.textMuted }}> OOS</span></div>
       </div>
     </div>
 
@@ -160,11 +183,13 @@ export default function Inventory({ ctx }) {
             <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text }}>Stock Register</div>
             <div style={{ fontSize: 11, color: T.textMuted, marginTop: 2 }}>Inventory value calculated at ex-GST purchase price</div>
           </div>
-          <div style={{ display: "flex", gap: 8 }}>
-            {isAdmin && (
-              <GBtn sz="sm" v="ghost" onClick={() => { /* handled per row */ }} icon={<Layers size={13} />} style={{ opacity: 0.6, cursor: "default" }}>Edit via row ✏</GBtn>
-            )}
-            <GBtn v="ghost" sz="sm" onClick={() => dlCSV(toCSV(filtered, ["name", "sku", "opening", "purchased", "sold", "returned", "damaged", "stock", "value"]), "inventory")} icon={<Download size={13} />}>Export CSV</GBtn>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {isAdmin && <>
+              <GBtn sz="sm" v="ghost" onClick={exportOsTemplate} icon={<Download size={13} />}>Opening Stock Template</GBtn>
+              <GBtn sz="sm" v="ghost" onClick={() => csvRef.current?.click()} icon={<Upload size={13} />}>Import Opening Stock</GBtn>
+              <input ref={csvRef} type="file" accept=".csv" onChange={handleOsCsvFile} style={{ display: "none" }} />
+            </>}
+            <GBtn v="ghost" sz="sm" onClick={() => dlCSV(toCSV(filtered.map(p => ({ name: p.name, sku: p.sku, opening: p.opening, purchased: p.purchased, sold: p.sold, returned: p.returned, stock: p.stock, value: p.value })), ["name","sku","opening","purchased","sold","returned","stock","value"]), "inventory")} icon={<Download size={13} />}>Export Register</GBtn>
           </div>
         </div>
         <div className="filter-wrap">
