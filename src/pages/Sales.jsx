@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { Plus, X, RotateCcw, Eye, Trash2, Send, Edit2, TrendingUp, DollarSign, FileText, Package, Printer } from "lucide-react";
+import { Plus, X, Eye, Trash2, Send, Edit2, TrendingUp, DollarSign, FileText, Package, Printer } from "lucide-react";
 import { useT } from "../theme";
 import { KCard, GBtn, GIn, GS, GTa, Field, Modal, Pager } from "../components/UI";
 import BillForm from "../components/BillForm";
@@ -45,14 +45,12 @@ export default function Sales({ ctx }) {
 
   const [modal, setModal] = useState(false);
   const [editBill, setEditBill] = useState(null);
-  const [retModal, setRetModal] = useState(false);
   const [preset, setPreset] = useState("30d");
   const [df, setDf] = useState(getPresetDate("30d"));
   const [dt, setDt] = useState(today());
   const [chF, setChF] = useState("");
   const [pg, setPg] = useState(1); const [ps, setPs] = useState(20);
   const [search, setSearch] = useState("");
-  const [retForm, setRetForm] = useState({ productId: "", qty: 1, price: "", channelId: "", date: today(), notes: "", isDamaged: false });
   const [exp, setExp] = useState({});
   const [invoiceBill, setInvoiceBill] = useState(null);
   useEffect(() => setPg(1), [df, dt, chF, search, ps]);
@@ -145,28 +143,6 @@ export default function Sales({ ctx }) {
     setEditBill(null);
   };
 
-  const handleReturn = () => {
-    if (!retForm.productId || !retForm.qty) return;
-    const pr = products.find(p => p.id === retForm.productId);
-    const returnPrice = retForm.price ? Number(retForm.price) : Number(pr?.mrp || 0);
-    const rate = Number(pr?.gstRate || 0);
-    const t = {
-      id: uid(), productId: retForm.productId,
-      type: retForm.isDamaged ? "damaged" : "return",
-      qty: Number(retForm.qty),
-      price: returnPrice,   // return price per unit (incl GST)
-      effectivePrice: returnPrice,
-      gstRate: rate,
-      gstAmount: returnPrice * rate / (100 + rate) * Number(retForm.qty),
-      vendorId: null, channelId: retForm.channelId || null, date: retForm.date,
-      notes: retForm.notes || "Customer return",
-      userId: user.id, userName: user.name, billId: null, isDamaged: retForm.isDamaged
-    };
-    saveTransactions([t, ...transactions]);
-    addLog("recorded", retForm.isDamaged ? "damaged return" : "sale return", pr?.name || "");
-    setRetModal(false);
-    setRetForm({ productId: "", qty: 1, price: "", channelId: "", date: today(), notes: "", isDamaged: false });
-  };
 
   const deleteBill = b => {
     if (!window.confirm(`Delete bill ${b.billNo}? This removes all associated transactions.`)) return;
@@ -189,7 +165,6 @@ export default function Sales({ ctx }) {
         <input type="date" className="inp" value={dt} onChange={e => { setDt(e.target.value); setPreset(""); }} style={{ width: 120, fontSize: 12 }} />
       </div>
       <div style={{ display: "flex", gap: 8 }}>
-        <GBtn v="ghost" sz="sm" onClick={() => setRetModal(true)} icon={<RotateCcw size={13} />}>Record Return</GBtn>
         <GBtn sz="md" onClick={() => setModal(true)} icon={<Plus size={14} />}>New Sale Bill</GBtn>
       </div>
     </div>
@@ -223,15 +198,6 @@ export default function Sales({ ctx }) {
         <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 20, color: T.text }}>{unitsSold}</div>
         <div style={{ fontSize: 12, fontWeight: 600, color: T.textSub, marginTop: 2 }}>Units Sold</div>
         <div style={{ fontSize: 10, color: T.textMuted, marginTop: 3 }}>total qty in bills</div>
-      </div>
-      <div className="kcard glass">
-        <div style={{ position: "absolute", top: -20, right: -20, width: 70, height: 70, borderRadius: "50%", background: `${T.red}12` }} />
-        <div style={{ width: 36, height: 36, borderRadius: 10, background: `${T.red}1A`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 12 }}><RotateCcw size={17} color={T.red} /></div>
-        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 20, color: T.text }}>{unitsReturned}</div>
-        <div style={{ fontSize: 12, fontWeight: 600, color: T.textSub, marginTop: 2 }}>Units Returned</div>
-        <div style={{ fontSize: 10, color: T.textMuted, marginTop: 3 }}>
-          {returnRevenueInclGst > 0 ? `${fmtCur(returnRevenueInclGst)} refunded` : "no returns"}
-        </div>
       </div>
     </div>
 
@@ -324,36 +290,6 @@ export default function Sales({ ctx }) {
       {editBill && <BillForm type="sale" bills={bills} onSave={handleEditBill} products={products} vendors={vendors} channels={channels} getStock={getStock} existingBill={editBill} />}
     </Modal>
 
-    {/* Return Modal */}
-    <Modal open={retModal} onClose={() => setRetModal(false)} title="Record Sale Return" width={440}
-      footer={<><GBtn v="ghost" onClick={() => setRetModal(false)}>Cancel</GBtn><GBtn v="danger" onClick={handleReturn} icon={<RotateCcw size={13} />}>Record Return</GBtn></>}>
-      <div className="fgrid">
-        <Field label="Product" req cl="s2"><GS value={retForm.productId} onChange={e => {
-          const pr = products.find(p => p.id === e.target.value);
-          setRetForm(p => ({ ...p, productId: e.target.value, price: pr?.mrp?.toString() || "" }));
-        }} placeholder="Select product">{products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</GS></Field>
-        <Field label="Return Qty" req><GIn type="number" min="1" value={retForm.qty} onChange={e => setRetForm(p => ({ ...p, qty: e.target.value }))} /></Field>
-        <Field label="Return Price / unit (incl GST)" req>
-          <GIn type="number" min="0" step="0.01" value={retForm.price} onChange={e => setRetForm(p => ({ ...p, price: e.target.value }))} placeholder="MRP or agreed refund price" />
-          {retForm.price && retForm.productId && (() => {
-            const pr = products.find(p => p.id === retForm.productId);
-            const rate = Number(pr?.gstRate || 0);
-            const price = Number(retForm.price);
-            if (rate > 0 && price > 0) {
-              const gst = price * rate / (100 + rate);
-              return <div style={{ fontSize: 10, marginTop: 3, color: T.textMuted }}>GST @{rate}%: {fmtCur(gst)} · Net: {fmtCur(price - gst)}</div>;
-            }
-          })()}
-        </Field>
-        <Field label="Channel"><GS value={retForm.channelId} onChange={e => setRetForm(p => ({ ...p, channelId: e.target.value }))} placeholder="Select channel">{channels.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</GS></Field>
-        <Field label="Date" cl="s2"><GIn type="date" value={retForm.date} onChange={e => setRetForm(p => ({ ...p, date: e.target.value }))} /></Field>
-        <Field label="Reason" cl="s2"><GTa value={retForm.notes} onChange={e => setRetForm(p => ({ ...p, notes: e.target.value }))} rows={2} placeholder="Reason for return…" /></Field>
-        <div className="s2" style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", background: T.redBg, borderRadius: 10 }}>
-          <input type="checkbox" id="damret" checked={retForm.isDamaged} onChange={e => setRetForm(p => ({ ...p, isDamaged: e.target.checked }))} style={{ width: 16, height: 16, accentColor: T.red }} />
-          <label htmlFor="damret" style={{ fontSize: 13, fontWeight: 600, color: T.red, cursor: "pointer" }}>Mark as Damaged (excluded from stock)</label>
-        </div>
-      </div>
-    </Modal>
 
     {/* Invoice Modal */}
     {invoiceBill && <InvoiceModal bill={invoiceBill} invSettings={invoiceSettings || {}} channels={channels} products={products} onClose={() => setInvoiceBill(null)} />}
