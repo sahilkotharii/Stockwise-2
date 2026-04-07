@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { Plus, X, Eye, Trash2, Edit2, ShoppingCart, FileText, Box, Package } from "lucide-react";
+import { Plus, X, Eye, Trash2, Edit2, ShoppingCart, FileText, Box, Package, Download } from "lucide-react";
 import { useT } from "../theme";
 import { KCard, GBtn, GS, Modal, Pager } from "../components/UI";
 import BillForm from "../components/BillForm";
@@ -38,6 +38,8 @@ export default function Purchase({ ctx }) {
   const [pg, setPg] = useState(1); const [ps, setPs] = useState(20);
   const [search, setSearch] = useState("");
   const [exp, setExp] = useState({});
+  const [selBills, setSelBills] = useState(new Set());
+  const tgBill = id => setSelBills(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
   useEffect(() => setPg(1), [df, dt, vF, search, ps]);
 
   const handlePreset = (k) => { setPreset(k); setDf(getPresetDate(k)); setDt(today()); };
@@ -170,16 +172,28 @@ export default function Purchase({ ctx }) {
         <GS value={vF} onChange={e => setVF(e.target.value)} placeholder="All Vendors">{vendors.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}</GS>
         {(vF || search) && <GBtn v="ghost" sz="sm" onClick={() => { setVF(""); setSearch(""); }} icon={<X size={12} />}>Clear</GBtn>}
       </div>
+      {selBills.size > 0 && (
+        <div style={{ marginBottom: 10, padding: "8px 14px", borderRadius: 10, background: T.blueBg, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+          <span style={{ fontSize: 12, fontWeight: 600, color: T.blue }}>{selBills.size} selected</span>
+          {isAdmin && <GBtn v="danger" sz="sm" onClick={() => { if(window.confirm(`Delete ${selBills.size} bills?`)){purBills.filter(b=>selBills.has(b.id)).forEach(b=>{saveBills(bills.filter(x=>x.id!==b.id));saveTransactions(transactions.filter(t=>t.billId!==b.id));});setSelBills(new Set());}}} icon={<Trash2 size={13} />}>Delete Selected</GBtn>}
+          <button onClick={()=>setSelBills(new Set())} style={{marginLeft:"auto",background:"none",border:"none",cursor:"pointer",fontSize:11,color:T.textMuted}}>Clear</button>
+        </div>
+      )}
       <div style={{ overflowX: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
-          <thead><tr>{["Bill No", "Date", "Vendor", "Items", "Ex-GST", "GST", "Total Paid", "", ""].map((h, i) => (
+          <thead><tr>
+            <th className="th" style={{ width: 36 }}>
+              <input type="checkbox" className="cb" checked={purBills.slice((pg-1)*ps,pg*ps).length>0&&purBills.slice((pg-1)*ps,pg*ps).every(b=>selBills.has(b.id))} onChange={e=>{ const paged=purBills.slice((pg-1)*ps,pg*ps); if(e.target.checked){setSelBills(s=>{const n=new Set(s);paged.forEach(b=>n.add(b.id));return n;});}else{setSelBills(s=>{const n=new Set(s);paged.forEach(b=>n.delete(b.id));return n;});}}} />
+            </th>
+            {["Bill No", "Date", "Vendor", "Items", "Ex-GST", "GST", "Total Paid", "", ""].map((h, i) => (
             <th key={i} className="th" style={{ textAlign: ["Ex-GST", "GST", "Total Paid"].includes(h) ? "right" : "left", width: h === "" ? 36 : "auto" }}>{h.toUpperCase()}</th>
           ))}</tr></thead>
           <tbody>
             {purBills.slice((pg - 1) * ps, pg * ps).map(b => {
               const v = vendors.find(x => x.id === b.vendorId);
               return <React.Fragment key={b.id}>
-                <tr className="trow">
+                <tr className={`trow${selBills.has(b.id)?" sel":""}`} onClick={()=>tgBill(b.id)} style={{cursor:"pointer"}}>
+                  <td className="td" onClick={e=>e.stopPropagation()}><input type="checkbox" className="cb" checked={selBills.has(b.id)} onChange={()=>tgBill(b.id)}/></td>
                   <td className="td" style={{ fontWeight: 600, color: T.blue }}>{b.billNo}</td>
                   <td className="td m">{fmtDate(b.date)}</td>
                   <td className="td">{v?.name || "—"}</td>
@@ -196,7 +210,7 @@ export default function Purchase({ ctx }) {
                   <td className="td">{isAdmin && <button className="btn-danger" onClick={() => deleteBill(b)} style={{ padding: "3px 6px" }}><Trash2 size={11} /></button>}</td>
                 </tr>
                 {exp[b.id] && <tr style={{ background: T.isDark ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.015)" }}>
-                  <td colSpan={9} style={{ padding: "12px 20px", borderBottom: `1px solid ${T.borderSubtle}` }}>
+                  <td colSpan={10} style={{ padding: "12px 20px", borderBottom: `1px solid ${T.borderSubtle}` }}>
                     <div style={{ fontSize: 10, fontWeight: 700, color: T.textMuted, marginBottom: 8 }}>BILL ITEMS</div>
                     <div style={{ display: "flex", flexDirection: "column", gap: 5, marginBottom: 10 }}>
                       {(b.items || []).map((it, idx) => {
