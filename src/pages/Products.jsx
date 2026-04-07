@@ -48,10 +48,10 @@ export default function Products({ ctx }) {
   }), [products, search, cf]);
 
   // ── CSV Template columns ─────────────────────────────────────────────────
-  const CSV_COLS = ["name","alias","sku","hsn","mrp","purchasePrice","gstRate","unit","minStock","description"];
+  const CSV_COLS = ["name","alias","sku","hsn","category","gstRate","mrp","purchasePrice","unit","minStock","imageUrl","description"];
   const CSV_SAMPLE = [
-    "Copper Water Bottle 1L,Copper Bottle 1L,CWB-001,7419,2549,632,5,pcs,10,Premium copper water bottle",
-    "Brass Tumbler 250ml,Brass Tumbler,BT-001,7418,899,210,12,pcs,5,Handcrafted brass tumbler"
+    "Pipal Apex Matt Copper Bottle,Copper Bottle,PFGCO0592,74181022,Copper Bottle,5,2549,632,pcs,10,https://pipalhome.com/cdn/shop/files/img.jpg,Premium copper water bottle",
+    "Brass Tumbler 250ml,Brass Tumbler,BT-001,74182000,Brass Cookware,12,899,210,pcs,5,,Handcrafted brass tumbler"
   ];
 
   const exportTemplate = () => {
@@ -79,7 +79,7 @@ export default function Products({ ctx }) {
         : CSV_COLS;
 
       const colIdx = col => {
-        const aliases = { name:["name","productname"], alias:["alias","shortname"], sku:["sku","code"], hsn:["hsn","hsncode"], mrp:["mrp","sellingprice","price"], purchaseprice:["purchaseprice","cost","costprice","buyprice"], gstrate:["gstrate","gst","tax"], unit:["unit","uom"], minstock:["minstock","reorderqty","minqty"], description:["description","desc"] };
+        const aliases = { name:["name","productname"], alias:["alias","shortname"], sku:["sku","code"], hsn:["hsn","hsncode"], mrp:["mrp","sellingprice","price"], purchaseprice:["purchaseprice","cost","costprice","buyprice"], gstrate:["gstrate","gst","tax"], unit:["unit","uom"], minstock:["minstock","reorderqty","minqty"], description:["description","desc"], category:["category","categoryname","cat"], imageurl:["imageurl","image","imagelink","img"] };
         const aliasList = aliases[col] || [col];
         for (const a of aliasList) { const i = headers.indexOf(a); if (i !== -1) return i; }
         return -1;
@@ -103,11 +103,12 @@ export default function Products({ ctx }) {
         if (!name) { errors.push(`Row ${idx+2}: Missing name — skipped`); return; }
         const mrp = parseFloat(get("mrp")) || 0;
         const cost = parseFloat(get("purchaseprice")) || 0;
-        const cat = categories.find(c => c.name.toLowerCase() === get("category")?.toLowerCase());
+        const catName = get("category");
+        const cat = catName ? categories.find(c => c.name.toLowerCase() === catName.toLowerCase()) : null;
         parsed.push({
           id: uid(),
           name,
-          alias: get("alias") || name.slice(0,20),
+          alias: get("alias") || name.slice(0, 20),
           sku: get("sku") || `SKU-${Date.now()}-${idx}`,
           hsn: get("hsn") || "",
           mrp, purchasePrice: cost,
@@ -115,9 +116,10 @@ export default function Products({ ctx }) {
           gstRate: get("gstrate") || "0",
           unit: get("unit") || "pcs",
           minStock: parseInt(get("minstock")) || 5,
+          imageUrl: get("imageurl") || "",
           description: get("description") || "",
           categoryId: cat?.id || "",
-          imageUrl: "",
+          categoryName: cat?.name || catName || "",
         });
       });
 
@@ -417,7 +419,7 @@ export default function Products({ ctx }) {
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11 }}>
               <thead>
                 <tr style={{ background: T.isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)", position: "sticky", top: 0 }}>
-                  {["Name", "Alias", "SKU", "HSN", "MRP", "Cost", "GST%", "Unit", "Min Stock"].map(h => (
+                  {["Img", "Name", "Alias", "SKU", "HSN", "Category", "GST%", "MRP", "Cost", "Margin", "Unit", "Min Stock"].map(h => (
                     <th key={h} className="th" style={{ padding: "6px 10px", fontSize: 10 }}>{h.toUpperCase()}</th>
                   ))}
                 </tr>
@@ -425,13 +427,24 @@ export default function Products({ ctx }) {
               <tbody>
                 {csvPreview.map((p, i) => (
                   <tr key={i} className="trow">
+                    <td className="td" style={{ padding: "5px 8px" }}>
+                      {p.imageUrl
+                        ? <img src={p.imageUrl} alt="" style={{ width: 28, height: 28, borderRadius: 4, objectFit: "cover" }} onError={e => { e.target.style.display = "none"; }} />
+                        : <div style={{ width: 28, height: 28, borderRadius: 4, background: T.isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>📦</div>}
+                    </td>
                     <td className="td" style={{ padding: "5px 10px", fontWeight: 600 }}>{p.name}</td>
                     <td className="td" style={{ padding: "5px 10px", color: T.textMuted }}>{p.alias}</td>
                     <td className="td" style={{ padding: "5px 10px", fontFamily: "monospace" }}>{p.sku}</td>
                     <td className="td" style={{ padding: "5px 10px" }}>{p.hsn || "—"}</td>
+                    <td className="td" style={{ padding: "5px 10px" }}>
+                      {p.categoryName
+                        ? <span style={{ color: p.categoryId ? T.green : T.amber, fontWeight: 600 }}>{p.categoryName}{!p.categoryId ? " ⚠" : ""}</span>
+                        : <span style={{ color: T.textMuted }}>—</span>}
+                    </td>
+                    <td className="td r" style={{ padding: "5px 10px" }}>{p.gstRate}%</td>
                     <td className="td r" style={{ padding: "5px 10px", color: T.green }}>₹{Number(p.mrp).toLocaleString("en-IN")}</td>
                     <td className="td r" style={{ padding: "5px 10px" }}>₹{Number(p.purchasePrice).toLocaleString("en-IN")}</td>
-                    <td className="td r" style={{ padding: "5px 10px" }}>{p.gstRate}%</td>
+                    <td className="td r" style={{ padding: "5px 10px", color: T.accent }}>{p.margin}%</td>
                     <td className="td" style={{ padding: "5px 10px" }}>{p.unit}</td>
                     <td className="td r" style={{ padding: "5px 10px" }}>{p.minStock}</td>
                   </tr>
@@ -440,6 +453,11 @@ export default function Products({ ctx }) {
             </table>
             {csvPreview.length === 0 && <div style={{ padding: "24px 0", textAlign: "center", color: T.textMuted }}>No valid products found in file</div>}
           </div>
+          {csvPreview.some(p => p.categoryName && !p.categoryId) && (
+            <div style={{ padding: "8px 12px", borderRadius: 8, background: T.amberBg, fontSize: 11, color: T.amber }}>
+              ⚠ Categories marked in orange don't exist yet — products will be imported without a category. Create the categories first and re-import to match them.
+            </div>
+          )}
         </div>
       </Modal>
 
