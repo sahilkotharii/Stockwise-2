@@ -7,7 +7,7 @@ import { fmtCur, fmtDate } from "../utils";
 
 export default function Dashboard({ ctx }) {
   const T = useT();
-  const { products, transactions, getStock, bills, channels, vendors } = ctx;
+  const { products, transactions, getStock, bills, vendors } = ctx;
   const [range, setRange] = useState("30");
 
   const now = new Date();
@@ -159,7 +159,6 @@ export default function Dashboard({ ctx }) {
               <th key={h} className="th" style={{ textAlign: h === "Total" ? "right" : "left" }}>{h.toUpperCase()}</th>
             ))}</tr></thead>
             <tbody>{recentBills.map(b => {
-              const ch = channels.find(c => c.id === b.channelId);
               const vn = vendors?.find(v => v.id === b.vendorId);
               return <tr key={b.id} className="trow">
                 <td className="td">{b.billNo}</td>
@@ -168,12 +167,7 @@ export default function Dashboard({ ctx }) {
                 <td className="td m">{(b.items || []).length}×</td>
                 <td className="td r" style={{ fontWeight: 700, color: b.type === "sale" ? T.green : T.blue }}>{fmtCur(b.total)}</td>
                 <td className="td m">
-                  {ch ? (
-                    <div style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-                      {ch.logoUrl && <img src={ch.logoUrl} alt="" style={{ width: 12, height: 12, objectFit: "contain" }} onError={e => { e.target.style.display = "none"; }} />}
-                      {ch.name}
-                    </div>
-                  ) : vn?.name || "—"}
+{vn?.name || "—"}
                 </td>
               </tr>;
             })}</tbody>
