@@ -21,7 +21,7 @@ function amountToWords(n) {
 }
 
 /* ── Build invoice HTML ──────────────────────────────────────────────────── */
-function buildHTML(bill, inv, vendor) {
+export function buildHTML(bill, inv, vendor) {
   const isIGST = (bill.gstType || "cgst_sgst") === "igst";
   const dateStr = bill.date ? new Date(bill.date).toLocaleDateString("en-IN",{day:"2-digit",month:"long",year:"numeric"}) : "";
 
