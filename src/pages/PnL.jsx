@@ -221,7 +221,7 @@ export default function PnL({ ctx }) {
       </div>
 
       {/* KPI Cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+      <div className="kgrid" style={{ gap: 12 }}>
         {[
           { label: "Net Revenue", value: netRevenueExclGst, sub: "excl. GST · after returns", icon: TrendingUp, color: T.green },
           { label: "COGS", value: cogs, sub: "opening + purchases − closing", icon: TrendingDown, color: T.blue },
