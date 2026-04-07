@@ -87,6 +87,20 @@ export default function Reports({ ctx }) {
   }), [bills, transactions, products]);
 
 
+  // ── Vendor performance in sales (replaces channel perf) ─────────────────
+  const chPerf = useMemo(() => {
+    const m = {};
+    periodSaleBills.forEach(b => {
+      const v = vendors?.find(x => x.id === b.vendorId);
+      const n = v?.name || "Direct / Walk-in";
+      if (!m[n]) m[n] = { name: n, revenue: 0, units: 0, orders: 0 };
+      m[n].revenue += Number(b.total || 0);
+      m[n].orders += 1;
+      m[n].units += (b.items || []).reduce((s, i) => s + Number(i.qty || 0), 0);
+    });
+    return Object.values(m).map(x => ({ ...x, avgOrder: x.orders > 0 ? x.revenue / x.orders : 0 })).sort((a, b) => b.revenue - a.revenue);
+  }, [periodSaleBills, vendors]);
+
   // ── Category performance ─────────────────────────────────────────────────
   const catPerf = useMemo(() => {
     const m = {};
@@ -219,7 +233,7 @@ export default function Reports({ ctx }) {
         {/* Channel + Category */}
         <div className="chart-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
           <div className="glass" style={{ padding: 18, borderRadius: T.radius }}>
-            <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 14 }}>By Channel</div>
+            <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 14 }}>By Vendor</div>
             {chPerf.length > 0 && <ResponsiveContainer width="100%" height={160}>
               <BarChart data={chPerf} margin={{ left: 0 }}>
                 <XAxis dataKey="name" tick={{ fontSize: 10, fill: T.textMuted }} axisLine={false} tickLine={false} />
