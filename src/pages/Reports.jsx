@@ -10,14 +10,13 @@ const TABS = ["Sales", "Purchase", "Products", "Inventory"];
 
 export default function Reports({ ctx }) {
   const T = useT();
-  const { transactions, products, categories, channels, vendors, getStock, bills } = ctx;
+  const { transactions, products, categories, vendors, getStock, bills } = ctx;
   const [tab, setTab] = useState("Sales");
 
   // ── Global date filter ──────────────────────────────────────────────────
   const [df, setDf] = useState(() => { const d = new Date(); d.setMonth(d.getMonth() - 3); return d.toISOString().split("T")[0]; });
   const [dt, setDt] = useState(today());
   const [catF, setCatF] = useState("");
-  const [chF, setChF] = useState("");
   const [vendorF, setVendorF] = useState("");
 
   const months = getLast12Months();
@@ -26,9 +25,8 @@ export default function Reports({ ctx }) {
   // ── Period bills (ground truth) ────────────────────────────────────────
   const periodSaleBills = useMemo(() => bills.filter(b =>
     b.type === "sale" && inRange(b.date, df, dt) &&
-    (catF ? (b.items || []).some(i => products.find(p => p.id === i.productId)?.categoryId === catF) : true) &&
-    (chF ? b.channelId === chF : true)
-  ), [bills, df, dt, catF, chF, products]);
+    (catF ? (b.items || []).some(i => products.find(p => p.id === i.productId)?.categoryId === catF) : true)
+  ), [bills, df, dt, catF, products]);
 
   const periodPurBills = useMemo(() => bills.filter(b =>
     b.type === "purchase" && inRange(b.date, df, dt) &&
@@ -40,9 +38,8 @@ export default function Reports({ ctx }) {
   // For channel/category breakdown we still use sale transactions
   const sales = useMemo(() => transactions.filter(t =>
     t.type === "sale" && inRange(t.date, df, dt) &&
-    (catF ? products.find(p => p.id === t.productId)?.categoryId === catF : true) &&
-    (chF ? t.channelId === chF : true)
-  ), [transactions, df, dt, catF, chF, products]);
+    (catF ? products.find(p => p.id === t.productId)?.categoryId === catF : true)
+  ), [transactions, df, dt, catF, products]);
   const purch = useMemo(() => transactions.filter(t =>
     t.type === "purchase" && inRange(t.date, df, dt) &&
     (vendorF ? t.vendorId === vendorF : true)
@@ -89,23 +86,6 @@ export default function Reports({ ctx }) {
     return { ...m, revenue: net, purchase: purCost, profit: net - (cogs - cogsR) };
   }), [bills, transactions, products]);
 
-  // ── Channel performance ──────────────────────────────────────────────────
-  const chPerf = useMemo(() => {
-    const m = {};
-    sales.forEach(t => {
-      const ch = channels.find(c => c.id === t.channelId);
-      const n = ch?.name || "Unknown"; const col = ch?.color || T.textMuted;
-      if (!m[n]) m[n] = { name: n, revenue: 0, units: 0, orders: new Set(), color: col, logo: ch?.logoUrl };
-      m[n].revenue += Number(t.qty) * Number(t.price); m[n].units += Number(t.qty);
-      if (t.billId) m[n].orders.add(t.billId);
-    });
-    rets.forEach(t => {
-      const ch = channels.find(c => c.id === t.channelId);
-      const n = ch?.name || "Unknown";
-      if (m[n]) { m[n].revenue -= Number(t.qty) * Number(t.price); }
-    });
-    return Object.values(m).map(x => ({ ...x, orders: x.orders.size || 1, avgOrder: x.revenue / (x.orders.size || 1) })).sort((a, b) => b.revenue - a.revenue);
-  }, [sales, rets, channels]);
 
   // ── Category performance ─────────────────────────────────────────────────
   const catPerf = useMemo(() => {
@@ -193,12 +173,10 @@ export default function Reports({ ctx }) {
         <input type="date" className="inp" value={dt} onChange={e => setDt(e.target.value)} style={{ flex: "0 1 120px" }} />
         {tab === "Sales" && <>
           <GS value={catF} onChange={e => setCatF(e.target.value)} placeholder="All Categories">{categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</GS>
-          <GS value={chF} onChange={e => setChF(e.target.value)} placeholder="All Channels">{channels.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</GS>
         </>}
         {tab === "Purchase" && <GS value={vendorF} onChange={e => setVendorF(e.target.value)} placeholder="All Vendors">{vendors.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}</GS>}
         {tab === "Products" && <>
           <GS value={catF} onChange={e => setCatF(e.target.value)} placeholder="All Categories">{categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</GS>
-          <GS value={chF} onChange={e => setChF(e.target.value)} placeholder="All Channels">{channels.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</GS>
         </>}
         <GBtn v="ghost" sz="sm" onClick={() => dlCSV(toCSV(prodPerf.map(x => ({ product: x.p?.name, sku: x.p?.sku, units: x.units, revenue: x.revenue, cost: x.cost, profit: x.profit, margin: x.margin + "%" })), ["product", "sku", "units", "revenue", "cost", "profit", "margin"]), "report")} icon={<Download size={13} />}>Export</GBtn>
       </div>
@@ -252,12 +230,12 @@ export default function Reports({ ctx }) {
             </ResponsiveContainer>}
             <div style={{ overflowX: "auto", marginTop: 10 }}>
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11 }}>
-                <thead><tr>{["Channel", "Net Rev", "Units", "Avg Order"].map(h => <th key={h} className="th" style={{ textAlign: h === "Channel" ? "left" : "right", padding: "6px 8px" }}>{h.toUpperCase()}</th>)}</tr></thead>
+                <thead><tr>{["Vendor", "Net Rev", "Units", "Avg Order"].map(h => <th key={h} className="th" style={{ textAlign: h === "Vendor" ? "left" : "right", padding: "6px 8px" }}>{h.toUpperCase()}</th>)}</tr></thead>
                 <tbody>{chPerf.map((c, i) => <tr key={i} className="trow">
                   <td className="td" style={{ padding: "6px 8px" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                      {c.logo ? <img src={c.logo} alt="" style={{ width: 14, height: 14, borderRadius: 2, objectFit: "contain" }} onError={e => e.target.style.display = "none"} /> : <div style={{ width: 8, height: 8, borderRadius: "50%", background: c.color }} />}
-                      <span style={{ color: c.color, fontWeight: 600 }}>{c.name}</span>
+                      <div style={{ width: 8, height: 8, borderRadius: "50%", background: T.accent }} />
+                      <span style={{ fontWeight: 600, color: T.text }}>{c.name}</span>
                     </div>
                   </td>
                   <td className="td r" style={{ padding: "6px 8px", color: T.green, fontWeight: 600 }}>{fmtCur(c.revenue)}</td>
