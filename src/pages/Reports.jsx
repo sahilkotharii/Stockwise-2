@@ -49,7 +49,7 @@ export default function Reports({ ctx }) {
   // Revenue = bill.total (incl GST, after discount)
   // Net revenue = bill.total - bill.saleGstInfo (excl GST)
   const revenue = periodSaleBills.reduce((s, b) => s + Number(b.total || 0), 0);
-  const saleGstTotal = periodSaleBills.reduce((s, b) => s + Number(b.saleGstInfo || 0), 0);
+  const saleGstTotal = periodSaleBills.reduce((s, b) => s + calcBillGst(b), 0);
   const retAmt = rets.reduce((s, t) => s + Number(t.qty) * Number(t.price || 0), 0);
   const retGst = rets.reduce((s, t) => {
     const rate = Number(t.gstRate || products.find(p => p.id === t.productId)?.gstRate || 0);
@@ -76,7 +76,7 @@ export default function Reports({ ctx }) {
     const mp = bills.filter(b => b.type === "purchase" && monthOf(b.date) === m.key);
     const mr = transactions.filter(t => t.type === "return" && monthOf(t.date) === m.key);
     const rev = mb.reduce((s, b) => s + Number(b.total || 0), 0);
-    const gstOnSales = mb.reduce((s, b) => s + Number(b.saleGstInfo || 0), 0);
+    const gstOnSales = mb.reduce((s, b) => s + calcBillGst(b), 0);
     const rAmt = mr.reduce((s, t) => s + Number(t.qty) * Number(t.price || 0), 0);
     const rGst = mr.reduce((s, t) => { const rate = Number(t.gstRate || products.find(p => p.id === t.productId)?.gstRate || 0); return s + Number(t.qty) * Number(t.price || 0) * rate / (100 + rate); }, 0);
     const net = (rev - gstOnSales) - (rAmt - rGst);  // excl GST
