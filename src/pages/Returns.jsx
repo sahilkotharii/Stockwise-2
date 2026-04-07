@@ -247,7 +247,20 @@ export default function Returns({ ctx }) {
       {selRets.size > 0 && (
         <div style={{ marginBottom: 10, padding: "8px 14px", borderRadius: 10, background: T.amberBg, display: "flex", alignItems: "center", gap: 10 }}>
           <span style={{ fontSize: 12, fontWeight: 600, color: T.amber }}>{selRets.size} selected</span>
-          <GBtn v="danger" sz="sm" onClick={() => { if(isManager){if(window.confirm(`Request admin to delete ${selRets.size} entries?`)){allReturns.filter(t=>selRets.has(t.id)).forEach(t=>addChangeReq({entity:'return',action:'delete',entityId:t.id,entityName:t.type,currentData:t,proposedData:null}));setSelRets(new Set());}}else if(window.confirm(`Delete ${selRets.size} entries?`)){saveTransactions(transactions.filter(t=>!selRets.has(t.id)));setSelRets(new Set());}}} icon={<Trash2 size={13} />}>{isManager?"Request Delete":"Delete Selected"}</GBtn>
+          <GBtn v="danger" sz="sm" onClick={() => {
+            if (isManager) {
+              if (!window.confirm(`Request admin to delete ${selRets.size} entries?`)) return;
+              allReturns.filter(t => selRets.has(t.id)).forEach(t =>
+                addChangeReq({ entity: 'return', action: 'delete', entityId: t.id, entityName: t.type, currentData: t, proposedData: null })
+              );
+              setSelRets(new Set());
+            } else {
+              if (!window.confirm(`Delete ${selRets.size} return entries? This cannot be undone.`)) return;
+              const toDelete = new Set(selRets);
+              saveTransactions(transactions.filter(t => !toDelete.has(t.id)));
+              setSelRets(new Set());
+            }
+          }} icon={<Trash2 size={13} />}>{isManager ? "Request Delete" : "Delete Selected"}</GBtn>
           <button onClick={()=>setSelRets(new Set())} style={{marginLeft:"auto",background:"none",border:"none",cursor:"pointer",fontSize:11,color:T.textMuted}}>Clear</button>
         </div>
       )}
@@ -255,7 +268,17 @@ export default function Returns({ ctx }) {
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
           <thead><tr>
             <th className="th" style={{ width: 36 }}>
-              <input type="checkbox" className="cb" checked={allReturns.slice((pg-1)*ps,pg*ps).length>0&&allReturns.slice((pg-1)*ps,pg*ps).every(t=>selRets.has(t.id))} onChange={e=>{ const paged=allReturns.slice((pg-1)*ps,pg*ps); if(e.target.checked){setSelRets(s=>{const n=new Set(s);paged.forEach(t=>n.add(t.id));return n;});}else{setSelRets(s=>{const n=new Set(s);paged.forEach(t=>n.delete(t.id));return n;});}}} />
+              <input type="checkbox" className="cb"
+                checked={allReturns.length > 0 && allReturns.every(t => selRets.has(t.id))}
+                onChange={e => {
+                  if (e.target.checked) {
+                    setSelRets(new Set(allReturns.map(t => t.id)));
+                  } else {
+                    setSelRets(new Set());
+                  }
+                }}
+                title="Select all filtered returns"
+              />
             </th>
             {["Date", "Type", "Product", "Qty", "Price/Unit", "Value", "Channel/Vendor", "Damaged", ""].map((h, i) => (
             <th key={i} className="th" style={{ textAlign: ["Qty", "Price/Unit", "Value"].includes(h) ? "right" : "left", width: h === "" ? 36 : "auto" }}>{h.toUpperCase()}</th>
