@@ -6,13 +6,15 @@ import { uid, today, fmtTs, toCSV, dlCSV } from "../utils";
 import { lsSet } from "../storage";
 
 const LOCKABLE = [
-  { id: "sales", label: "Sales" },
-  { id: "purchase", label: "Purchase" },
-  { id: "inventory", label: "Inventory" },
-  { id: "reports", label: "Reports" },
-  { id: "products", label: "Products" },
-  { id: "vendors", label: "Vendors" },
-  { id: "transactions", label: "Transactions" }
+  { id: "sales",        label: "Sales" },
+  { id: "purchase",     label: "Purchase" },
+  { id: "returns",      label: "Returns" },
+  { id: "inventory",    label: "Inventory" },
+  { id: "reports",      label: "Reports" },
+  { id: "pnl",         label: "P&L" },
+  { id: "products",     label: "Products" },
+  { id: "vendors",      label: "Vendors" },
+  { id: "transactions", label: "Transactions" },
 ];
 
 export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onTest }) {
