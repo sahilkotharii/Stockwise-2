@@ -151,12 +151,36 @@ export default function App() {
     } catch { setSyncSt("error"); }
   }
 
+  // ── Enrich data with human-readable names before syncing to Sheets ───────
+  function enrichForSync(entity, rows) {
+    if (entity === "transactions") {
+      return rows.map(t => ({
+        ...t,
+        productName: products.find(p => p.id === t.productId)?.name || "",
+        vendorName:  vendors.find(v => v.id === t.vendorId)?.name || "",
+      }));
+    }
+    if (entity === "bills") {
+      return rows.map(b => ({
+        ...b,
+        vendorName: vendors.find(v => v.id === b.vendorId)?.name || "",
+      }));
+    }
+    if (entity === "products") {
+      return rows.map(p => ({
+        ...p,
+        categoryName: categories.find(c => c.id === p.categoryId)?.name || "",
+      }));
+    }
+    return rows;
+  }
+
   async function push(entity, rows) {
     const url = sheetsUrl || DEFAULT_SHEETS_URL;
     if (!url) return;
     setSyncSt("syncing");
     try {
-      await syncEnt(url, entity, rows);
+      await syncEnt(url, entity, enrichForSync(entity, rows));
       setSyncSt("success");
       setLastSync(new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }));
       setTimeout(() => setSyncSt("idle"), 2500);
