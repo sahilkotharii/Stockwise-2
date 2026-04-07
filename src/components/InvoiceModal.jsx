@@ -65,8 +65,16 @@ function buildHTML(bill, inv, vendor) {
     bill.billToAddress.split(",").forEach(p => billToLines.push(p.trim()));
   }
 
-  const shipAddr = bill.shipToSameAsBill !== false ? (billToLines.join(", ")) : (bill.shipTo || "");
-  const shipLines = shipAddr ? shipAddr.split(", ").filter(Boolean) : billToLines;
+  const shipLines = (() => {
+    if (bill.shipToSameAsBill !== false) {
+      // Same as Bill To — reuse the already-structured lines
+      return billToLines;
+    }
+    const custom = bill.shipTo || "";
+    if (!custom) return billToLines;
+    // Custom ship-to: treat as plain text lines (user entered it as freeform)
+    return custom.split("\n").map(l => l.trim()).filter(Boolean);
+  })();
 
   // Items table rows
   const itemRows = itemsData.map((it, idx) => `
