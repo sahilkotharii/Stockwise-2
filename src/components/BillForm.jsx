@@ -70,6 +70,7 @@ export default function BillForm({ type, bills, onSave, products, vendors, chann
   const [discount, setDiscount] = useState(existingBill?.discValue?.toString() || "");
   const [discType, setDiscType] = useState(existingBill?.discType || "percent");
   const [notes, setNotes] = useState(existingBill?.notes || "");
+  const [gstType, setGstType] = useState(existingBill?.gstType || "cgst_sgst");
   const [items, setItems] = useState(
     existingBill?.items?.map(i => ({
       id: uid(), productId: i.productId, qty: i.qty,
@@ -179,6 +180,7 @@ export default function BillForm({ type, bills, onSave, products, vendors, chann
       totalGst: type === "purchase" ? totalGst : 0,
       saleGstInfo: type === "sale" ? totalGst : 0,
       total,
+      gstType,
       notes,
       ts: existingBill?.ts || new Date().toISOString(),
       updatedTs: isEdit ? new Date().toISOString() : undefined
@@ -202,6 +204,21 @@ export default function BillForm({ type, bills, onSave, products, vendors, chann
           ? <Field label="Sales Channel" req><GS value={channelId} onChange={e => setChannelId(e.target.value)} placeholder="Select channel">{channels.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</GS></Field>
           : <Field label="Vendor" req><GS value={vendorId} onChange={e => setVendorId(e.target.value)} placeholder="Select vendor">{vendors.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}</GS></Field>
         }
+      </div>
+
+      {/* GST Type toggle */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <span style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, letterSpacing: "0.05em", whiteSpace: "nowrap" }}>GST TYPE</span>
+        <div style={{ display: "flex", gap: 2, background: T.isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.05)", borderRadius: 10, padding: 3 }}>
+          {[{ k: "cgst_sgst", l: "CGST + SGST", sub: "Intra-state" }, { k: "igst", l: "IGST", sub: "Inter-state / Export" }].map(g => (
+            <button type="button" key={g.k} onClick={() => setGstType(g.k)} style={{ padding: "5px 14px", borderRadius: 8, border: "none", cursor: "pointer", background: gstType === g.k ? T.accent : "transparent", color: gstType === g.k ? "#fff" : T.textMuted, fontSize: 12, fontWeight: 600, transition: "all .15s", display: "flex", flexDirection: "column", alignItems: "center" }}>
+              <span>{g.l}</span>
+              <span style={{ fontSize: 9, opacity: 0.8 }}>{g.sub}</span>
+            </button>
+          ))}
+        </div>
+        {gstType === "igst" && <span style={{ fontSize: 11, color: T.blue, fontWeight: 600 }}>Full GST shown as IGST on invoice</span>}
+        {gstType === "cgst_sgst" && <span style={{ fontSize: 11, color: T.green, fontWeight: 600 }}>GST split as CGST 50% + SGST 50%</span>}
       </div>
 
       <div>
