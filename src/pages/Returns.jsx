@@ -33,7 +33,8 @@ export default function Returns({ ctx }) {
   const [typeFilter, setTypeFilter] = useState("all"); // all | sales_return | purchase_return | damaged
   const [pg, setPg] = useState(1); const [ps, setPs] = useState(20);
   const [search, setSearch] = useState("");
-  const [exp, setExp] = useState({});
+  const [selRets, setSelRets] = useState(new Set());
+  const tgRet = id => setSelRets(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
   useEffect(() => setPg(1), [df, dt, typeFilter, search, ps]);
 
   const handlePreset = k => { setPreset(k); setDf(getPresetDate(k)); setDt(today()); };
@@ -238,9 +239,20 @@ export default function Returns({ ctx }) {
         </div>
         {(search || typeFilter !== "all") && <GBtn v="ghost" sz="sm" onClick={() => { setSearch(""); setTypeFilter("all"); }} icon={<X size={12} />}>Clear</GBtn>}
       </div>
+      {selRets.size > 0 && (
+        <div style={{ marginBottom: 10, padding: "8px 14px", borderRadius: 10, background: T.amberBg, display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ fontSize: 12, fontWeight: 600, color: T.amber }}>{selRets.size} selected</span>
+          {isAdmin && <GBtn v="danger" sz="sm" onClick={() => { if(window.confirm(`Delete ${selRets.size} entries?`)){saveTransactions(transactions.filter(t=>!selRets.has(t.id)));setSelRets(new Set());}}} icon={<Trash2 size={13} />}>Delete Selected</GBtn>}
+          <button onClick={()=>setSelRets(new Set())} style={{marginLeft:"auto",background:"none",border:"none",cursor:"pointer",fontSize:11,color:T.textMuted}}>Clear</button>
+        </div>
+      )}
       <div style={{ overflowX: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
-          <thead><tr>{["Date", "Type", "Product", "Qty", "Price/Unit", "Value", "Channel/Vendor", "Damaged", ""].map((h, i) => (
+          <thead><tr>
+            <th className="th" style={{ width: 36 }}>
+              <input type="checkbox" className="cb" checked={allReturns.slice((pg-1)*ps,pg*ps).length>0&&allReturns.slice((pg-1)*ps,pg*ps).every(t=>selRets.has(t.id))} onChange={e=>{ const paged=allReturns.slice((pg-1)*ps,pg*ps); if(e.target.checked){setSelRets(s=>{const n=new Set(s);paged.forEach(t=>n.add(t.id));return n;});}else{setSelRets(s=>{const n=new Set(s);paged.forEach(t=>n.delete(t.id));return n;});}}} />
+            </th>
+            {["Date", "Type", "Product", "Qty", "Price/Unit", "Value", "Channel/Vendor", "Damaged", ""].map((h, i) => (
             <th key={i} className="th" style={{ textAlign: ["Qty", "Price/Unit", "Value"].includes(h) ? "right" : "left", width: h === "" ? 36 : "auto" }}>{h.toUpperCase()}</th>
           ))}</tr></thead>
           <tbody>
@@ -251,7 +263,8 @@ export default function Returns({ ctx }) {
               const typeColor = t.type === "return" ? T.red : t.type === "purchase_return" ? T.blue : T.amber;
               const typeLabel = t.type === "return" ? "Sales Return" : t.type === "purchase_return" ? "Purchase Return" : "Damaged";
               return (
-                <tr key={t.id} className="trow">
+                <tr key={t.id} className={`trow${selRets.has(t.id)?" sel":""}`} onClick={()=>tgRet(t.id)} style={{cursor:"pointer"}}>
+                  <td className="td" onClick={e=>e.stopPropagation()}><input type="checkbox" className="cb" checked={selRets.has(t.id)} onChange={()=>tgRet(t.id)}/></td>
                   <td className="td m">{fmtDate(t.date)}</td>
                   <td className="td">
                     <span className="badge" style={{ background: typeColor + "18", color: typeColor }}>{typeLabel}</span>
