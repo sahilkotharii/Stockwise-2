@@ -1,8 +1,8 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { Plus, Search, Edit2, Trash2, Package, Tag, Send, X } from "lucide-react";
+import { Plus, Search, Edit2, Trash2, Package, Tag, Send, X, Upload, Download, AlertTriangle, CheckCircle } from "lucide-react";
 import { useT } from "../theme";
 import { GBtn, GIn, GS, GTa, Field, Modal, StChip, Pager } from "../components/UI";
-import { uid, calcMgn } from "../utils";
+import { uid, calcMgn, dlCSV } from "../utils";
 
 export default function Products({ ctx }) {
   const T = useT();
@@ -23,6 +23,11 @@ export default function Products({ ctx }) {
   const [catEdit, setCatEdit] = useState(null);
   const [catForm, setCatForm] = useState({ name: "", color: "#C05C1E" });
 
+  const [csvModal, setCsvModal] = useState(false);
+  const [csvPreview, setCsvPreview] = useState([]); // parsed rows waiting to import
+  const [csvErrors, setCsvErrors] = useState([]);
+  const csvInputRef = React.useRef(null);
+
   useEffect(() => setPg(1), [search, cf, ps]);
 
   const ff = (k, v) => setForm(p => {
@@ -41,6 +46,100 @@ export default function Products({ ctx }) {
       (p.hsn || "").toLowerCase().includes(q)
     );
   }), [products, search, cf]);
+
+  // ── CSV Template columns ─────────────────────────────────────────────────
+  const CSV_COLS = ["name","alias","sku","hsn","mrp","purchasePrice","gstRate","unit","minStock","description"];
+  const CSV_SAMPLE = [
+    "Copper Water Bottle 1L,Copper Bottle 1L,CWB-001,7419,2549,632,5,pcs,10,Premium copper water bottle",
+    "Brass Tumbler 250ml,Brass Tumbler,BT-001,7418,899,210,12,pcs,5,Handcrafted brass tumbler"
+  ];
+
+  const exportTemplate = () => {
+    const header = CSV_COLS.join(",");
+    const rows = [header, ...CSV_SAMPLE].join("\n");
+    const blob = new Blob([rows], { type: "text/csv" });
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
+    a.download = "products_import_template.csv"; a.click();
+  };
+
+  const handleCSVFile = e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const lines = ev.target.result.split("\n").map(l => l.trim()).filter(Boolean);
+      if (lines.length < 2) { alert("File appears empty"); return; }
+
+      // Detect header row
+      const headerLine = lines[0].toLowerCase();
+      const hasHeader = headerLine.includes("name") || headerLine.includes("sku") || headerLine.includes("mrp");
+      const dataLines = hasHeader ? lines.slice(1) : lines;
+      const headers = hasHeader
+        ? lines[0].split(",").map(h => h.trim().toLowerCase().replace(/[^a-z]/g,""))
+        : CSV_COLS;
+
+      const colIdx = col => {
+        const aliases = { name:["name","productname"], alias:["alias","shortname"], sku:["sku","code"], hsn:["hsn","hsncode"], mrp:["mrp","sellingprice","price"], purchaseprice:["purchaseprice","cost","costprice","buyprice"], gstrate:["gstrate","gst","tax"], unit:["unit","uom"], minstock:["minstock","reorderqty","minqty"], description:["description","desc"] };
+        const aliasList = aliases[col] || [col];
+        for (const a of aliasList) { const i = headers.indexOf(a); if (i !== -1) return i; }
+        return -1;
+      };
+
+      const parsed = []; const errors = [];
+      dataLines.forEach((line, idx) => {
+        if (!line.trim()) return;
+        // Handle quoted CSV fields
+        const cols = [];
+        let cur = "", inQ = false;
+        for (const ch of line) {
+          if (ch === '"') { inQ = !inQ; }
+          else if (ch === "," && !inQ) { cols.push(cur.trim()); cur = ""; }
+          else { cur += ch; }
+        }
+        cols.push(cur.trim());
+
+        const get = col => { const i = colIdx(col); return i >= 0 ? (cols[i] || "").trim() : ""; };
+        const name = get("name");
+        if (!name) { errors.push(`Row ${idx+2}: Missing name — skipped`); return; }
+        const mrp = parseFloat(get("mrp")) || 0;
+        const cost = parseFloat(get("purchaseprice")) || 0;
+        const cat = categories.find(c => c.name.toLowerCase() === get("category")?.toLowerCase());
+        parsed.push({
+          id: uid(),
+          name,
+          alias: get("alias") || name.slice(0,20),
+          sku: get("sku") || `SKU-${Date.now()}-${idx}`,
+          hsn: get("hsn") || "",
+          mrp, purchasePrice: cost,
+          margin: calcMgn(mrp, cost),
+          gstRate: get("gstrate") || "0",
+          unit: get("unit") || "pcs",
+          minStock: parseInt(get("minstock")) || 5,
+          description: get("description") || "",
+          categoryId: cat?.id || "",
+          imageUrl: "",
+        });
+      });
+
+      setCsvPreview(parsed);
+      setCsvErrors(errors);
+      setCsvModal(true);
+      e.target.value = "";
+    };
+    reader.readAsText(file);
+  };
+
+  const confirmImport = () => {
+    if (csvPreview.length === 0) return;
+    // Skip duplicates by SKU
+    const existingSkus = new Set(products.map(p => p.sku));
+    const toAdd = csvPreview.filter(p => !existingSkus.has(p.sku));
+    const dupes = csvPreview.length - toAdd.length;
+    saveProducts([...products, ...toAdd]);
+    addLog("bulk imported", "products", `${toAdd.length} products`);
+    setCsvModal(false); setCsvPreview([]); setCsvErrors([]);
+    alert(`✅ Imported ${toAdd.length} products.${dupes > 0 ? ` Skipped ${dupes} duplicate SKUs.` : ""}`);
+  };
 
   const doSave = () => {
     if (!form.name || !form.sku) return;
@@ -108,6 +207,11 @@ export default function Products({ ctx }) {
             <GS value={cf} onChange={e => setCf(e.target.value)} placeholder="All Categories">
               {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </GS>
+            {isAdmin && <>
+              <GBtn v="ghost" sz="sm" onClick={exportTemplate} icon={<Download size={13} />}>CSV Template</GBtn>
+              <GBtn v="ghost" sz="sm" onClick={() => csvInputRef.current?.click()} icon={<Upload size={13} />}>Import CSV</GBtn>
+              <input ref={csvInputRef} type="file" accept=".csv,text/csv" onChange={handleCSVFile} style={{ display: "none" }} />
+            </>}
             <GBtn onClick={() => { setForm({ unit: "pcs", minStock: 10, gstRate: "0", hsn: "" }); setEditId(null); setModal(true); }} icon={<Plus size={14} />}>Add Product</GBtn>
           </div>
 
@@ -282,6 +386,60 @@ export default function Products({ ctx }) {
               <GIn value={catForm.color} onChange={e => setCatForm(p => ({ ...p, color: e.target.value }))} />
             </div>
           </Field>
+        </div>
+      </Modal>
+
+      {/* CSV Import Preview Modal */}
+      <Modal open={csvModal} onClose={() => { setCsvModal(false); setCsvPreview([]); setCsvErrors([]); }} title={`Import Products — ${csvPreview.length} found`} width={700}
+        footer={<>
+          <GBtn v="ghost" onClick={() => { setCsvModal(false); setCsvPreview([]); setCsvErrors([]); }}>Cancel</GBtn>
+          <GBtn onClick={confirmImport} icon={<Upload size={13} />} disabled={csvPreview.length === 0}>Import {csvPreview.length} Products</GBtn>
+        </>}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+
+          {csvErrors.length > 0 && (
+            <div style={{ padding: "10px 14px", borderRadius: 10, background: T.amberBg, border: `1px solid ${T.amber}30` }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 700, fontSize: 12, color: T.amber, marginBottom: 6 }}>
+                <AlertTriangle size={13} /> {csvErrors.length} row{csvErrors.length !== 1 ? "s" : ""} skipped
+              </div>
+              {csvErrors.slice(0, 5).map((e, i) => <div key={i} style={{ fontSize: 11, color: T.amber }}>{e}</div>)}
+              {csvErrors.length > 5 && <div style={{ fontSize: 11, color: T.amber }}>…and {csvErrors.length - 5} more</div>}
+            </div>
+          )}
+
+          {csvPreview.length > 0 && (
+            <div style={{ padding: "8px 12px", borderRadius: 10, background: T.greenBg, border: `1px solid ${T.green}30`, display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: T.green }}>
+              <CheckCircle size={13} /> {csvPreview.length} products ready to import. Duplicate SKUs will be skipped.
+            </div>
+          )}
+
+          <div style={{ overflowX: "auto", maxHeight: 360, overflowY: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11 }}>
+              <thead>
+                <tr style={{ background: T.isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)", position: "sticky", top: 0 }}>
+                  {["Name", "Alias", "SKU", "HSN", "MRP", "Cost", "GST%", "Unit", "Min Stock"].map(h => (
+                    <th key={h} className="th" style={{ padding: "6px 10px", fontSize: 10 }}>{h.toUpperCase()}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {csvPreview.map((p, i) => (
+                  <tr key={i} className="trow">
+                    <td className="td" style={{ padding: "5px 10px", fontWeight: 600 }}>{p.name}</td>
+                    <td className="td" style={{ padding: "5px 10px", color: T.textMuted }}>{p.alias}</td>
+                    <td className="td" style={{ padding: "5px 10px", fontFamily: "monospace" }}>{p.sku}</td>
+                    <td className="td" style={{ padding: "5px 10px" }}>{p.hsn || "—"}</td>
+                    <td className="td r" style={{ padding: "5px 10px", color: T.green }}>₹{Number(p.mrp).toLocaleString("en-IN")}</td>
+                    <td className="td r" style={{ padding: "5px 10px" }}>₹{Number(p.purchasePrice).toLocaleString("en-IN")}</td>
+                    <td className="td r" style={{ padding: "5px 10px" }}>{p.gstRate}%</td>
+                    <td className="td" style={{ padding: "5px 10px" }}>{p.unit}</td>
+                    <td className="td r" style={{ padding: "5px 10px" }}>{p.minStock}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {csvPreview.length === 0 && <div style={{ padding: "24px 0", textAlign: "center", color: T.textMuted }}>No valid products found in file</div>}
+          </div>
         </div>
       </Modal>
 
