@@ -168,6 +168,11 @@ export default function Sales({ ctx }) {
   };
 
   const deleteBill = b => {
+    if (isManager) {
+      if (!window.confirm(`Request admin to delete bill ${b.billNo}?`)) return;
+      addChangeReq({ entity: "sale", action: "delete", entityId: b.id, entityName: b.billNo, currentData: b, proposedData: null });
+      return;
+    }
     if (!window.confirm(`Delete bill ${b.billNo}?`)) return;
     saveBills(bills.filter(x => x.id !== b.id));
     saveTransactions(transactions.filter(t => t.billId !== b.id));
@@ -223,7 +228,7 @@ export default function Sales({ ctx }) {
         <div style={{ marginBottom: 10, padding: "8px 14px", borderRadius: 10, background: T.accentBg, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
           <span style={{ fontSize: 12, fontWeight: 600, color: T.accent }}>{selBills.size} selected</span>
           <GBtn sz="sm" onClick={downloadBulkInvoices} icon={<Download size={13} />}>Download {selBills.size} Invoice{selBills.size!==1?"s":""}</GBtn>
-          {isAdmin && <GBtn v="danger" sz="sm" onClick={() => { if(window.confirm(`Delete ${selBills.size} bills?`)){saleBills.filter(b=>selBills.has(b.id)).forEach(b=>{saveBills(bills.filter(x=>x.id!==b.id));saveTransactions(transactions.filter(t=>t.billId!==b.id));});setSelBills(new Set());}}} icon={<Trash2 size={13} />}>Delete Selected</GBtn>}
+          <GBtn v="danger" sz="sm" onClick={() => { if(isManager){if(window.confirm(`Request admin to delete ${selBills.size} bills?`)){saleBills.filter(b=>selBills.has(b.id)).forEach(b=>addChangeReq({entity:'sale',action:'delete',entityId:b.id,entityName:b.billNo,currentData:b,proposedData:null}));setSelBills(new Set());}}else if(window.confirm(`Delete ${selBills.size} bills?`)){saleBills.filter(b=>selBills.has(b.id)).forEach(b=>{saveBills(bills.filter(x=>x.id!==b.id));saveTransactions(transactions.filter(t=>t.billId!==b.id));});setSelBills(new Set());}}} icon={<Trash2 size={13} />}>{isManager?"Request Delete":"Delete Selected"}</GBtn>
           <button onClick={() => setSelBills(new Set())} style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", fontSize: 11, color: T.textMuted }}>Clear</button>
         </div>
       )}
