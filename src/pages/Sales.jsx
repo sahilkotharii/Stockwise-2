@@ -4,7 +4,7 @@ import { useT } from "../theme";
 import { KCard, GBtn, GIn, GS, Field, Modal, Pager } from "../components/UI";
 import BillForm from "../components/BillForm";
 import InvoiceModal from "../components/InvoiceModal";
-import { uid, today, fmtCur, fmtDate, inRange } from "../utils";
+import { uid, today, fmtCur, fmtDate, inRange, calcBillGst } from "../utils";
 
 const PRESETS = [
   { k: "1d", l: "Today" }, { k: "7d", l: "7d" }, { k: "30d", l: "30d" },
@@ -46,16 +46,6 @@ export default function Sales({ ctx }) {
   const periodSaleBills = useMemo(() => bills.filter(b =>
     b.type === "sale" && inRange(b.date, df, dt) && (vendorF ? b.vendorId === vendorF : true)
   ), [bills, df, dt, vendorF]);
-
-  // Always recalc GST from items — stored saleGstInfo can be stale/corrupted in old bills
-  const calcBillGst = b => (b.items || []).reduce((s, i) => {
-    const rate = Number(i.gstRate || 0);
-    if (!rate) return s;
-    const effPrice = Number(i.effectivePrice || i.price || 0);
-    const effLine = Number(i.qty || 0) * effPrice;
-    // If discount applied, effectivePrice already reflects it
-    return s + effLine * rate / (100 + rate);
-  }, 0);
 
   const totalRevenueInclGst = periodSaleBills.reduce((s, b) => s + Number(b.total || 0), 0);
   const totalGstCollected = periodSaleBills.reduce((s, b) => s + calcBillGst(b), 0);
