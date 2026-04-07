@@ -23,37 +23,71 @@ export default function Reports({ ctx }) {
   const months = getLast12Months();
   const pp = pid => Number(products.find(pr => pr.id === pid)?.purchasePrice || 0);
 
-  // All transactions in date range
-  const filAll = useMemo(() => transactions.filter(t => inRange(t.date, df, dt)), [transactions, df, dt]);
-  const sales = useMemo(() => filAll.filter(t => t.type === "sale" && (catF ? products.find(p => p.id === t.productId)?.categoryId === catF : true) && (chF ? t.channelId === chF : true)), [filAll, catF, chF, products]);
-  const rets = useMemo(() => filAll.filter(t => t.type === "return" && (catF ? products.find(p => p.id === t.productId)?.categoryId === catF : true) && (chF ? t.channelId === chF : true)), [filAll, catF, chF, products]);
-  const purch = useMemo(() => filAll.filter(t => t.type === "purchase" && (vendorF ? t.vendorId === vendorF : true)), [filAll, vendorF]);
+  // ── Period bills (ground truth) ────────────────────────────────────────
+  const periodSaleBills = useMemo(() => bills.filter(b =>
+    b.type === "sale" && inRange(b.date, df, dt) &&
+    (catF ? (b.items || []).some(i => products.find(p => p.id === i.productId)?.categoryId === catF) : true) &&
+    (chF ? b.channelId === chF : true)
+  ), [bills, df, dt, catF, chF, products]);
 
-  // ── SALES metrics ───────────────────────────────────────────────────────
-  const revenue = sales.reduce((s, t) => s + Number(t.qty) * Number(t.price), 0);
-  const retAmt = rets.reduce((s, t) => s + Number(t.qty) * Number(t.price), 0);
-  const netRev = revenue - retAmt;
-  const cogsSales = sales.reduce((s, t) => s + Number(t.qty) * pp(t.productId), 0);
+  const periodPurBills = useMemo(() => bills.filter(b =>
+    b.type === "purchase" && inRange(b.date, df, dt) &&
+    (vendorF ? b.vendorId === vendorF : true)
+  ), [bills, df, dt, vendorF]);
+
+  // Return transactions
+  const rets = useMemo(() => transactions.filter(t => t.type === "return" && inRange(t.date, df, dt)), [transactions, df, dt]);
+  // For channel/category breakdown we still use sale transactions
+  const sales = useMemo(() => transactions.filter(t =>
+    t.type === "sale" && inRange(t.date, df, dt) &&
+    (catF ? products.find(p => p.id === t.productId)?.categoryId === catF : true) &&
+    (chF ? t.channelId === chF : true)
+  ), [transactions, df, dt, catF, chF, products]);
+  const purch = useMemo(() => transactions.filter(t =>
+    t.type === "purchase" && inRange(t.date, df, dt) &&
+    (vendorF ? t.vendorId === vendorF : true)
+  ), [transactions, df, dt, vendorF]);
+
+  // ── SALES metrics from BILLS ─────────────────────────────────────────────
+  // Revenue = bill.total (incl GST, after discount)
+  // Net revenue = bill.total - bill.saleGstInfo (excl GST)
+  const revenue = periodSaleBills.reduce((s, b) => s + Number(b.total || 0), 0);
+  const saleGstTotal = periodSaleBills.reduce((s, b) => s + Number(b.saleGstInfo || 0), 0);
+  const retAmt = rets.reduce((s, t) => s + Number(t.qty) * Number(t.price || 0), 0);
+  const retGst = rets.reduce((s, t) => {
+    const rate = Number(t.gstRate || products.find(p => p.id === t.productId)?.gstRate || 0);
+    return s + Number(t.qty) * Number(t.price || 0) * rate / (100 + rate);
+  }, 0);
+  const finalRevenue = revenue - retAmt;                            // incl GST after returns
+  const netRev = (revenue - saleGstTotal) - (retAmt - retGst);     // excl GST after returns
+
+  // COGS = units sold * ex-GST purchasePrice (from product record)
+  const cogsSales = periodSaleBills.reduce((s, b) => s + (b.items || []).reduce((si, i) => si + Number(i.qty) * pp(i.productId), 0), 0);
   const cogsRet = rets.reduce((s, t) => s + Number(t.qty) * pp(t.productId), 0);
   const netCogs = cogsSales - cogsRet;
   const gp = netRev - netCogs;
 
-  // ── PURCHASE metrics ─────────────────────────────────────────────────────
-  const pc = purch.reduce((s, t) => s + Number(t.qty) * Number(t.price), 0);
-  const pu = purch.reduce((s, t) => s + Number(t.qty), 0);
+  // ── PURCHASE metrics from BILLS ──────────────────────────────────────────
+  // pc = total paid (incl GST), pu = units
+  const pc = periodPurBills.reduce((s, b) => s + Number(b.total || 0), 0);
+  const pcExclGst = periodPurBills.reduce((s, b) => s + Number(b.subtotal || 0), 0);
+  const pu = periodPurBills.reduce((s, b) => s + (b.items || []).reduce((si, i) => si + Number(i.qty || 0), 0), 0);
 
-  // ── Monthly 12m ──────────────────────────────────────────────────────────
+  // ── Monthly 12m from bills ───────────────────────────────────────────────
   const monthly12 = useMemo(() => months.map(m => {
-    const ms = transactions.filter(t => t.type === "sale" && monthOf(t.date) === m.key);
+    const mb = bills.filter(b => b.type === "sale" && monthOf(b.date) === m.key);
+    const mp = bills.filter(b => b.type === "purchase" && monthOf(b.date) === m.key);
     const mr = transactions.filter(t => t.type === "return" && monthOf(t.date) === m.key);
-    const mp = transactions.filter(t => t.type === "purchase" && monthOf(t.date) === m.key);
-    const rev = ms.reduce((s, t) => s + Number(t.qty) * Number(t.price), 0);
-    const rAmt = mr.reduce((s, t) => s + Number(t.qty) * Number(t.price), 0);
-    const net = rev - rAmt;
-    const cgS = ms.reduce((s, t) => s + Number(t.qty) * pp(t.productId), 0);
-    const cgR = mr.reduce((s, t) => s + Number(t.qty) * pp(t.productId), 0);
-    return { ...m, revenue: net, purchase: mp.reduce((s, t) => s + Number(t.qty) * Number(t.price), 0), profit: net - (cgS - cgR) };
-  }), [transactions, products]);
+    const rev = mb.reduce((s, b) => s + Number(b.total || 0), 0);
+    const gstOnSales = mb.reduce((s, b) => s + Number(b.saleGstInfo || 0), 0);
+    const rAmt = mr.reduce((s, t) => s + Number(t.qty) * Number(t.price || 0), 0);
+    const rGst = mr.reduce((s, t) => { const rate = Number(t.gstRate || products.find(p => p.id === t.productId)?.gstRate || 0); return s + Number(t.qty) * Number(t.price || 0) * rate / (100 + rate); }, 0);
+    const net = (rev - gstOnSales) - (rAmt - rGst);  // excl GST
+    const cogs = mb.reduce((s, b) => s + (b.items || []).reduce((si, i) => si + Number(i.qty) * pp(i.productId), 0), 0);
+    const cogsR = mr.reduce((s, t) => s + Number(t.qty) * pp(t.productId), 0);
+    const purCost = mp.reduce((s, b) => s + Number(b.total || 0), 0);
+    return { ...m, revenue: net, purchase: purCost, profit: net - (cogs - cogsR) };
+  }), [bills, transactions, products]);
 
   // ── Channel performance ──────────────────────────────────────────────────
   const chPerf = useMemo(() => {
@@ -183,10 +217,10 @@ export default function Reports({ ctx }) {
       {/* ── SALES TAB ── */}
       {tab === "Sales" && <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         <div className="kgrid" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14 }}>
-          <KCard label="Revenue" value={fmtCur(revenue)} icon={TrendingUp} color={T.green} />
-          <KCard label="Returns" value={fmtCur(retAmt)} icon={RotateCcw} color={T.red} />
-          <KCard label="Net Revenue" value={fmtCur(netRev)} icon={Activity} color={T.accent} />
-          <KCard label="Gross Profit" value={fmtCur(gp)} sub={netRev > 0 ? `${((gp / netRev) * 100).toFixed(1)}% margin` : ""} icon={DollarSign} color={T.purple} />
+          <KCard label="Total Sales" value={fmtCur(finalRevenue)} sub="incl. GST · after returns" icon={TrendingUp} color={T.green} />
+          <KCard label="Returns" value={fmtCur(retAmt)} sub="at return price" icon={RotateCcw} color={T.red} />
+          <KCard label="Net Revenue" value={fmtCur(netRev)} sub="excl. GST · after returns" icon={Activity} color={T.accent} />
+          <KCard label="Gross Profit" value={fmtCur(gp)} sub={netRev > 0 ? `${((gp / netRev) * 100).toFixed(1)}% margin (excl GST)` : ""} icon={DollarSign} color={T.purple} />
         </div>
 
         {/* 12-month trend */}
