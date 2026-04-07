@@ -80,8 +80,16 @@ export default function PnL({ ctx }) {
   const grossSalesInclGst = useMemo(() =>
     saleBills.reduce((s, b) => s + Number(b.total || 0), 0), [saleBills]);
 
+  // Recalc GST from items — never trust stored saleGstInfo (can be corrupted)
+  const calcBillGst = b => (b.items || []).reduce((s, i) => {
+    const rate = Number(i.gstRate || 0);
+    if (!rate) return s;
+    const effPrice = Number(i.effectivePrice || i.price || 0);
+    return s + Number(i.qty || 0) * effPrice * rate / (100 + rate);
+  }, 0);
+
   const gstOnSales = useMemo(() =>
-    saleBills.reduce((s, b) => s + Number(b.saleGstInfo || 0), 0), [saleBills]);
+    saleBills.reduce((s, b) => s + calcBillGst(b), 0), [saleBills]);
 
   const grossSalesExclGst = grossSalesInclGst - gstOnSales;
 
