@@ -411,12 +411,13 @@ export default function Reports({ ctx }) {
 
         <div className="chart-row" style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 14 }}>
           <div className="glass" style={{ padding: "18px 18px 10px", borderRadius: T.radius }}>
-            <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 14 }}>Stock Levels by Product</div>
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={products.map(p => ({ name: p.alias || p.name?.slice(0, 12), stock: getStock(p.id) })).sort((a, b) => b.stock - a.stock).slice(0, 12)} layout="vertical" margin={{ left: 90 }}>
+            <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 4 }}>Stock Levels by Product</div>
+            <div style={{ fontSize: 11, color: T.textMuted, marginBottom: 12 }}>Top 15 by stock qty · scroll table for full list below</div>
+            <ResponsiveContainer width="100%" height={Math.max(200, Math.min(products.length, 15) * 28)}>
+              <BarChart data={products.map(p => ({ name: (p.name || "").slice(0, 20), fullName: p.name, sku: p.sku, stock: getStock(p.id) })).sort((a, b) => b.stock - a.stock).slice(0, 15)} layout="vertical" margin={{ left: 140, right: 30 }}>
                 <XAxis type="number" tick={{ fontSize: 10, fill: T.textMuted }} axisLine={false} tickLine={false} />
-                <YAxis type="category" dataKey="name" tick={{ fontSize: 9, fill: T.textMuted }} width={90} axisLine={false} tickLine={false} />
-                <Tooltip contentStyle={{ background: T.surfaceStrong, border: `1px solid ${T.border}`, borderRadius: 10, fontSize: 11 }} />
+                <YAxis type="category" dataKey="name" tick={{ fontSize: 9, fill: T.textMuted }} width={140} axisLine={false} tickLine={false} />
+                <Tooltip content={({ active, payload }) => active && payload?.length ? <div style={{ background: T.surfaceStrong, border: `1px solid ${T.border}`, borderRadius: 8, padding: "8px 12px", fontSize: 11 }}><div style={{ fontWeight: 600, color: T.text }}>{payload[0].payload.fullName}</div><div style={{ color: T.textMuted }}>{payload[0].payload.sku}</div><div style={{ color: T.accent, fontWeight: 700 }}>{payload[0].value} units</div></div> : null} />
                 <Bar dataKey="stock" name="Stock" fill={T.accent} radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
