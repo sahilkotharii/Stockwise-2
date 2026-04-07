@@ -1,0 +1,389 @@
+import React, { useState, useMemo, useEffect } from "react";
+import { Plus, Search, X, Eye, Trash2, RotateCcw, Package, Truck, AlertTriangle, ChevronDown, ChevronRight } from "lucide-react";
+import { useT } from "../theme";
+import { KCard, GBtn, GIn, GS, GTa, Field, Modal, Pager } from "../components/UI";
+import { uid, today, fmtCur, fmtDate, inRange } from "../utils";
+
+const PRESETS = [
+  { k: "30d", l: "30d" }, { k: "90d", l: "90d" }, { k: "6m", l: "6M" }, { k: "1y", l: "1Y" }
+];
+
+function getPresetDate(preset) {
+  const now = new Date();
+  switch (preset) {
+    case "7d": return new Date(now - 7 * 864e5).toISOString().split("T")[0];
+    case "30d": return new Date(now - 30 * 864e5).toISOString().split("T")[0];
+    case "90d": return new Date(now - 90 * 864e5).toISOString().split("T")[0];
+    case "6m": { const d = new Date(now); d.setMonth(d.getMonth() - 6); return d.toISOString().split("T")[0]; }
+    case "1y": { const d = new Date(now); d.setFullYear(d.getFullYear() - 1); return d.toISOString().split("T")[0]; }
+    default: return null;
+  }
+}
+
+export default function Returns({ ctx }) {
+  const T = useT();
+  const { transactions, saveTransactions, products, vendors, channels, getStock, user, addLog } = ctx;
+  const isAdmin = user.role === "admin";
+
+  const [modal, setModal] = useState(false);
+  const [returnType, setReturnType] = useState("sales_return"); // "sales_return" | "purchase_return"
+  const [preset, setPreset] = useState("30d");
+  const [df, setDf] = useState(getPresetDate("30d"));
+  const [dt, setDt] = useState(today());
+  const [typeFilter, setTypeFilter] = useState("all"); // all | sales_return | purchase_return | damaged
+  const [pg, setPg] = useState(1); const [ps, setPs] = useState(20);
+  const [search, setSearch] = useState("");
+  const [exp, setExp] = useState({});
+  useEffect(() => setPg(1), [df, dt, typeFilter, search, ps]);
+
+  const handlePreset = k => { setPreset(k); setDf(getPresetDate(k)); setDt(today()); };
+
+  // ── Form state ──────────────────────────────────────────────────────────
+  const [form, setForm] = useState({
+    date: today(),
+    channelId: "",
+    vendorId: "",
+    notes: "",
+    items: [{ id: uid(), productId: "", qty: 1, price: "", isDamaged: false }]
+  });
+
+  const resetForm = () => setForm({ date: today(), channelId: "", vendorId: "", notes: "", items: [{ id: uid(), productId: "", qty: 1, price: "", isDamaged: false }] });
+  const addItem = () => setForm(f => ({ ...f, items: [...f.items, { id: uid(), productId: "", qty: 1, price: "", isDamaged: false }] }));
+  const remItem = id => setForm(f => ({ ...f, items: f.items.filter(i => i.id !== id) }));
+  const upItem = (id, k, v) => setForm(f => ({
+    ...f, items: f.items.map(i => {
+      if (i.id !== id) return i;
+      const u = { ...i, [k]: v };
+      if (k === "productId") {
+        const pr = products.find(p => p.id === v);
+        if (pr) u.price = returnType === "sales_return" ? (pr.mrp || "") : (pr.purchasePrice || "");
+      }
+      return u;
+    })
+  }));
+
+  const valid = form.items.filter(i => i.productId && Number(i.qty) > 0);
+  const totalValue = valid.reduce((s, i) => s + Number(i.qty) * Number(i.price || 0), 0);
+
+  const handleSave = () => {
+    if (valid.length === 0) { alert("Add at least one product"); return; }
+    if (returnType === "sales_return" && !form.channelId) { alert("Select a channel"); return; }
+    if (returnType === "purchase_return" && !form.vendorId) { alert("Select a vendor"); return; }
+
+    const newTxns = valid.map(item => {
+      const pr = products.find(p => p.id === item.productId);
+      const rate = Number(pr?.gstRate || 0);
+      const price = Number(item.price || 0);
+      return {
+        id: uid(),
+        productId: item.productId,
+        type: returnType === "purchase_return" ? "purchase_return" : "return",
+        qty: Number(item.qty),
+        price,
+        effectivePrice: price,
+        gstRate: rate,
+        gstAmount: returnType === "sales_return"
+          ? price * rate / (100 + rate) * Number(item.qty)
+          : price * rate / 100 * Number(item.qty),
+        vendorId: form.vendorId || null,
+        channelId: form.channelId || null,
+        date: form.date,
+        notes: form.notes || (returnType === "purchase_return" ? "Purchase return to vendor" : "Sales return from customer"),
+        userId: user.id, userName: user.name,
+        billId: null,
+        isDamaged: item.isDamaged,
+        returnType
+      };
+    });
+    saveTransactions([...newTxns, ...transactions]);
+    addLog("recorded", returnType === "purchase_return" ? "purchase return" : "sales return", `${valid.length} product(s)`);
+    setModal(false);
+    resetForm();
+  };
+
+  const deleteTxn = t => {
+    if (!window.confirm("Delete this return entry?")) return;
+    saveTransactions(transactions.filter(x => x.id !== t.id));
+  };
+
+  // ── All return transactions ──────────────────────────────────────────────
+  const allReturns = useMemo(() => transactions.filter(t =>
+    ["return", "purchase_return", "damaged"].includes(t.type) &&
+    inRange(t.date, df, dt) &&
+    (typeFilter === "all" ? true :
+      typeFilter === "damaged" ? t.isDamaged :
+      typeFilter === "sales_return" ? t.type === "return" :
+      typeFilter === "purchase_return" ? t.type === "purchase_return" : true)
+  ).filter(t => {
+    if (!search) return true;
+    const q = search.toLowerCase();
+    const pn = products.find(p => p.id === t.productId)?.name || "";
+    return pn.toLowerCase().includes(q) || (t.notes || "").toLowerCase().includes(q);
+  }).sort((a, b) => new Date(b.date) - new Date(a.date)), [transactions, df, dt, typeFilter, search, products]);
+
+  // ── KPIs ─────────────────────────────────────────────────────────────────
+  const salesRets = allReturns.filter(t => t.type === "return");
+  const purRets = allReturns.filter(t => t.type === "purchase_return");
+  const damaged = allReturns.filter(t => t.isDamaged);
+
+  const salesRetValue = salesRets.reduce((s, t) => s + Number(t.qty) * Number(t.price || 0), 0);
+  const purRetValue = purRets.reduce((s, t) => s + Number(t.qty) * Number(t.price || 0), 0);
+
+  // Damaged stock: items that came back as damaged (sales returns with isDamaged)
+  // Still in inventory but marked damaged
+  const damagedStockByProduct = useMemo(() => {
+    const m = {};
+    transactions.filter(t => t.isDamaged && t.type === "return").forEach(t => {
+      if (!m[t.productId]) m[t.productId] = 0;
+      m[t.productId] += Number(t.qty);
+    });
+    // Subtract purchase_return of damaged items (sent back to vendor)
+    transactions.filter(t => t.isDamaged && t.type === "purchase_return").forEach(t => {
+      if (!m[t.productId]) m[t.productId] = 0;
+      m[t.productId] -= Number(t.qty);
+    });
+    return m;
+  }, [transactions]);
+
+  const damagedInvValue = Object.entries(damagedStockByProduct).reduce((s, [pid, qty]) => {
+    const pp = Number(products.find(p => p.id === pid)?.purchasePrice || 0);
+    return s + Math.max(0, qty) * pp;
+  }, 0);
+  const totalDamagedUnits = Object.values(damagedStockByProduct).reduce((s, q) => s + Math.max(0, q), 0);
+
+  // ── Group returns by date for display ───────────────────────────────────
+  const grouped = useMemo(() => {
+    const m = {};
+    allReturns.forEach(t => {
+      const key = t.date;
+      if (!m[key]) m[key] = [];
+      m[key].push(t);
+    });
+    return Object.entries(m).sort(([a], [b]) => b.localeCompare(a));
+  }, [allReturns]);
+
+  return <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+    {/* Time filter + actions */}
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+        <span style={{ fontSize: 10, fontWeight: 700, color: T.textMuted, letterSpacing: "0.05em" }}>PERIOD</span>
+        {PRESETS.map(p => (
+          <button key={p.k} onClick={() => handlePreset(p.k)} style={{ padding: "5px 12px", borderRadius: 99, fontSize: 12, fontWeight: 600, border: "none", cursor: "pointer", background: preset === p.k ? T.accent : "transparent", color: preset === p.k ? "#fff" : T.textSub, transition: "all .15s" }}>{p.l}</button>
+        ))}
+        <input type="date" className="inp" value={df} onChange={e => { setDf(e.target.value); setPreset(""); }} style={{ width: 120, fontSize: 12 }} />
+        <span style={{ fontSize: 12, color: T.textMuted }}>→</span>
+        <input type="date" className="inp" value={dt} onChange={e => { setDt(e.target.value); setPreset(""); }} style={{ width: 120, fontSize: 12 }} />
+      </div>
+      <GBtn sz="md" onClick={() => { resetForm(); setModal(true); }} icon={<Plus size={14} />}>Record Return</GBtn>
+    </div>
+
+    {/* KPI Cards */}
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14 }}>
+      <div className="kcard glass" style={{ cursor: "pointer" }} onClick={() => setTypeFilter(typeFilter === "sales_return" ? "all" : "sales_return")}>
+        <div style={{ position: "absolute", top: -20, right: -20, width: 70, height: 70, borderRadius: "50%", background: `${T.red}12` }} />
+        <div style={{ width: 36, height: 36, borderRadius: 10, background: `${T.red}1A`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 12 }}><RotateCcw size={17} color={T.red} /></div>
+        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 20, color: T.text }}>{fmtCur(salesRetValue)}</div>
+        <div style={{ fontSize: 12, fontWeight: 600, color: T.textSub, marginTop: 2 }}>Sales Returns</div>
+        <div style={{ fontSize: 10, color: T.textMuted, marginTop: 3 }}>{salesRets.length} entries · {salesRets.reduce((s, t) => s + Number(t.qty), 0)} units</div>
+      </div>
+      <div className="kcard glass" style={{ cursor: "pointer" }} onClick={() => setTypeFilter(typeFilter === "purchase_return" ? "all" : "purchase_return")}>
+        <div style={{ position: "absolute", top: -20, right: -20, width: 70, height: 70, borderRadius: "50%", background: `${T.blue}12` }} />
+        <div style={{ width: 36, height: 36, borderRadius: 10, background: `${T.blue}1A`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 12 }}><Truck size={17} color={T.blue} /></div>
+        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 20, color: T.text }}>{fmtCur(purRetValue)}</div>
+        <div style={{ fontSize: 12, fontWeight: 600, color: T.textSub, marginTop: 2 }}>Purchase Returns</div>
+        <div style={{ fontSize: 10, color: T.textMuted, marginTop: 3 }}>{purRets.length} entries · {purRets.reduce((s, t) => s + Number(t.qty), 0)} units</div>
+      </div>
+      <div className="kcard glass" style={{ cursor: "pointer" }} onClick={() => setTypeFilter(typeFilter === "damaged" ? "all" : "damaged")}>
+        <div style={{ position: "absolute", top: -20, right: -20, width: 70, height: 70, borderRadius: "50%", background: `${T.amber}12` }} />
+        <div style={{ width: 36, height: 36, borderRadius: 10, background: `${T.amber}1A`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 12 }}><AlertTriangle size={17} color={T.amber} /></div>
+        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 20, color: T.text }}>{totalDamagedUnits}</div>
+        <div style={{ fontSize: 12, fontWeight: 600, color: T.textSub, marginTop: 2 }}>Damaged in Inventory</div>
+        <div style={{ fontSize: 10, color: T.textMuted, marginTop: 3 }}>Value: {fmtCur(damagedInvValue)} (ex-GST)</div>
+      </div>
+    </div>
+
+    {/* Damaged stock breakdown */}
+    {totalDamagedUnits > 0 && (
+      <div className="glass" style={{ padding: 16, borderRadius: T.radius, borderLeft: `4px solid ${T.amber}` }}>
+        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 14, color: T.amber, marginBottom: 10 }}>⚠️ Damaged Stock in Inventory</div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+          {Object.entries(damagedStockByProduct).filter(([, q]) => q > 0).map(([pid, qty]) => {
+            const pr = products.find(p => p.id === pid);
+            return pr ? (
+              <div key={pid} style={{ padding: "6px 12px", borderRadius: 99, background: `${T.amber}15`, border: `1px solid ${T.amber}30`, fontSize: 12 }}>
+                <span style={{ fontWeight: 600, color: T.text }}>{pr.alias || pr.name}</span>
+                <span style={{ color: T.amber, marginLeft: 6 }}>{qty} units</span>
+              </div>
+            ) : null;
+          })}
+        </div>
+        <div style={{ fontSize: 11, color: T.textMuted, marginTop: 8 }}>These items are physically in your inventory but marked as damaged. They are counted in total stock and inventory value at purchase price.</div>
+      </div>
+    )}
+
+    {/* Returns table */}
+    <div className="glass" style={{ padding: 18, borderRadius: T.radius }}>
+      <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 14 }}>Returns Log</div>
+      <div className="filter-wrap" style={{ marginBottom: 12 }}>
+        <div style={{ position: "relative", flex: "1 1 160px" }}>
+          <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: T.textMuted, fontSize: 12 }}>🔍</span>
+          <input className="inp" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search product, notes…" style={{ paddingLeft: 28 }} />
+        </div>
+        <div style={{ display: "flex", gap: 5 }}>
+          {["all", "sales_return", "purchase_return", "damaged"].map(f => (
+            <button key={f} onClick={() => setTypeFilter(f)} style={{ padding: "5px 12px", borderRadius: 99, fontSize: 11, fontWeight: 600, border: "none", cursor: "pointer", background: typeFilter === f ? T.accent : T.isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.05)", color: typeFilter === f ? "#fff" : T.textSub }}>
+              {f === "all" ? "All" : f === "sales_return" ? "Sales Returns" : f === "purchase_return" ? "Purchase Returns" : "Damaged"}
+            </button>
+          ))}
+        </div>
+        {(search || typeFilter !== "all") && <GBtn v="ghost" sz="sm" onClick={() => { setSearch(""); setTypeFilter("all"); }} icon={<X size={12} />}>Clear</GBtn>}
+      </div>
+      <div style={{ overflowX: "auto" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+          <thead><tr>{["Date", "Type", "Product", "Qty", "Price/Unit", "Value", "Channel/Vendor", "Damaged", ""].map((h, i) => (
+            <th key={i} className="th" style={{ textAlign: ["Qty", "Price/Unit", "Value"].includes(h) ? "right" : "left", width: h === "" ? 36 : "auto" }}>{h.toUpperCase()}</th>
+          ))}</tr></thead>
+          <tbody>
+            {allReturns.slice((pg - 1) * ps, pg * ps).map(t => {
+              const pr = products.find(p => p.id === t.productId);
+              const ch = channels.find(c => c.id === t.channelId);
+              const v = vendors.find(x => x.id === t.vendorId);
+              const typeColor = t.type === "return" ? T.red : t.type === "purchase_return" ? T.blue : T.amber;
+              const typeLabel = t.type === "return" ? "Sales Return" : t.type === "purchase_return" ? "Purchase Return" : "Damaged";
+              return (
+                <tr key={t.id} className="trow">
+                  <td className="td m">{fmtDate(t.date)}</td>
+                  <td className="td">
+                    <span className="badge" style={{ background: typeColor + "18", color: typeColor }}>{typeLabel}</span>
+                  </td>
+                  <td className="td">
+                    <div style={{ fontWeight: 600, color: T.text }}>{pr?.name || "—"}</div>
+                    <div style={{ fontSize: 10, color: T.textMuted }}>{pr?.sku}</div>
+                  </td>
+                  <td className="td r" style={{ fontWeight: 600 }}>{t.qty}</td>
+                  <td className="td r m">{fmtCur(t.price || 0)}</td>
+                  <td className="td r" style={{ fontWeight: 600, color: t.type === "return" ? T.red : T.blue }}>{fmtCur(Number(t.qty) * Number(t.price || 0))}</td>
+                  <td className="td m">
+                    {ch ? <span style={{ color: ch.color, fontWeight: 600 }}>{ch.name}</span> : v?.name || "—"}
+                  </td>
+                  <td className="td">
+                    {t.isDamaged ? <span style={{ fontSize: 10, fontWeight: 700, color: T.amber }}>⚠ YES</span> : <span style={{ color: T.textMuted, fontSize: 10 }}>—</span>}
+                  </td>
+                  <td className="td">
+                    {isAdmin && <button className="btn-danger" onClick={() => deleteTxn(t)} style={{ padding: "3px 6px" }}><Trash2 size={11} /></button>}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+        {allReturns.length === 0 && <div style={{ padding: "40px 0", textAlign: "center", color: T.textMuted }}>No returns in selected period</div>}
+      </div>
+      <Pager total={allReturns.length} page={pg} ps={ps} setPage={setPg} setPs={setPs} />
+    </div>
+
+    {/* New Return Modal */}
+    <Modal open={modal} onClose={() => { setModal(false); resetForm(); }} title="Record Return" width={620}
+      footer={<><GBtn v="ghost" onClick={() => { setModal(false); resetForm(); }}>Cancel</GBtn><GBtn onClick={handleSave} icon={<RotateCcw size={13} />}>Save Return</GBtn></>}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+
+        {/* Type selector */}
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, marginBottom: 8, letterSpacing: "0.05em" }}>RETURN TYPE</div>
+          <div style={{ display: "flex", gap: 8 }}>
+            {[{ k: "sales_return", l: "📦 Sales Return", sub: "Customer returns product to you" },
+              { k: "purchase_return", l: "🚚 Purchase Return", sub: "You return product to vendor" }].map(rt => (
+              <button key={rt.k} onClick={() => setReturnType(rt.k)} style={{
+                flex: 1, padding: "12px 16px", borderRadius: 12, border: `2px solid ${returnType === rt.k ? T.accent : T.borderSubtle}`,
+                cursor: "pointer", background: returnType === rt.k ? T.accentBg : "transparent",
+                textAlign: "left", transition: "all .15s"
+              }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: returnType === rt.k ? T.accent : T.text }}>{rt.l}</div>
+                <div style={{ fontSize: 11, color: T.textMuted, marginTop: 2 }}>{rt.sub}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Info banner */}
+        <div style={{ padding: "10px 14px", borderRadius: 10, background: returnType === "sales_return" ? T.redBg : T.blueBg, border: `1px solid ${returnType === "sales_return" ? T.red + "30" : T.blue + "30"}`, fontSize: 12, color: returnType === "sales_return" ? T.red : T.blue }}>
+          {returnType === "sales_return"
+            ? "📦 Sales Return: Product added back to your inventory. If damaged, it stays in stock but is flagged as damaged."
+            : "🚚 Purchase Return: Product removed from your inventory. Applicable for defective/wrong items sent back to vendor."}
+        </div>
+
+        {/* Date + Channel/Vendor */}
+        <div className="fgrid">
+          <Field label="Date" req><GIn type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} /></Field>
+          {returnType === "sales_return"
+            ? <Field label="Sales Channel" req><GS value={form.channelId} onChange={e => setForm(f => ({ ...f, channelId: e.target.value }))} placeholder="Select channel">{channels.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</GS></Field>
+            : <Field label="Vendor" req><GS value={form.vendorId} onChange={e => setForm(f => ({ ...f, vendorId: e.target.value }))} placeholder="Select vendor">{vendors.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}</GS></Field>
+          }
+        </div>
+
+        {/* Products */}
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, marginBottom: 8, letterSpacing: "0.05em" }}>PRODUCTS</div>
+          <div style={{ border: `1px solid ${T.borderSubtle}`, borderRadius: 12, overflow: "hidden" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 70px 100px 70px 32px", gap: 8, padding: "8px 12px", background: T.isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)" }}>
+              {["Product", "Qty", `${returnType === "sales_return" ? "Sale" : "Purchase"} Price`, "Damaged?", ""].map(h => (
+                <div key={h} style={{ fontSize: 10, fontWeight: 700, color: T.textMuted, letterSpacing: "0.04em" }}>{h.toUpperCase()}</div>
+              ))}
+            </div>
+            {form.items.map((item, i) => {
+              const pr = products.find(p => p.id === item.productId);
+              const stk = item.productId ? getStock(item.productId) : null;
+              return (
+                <div key={item.id} style={{ display: "grid", gridTemplateColumns: "1fr 70px 100px 70px 32px", gap: 8, padding: "8px 12px", alignItems: "center", borderTop: `1px solid ${T.borderSubtle}` }}>
+                  <div>
+                    <GS value={item.productId} onChange={e => upItem(item.id, "productId", e.target.value)} placeholder={`Product ${i + 1}`}>
+                      {products.map(p => <option key={p.id} value={p.id}>{p.name} ({p.sku})</option>)}
+                    </GS>
+                    {stk !== null && <div style={{ fontSize: 10, marginTop: 2, color: T.textMuted }}>Stock: {stk}</div>}
+                  </div>
+                  <GIn type="number" min="1" value={item.qty} onChange={e => upItem(item.id, "qty", e.target.value)} />
+                  <div>
+                    <GIn type="number" min="0" step="0.01" value={item.price} onChange={e => upItem(item.id, "price", e.target.value)} placeholder="0.00" />
+                    {item.price && pr?.gstRate > 0 && (() => {
+                      const rate = Number(pr.gstRate);
+                      const price = Number(item.price);
+                      if (returnType === "sales_return") {
+                        const gst = price * rate / (100 + rate);
+                        return <div style={{ fontSize: 9, color: T.textMuted, marginTop: 2 }}>GST: {fmtCur(gst)} · Net: {fmtCur(price - gst)}</div>;
+                      }
+                      return null;
+                    })()}
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                    <input type="checkbox" checked={item.isDamaged} onChange={e => upItem(item.id, "isDamaged", e.target.checked)} style={{ width: 16, height: 16, accentColor: T.amber, cursor: "pointer" }} />
+                  </div>
+                  <button onClick={() => remItem(item.id)} className="btn-danger" style={{ padding: "4px", opacity: form.items.length <= 1 ? .3 : 1 }} disabled={form.items.length <= 1}>
+                    <X size={12} />
+                  </button>
+                </div>
+              );
+            })}
+            <div style={{ padding: "8px 12px", borderTop: `1px solid ${T.borderSubtle}` }}>
+              <GBtn v="ghost" sz="sm" onClick={addItem} icon={<Plus size={12} />}>Add Another Product</GBtn>
+            </div>
+          </div>
+        </div>
+
+        {/* Summary + Notes */}
+        <div className="fgrid">
+          <Field label="Notes"><GTa value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} placeholder="Reason for return, condition, reference no…" /></Field>
+          <div style={{ display: "flex", flexDirection: "column", justifyContent: "flex-end", gap: 5 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: T.textSub }}>
+              <span>{valid.length} product{valid.length !== 1 ? "s" : ""}</span>
+              <span>{valid.reduce((s, i) => s + Number(i.qty), 0)} units</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 15, fontWeight: 700, color: T.text, borderTop: `1px solid ${T.borderSubtle}`, paddingTop: 8 }}>
+              <span>Total {returnType === "purchase_return" ? "Refund" : "Value"}</span>
+              <span style={{ color: T.accent }}>{fmtCur(totalValue)}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Modal>
+  </div>;
+}
