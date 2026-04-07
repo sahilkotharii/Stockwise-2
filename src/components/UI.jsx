@@ -68,13 +68,13 @@ export function Modal({ open, onClose, title, children, footer, width = 520 }) {
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 200, overflowY: "auto", overflowX: "hidden", WebkitOverflowScrolling: "touch", background: "rgba(0,0,0,0.55)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)" }}>
       <div style={{ minHeight: "100%", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "5vh 16px 60px", boxSizing: "border-box" }}>
-        <div className="glass-strong fade-up" onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: width, borderRadius: T.radiusXl, overflow: "hidden", boxShadow: T.shadowXl, flexShrink: 0, alignSelf: "flex-start" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: `1px solid ${T.borderSubtle}`, background: T.surfaceStrong }}>
+        <div className="glass-strong fade-up" onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: width, borderRadius: T.radiusXl, boxShadow: T.shadowXl, flexShrink: 0, alignSelf: "flex-start", overflow: "visible" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: `1px solid ${T.borderSubtle}`, background: T.surfaceStrong, borderRadius: `${T.radiusXl} ${T.radiusXl} 0 0` }}>
             <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 16, color: T.text, letterSpacing: "-0.01em" }}>{title}</div>
             <button onClick={onClose} className="btn-ghost" style={{ padding: "5px", borderRadius: 8, flexShrink: 0 }}><X size={15} /></button>
           </div>
-          <div style={{ padding: 20 }}>{children}</div>
-          {footer && <div style={{ padding: "14px 20px", borderTop: `1px solid ${T.borderSubtle}`, display: "flex", justifyContent: "flex-end", gap: 10, background: T.surfaceStrong, flexWrap: "wrap" }}>{footer}</div>}
+          <div style={{ padding: 20, overflowY: "auto", maxHeight: "75vh", WebkitOverflowScrolling: "touch" }}>{children}</div>
+          {footer && <div style={{ padding: "14px 20px", borderTop: `1px solid ${T.borderSubtle}`, display: "flex", justifyContent: "flex-end", gap: 10, background: T.surfaceStrong, flexWrap: "wrap", borderRadius: `0 0 ${T.radiusXl} ${T.radiusXl}` }}>{footer}</div>}
         </div>
       </div>
     </div>
