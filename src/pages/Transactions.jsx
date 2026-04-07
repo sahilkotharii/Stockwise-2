@@ -86,7 +86,7 @@ export default function Transactions({ ctx }) {
             <td className="td"><span className="badge" style={{ background: `${tc}18`, color: tc, textTransform: "capitalize" }}>{t.type} {t.isDamaged ? <span style={{ color: T.red }}>⚠</span> : ""}</span></td>
             <td className="td r" style={{ fontWeight: 700 }}>{t.qty}</td>
             <td className="td r m">{fmtCur(t.price)}</td>
-            <td className="td r" style={{ fontWeight: 600, color: t.type === "sale" ? T.green : t.type === "purchase" ? T.blue : T.textSub }}>{fmtCur(Number(t.qty) * Number(t.price))}</td>
+            <td className="td r" style={{ fontWeight: 600, color: t.type === "sale" ? T.green : t.type === "purchase" ? T.blue : T.textSub }}>{fmtCur(Number(t.qty) * Number(t.effectivePrice || t.price))}</td>
             <td className="td m" style={{ fontSize: 11 }}>{vc?.name || "—"}</td>
             <td className="td m" style={{ fontSize: 10 }}>{t.userName || "—"}</td>
             <td className="td m" style={{ fontSize: 10, fontFamily: "monospace" }}>{t.billId ? "📄" : "—"}</td>
