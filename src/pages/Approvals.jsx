@@ -43,6 +43,11 @@ export default function Approvals({ ctx }) {
         }));
         saveBills([bill, ...bills]);
         saveTransactions([...newT, ...transactions]);
+      } else if ((req.entity === "sale" || req.entity === "purchase") && req.action === "delete") {
+        saveBills(bills.filter(b => b.id !== req.entityId));
+        saveTransactions(transactions.filter(t => t.billId !== req.entityId));
+      } else if (req.entity === "return" && req.action === "delete") {
+        saveTransactions(transactions.filter(t => t.id !== req.entityId));
       }
       saveChangeReqs(changeReqs.map(r => r.id === req.id ? { ...r, status: "approved", reviewedBy: user.id, reviewedByName: user.name, reviewedAt: new Date().toISOString() } : r));
       addLog("approved", req.entity, req.entityName);
@@ -82,7 +87,13 @@ export default function Approvals({ ctx }) {
         <span className="badge" style={{ background: `${sc[req.status]}18`, color: sc[req.status], textTransform: "capitalize" }}>{req.status}</span>
       </div>
 
-      {req.proposedData?.items && (
+      {req.action === "delete" && (
+        <div style={{ marginBottom: 12, padding: "10px 14px", borderRadius: 10, background: T.redBg, border: `1px solid ${T.red}30`, fontSize: 12, color: T.red, display: "flex", alignItems: "center", gap: 8 }}>
+          <Trash2 size={14} />
+          <span><strong>Delete Request</strong> — approving will permanently remove this {req.entity} record{req.entity === "sale" || req.entity === "purchase" ? " and all its transactions" : ""}.</span>
+        </div>
+      )}
+      {req.action !== "delete" && req.proposedData?.items && (
         <div style={{ marginTop: 10, marginBottom: 12, padding: 14, background: T.isDark ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.015)", borderRadius: 10, border: `1px solid ${T.borderSubtle}` }}>
           <div style={{ fontSize: 10, fontWeight: 700, color: T.textMuted, marginBottom: 8 }}>BILL ITEMS REVIEW</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
