@@ -274,7 +274,7 @@ export default function Products({ ctx }) {
                               <Edit2 size={12} />
                             </button>
                             {isAdmin && (
-                              <button className="btn-danger" onClick={() => { if (window.confirm("Delete?")) saveProducts(products.filter(x => x.id !== p.id)); }} style={{ padding: "4px 7px" }}>
+                              <button className="btn-danger" onClick={() => { if(isManager){if(window.confirm("Request admin to delete this product?"))addChangeReq({entity:"product",action:"delete",entityId:p.id,entityName:p.name,currentData:p,proposedData:null});}else if(window.confirm("Delete product?"))saveProducts(products.filter(x=>x.id!==p.id)); }} style={{ padding: "4px 7px" }}>
                                 <Trash2 size={12} />
                               </button>
                             )}
