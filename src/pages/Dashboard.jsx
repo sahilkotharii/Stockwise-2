@@ -3,7 +3,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { TrendingUp, DollarSign, ShoppingCart, Box, AlertTriangle } from "lucide-react";
 import { useT } from "../theme";
 import { KCard, CTip } from "../components/UI";
-import { fmtCur, fmtDate } from "../utils";
+import { fmtCur, fmtDate, calcBillGst } from "../utils";
 
 export default function Dashboard({ ctx }) {
   const T = useT();
@@ -19,7 +19,7 @@ export default function Dashboard({ ctx }) {
 
   // Revenue incl GST (bill.total = after discount, incl GST)
   const totalRevenue = periodSaleBills.reduce((s, b) => s + Number(b.total || 0), 0);
-  const totalGstCollected = periodSaleBills.reduce((s, b) => s + Number(b.saleGstInfo || 0), 0);
+  const totalGstCollected = periodSaleBills.reduce((s, b) => s + calcBillGst(b), 0);
   const netRevenue = totalRevenue - totalGstCollected; // excl GST
 
   // Returns reduce revenue
