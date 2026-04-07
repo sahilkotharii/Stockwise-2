@@ -188,7 +188,7 @@ export default function Purchase({ ctx }) {
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
           <thead><tr>
             <th className="th" style={{ width: 36 }}>
-              <input type="checkbox" className="cb" checked={purBills.slice((pg-1)*ps,pg*ps).length>0&&purBills.slice((pg-1)*ps,pg*ps).every(b=>selBills.has(b.id))} onChange={e=>{ const paged=purBills.slice((pg-1)*ps,pg*ps); if(e.target.checked){setSelBills(s=>{const n=new Set(s);paged.forEach(b=>n.add(b.id));return n;});}else{setSelBills(s=>{const n=new Set(s);paged.forEach(b=>n.delete(b.id));return n;});}}} />
+              <input type="checkbox" className="cb" checked={purBills.length>0&&purBills.every(b=>selBills.has(b.id))} onChange={e=>{if(e.target.checked){setSelBills(new Set(purBills.map(b=>b.id)));}else{setSelBills(new Set());}}} />
             </th>
             {["Bill No", "Date", "Vendor", "Items", "Ex-GST", "GST", "Total Paid", "", ""].map((h, i) => (
             <th key={i} className="th" style={{ textAlign: ["Ex-GST", "GST", "Total Paid"].includes(h) ? "right" : "left", width: h === "" ? 36 : "auto" }}>{h.toUpperCase()}</th>
