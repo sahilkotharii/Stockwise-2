@@ -137,7 +137,8 @@ export default function Dashboard({ ctx }) {
               return <div key={i} style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <div style={{ width: 24, height: 24, borderRadius: 6, background: i === 0 ? `linear-gradient(135deg,${T.accent},${T.accentDark})` : `${T.accent}18`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: i === 0 ? "#fff" : T.textSub, flexShrink: 0 }}>{i + 1}</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 11, fontWeight: 600, color: T.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.product?.alias || item.product?.name}</div>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: T.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.product?.name}</div>
+                  <div style={{ fontSize: 10, color: T.textMuted }}>{item.product?.sku}</div>
                   <div style={{ height: 4, borderRadius: 99, background: T.isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,.06)", marginTop: 4, overflow: "hidden" }}>
                     <div style={{ height: "100%", borderRadius: 99, width: `${pct}%`, background: `linear-gradient(90deg,${T.accent},${T.accentLight})` }} />
                   </div>
@@ -155,7 +156,7 @@ export default function Dashboard({ ctx }) {
         ? <div style={{ padding: "20px 0", textAlign: "center", color: T.textMuted, fontSize: 13 }}>No bills yet</div>
         : <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
-            <thead><tr>{["Bill No", "Date", "Type", "Items", "Total", "Channel/Vendor"].map(h => (
+            <thead><tr>{["Bill No", "Date", "Type", "Items", "Total", "Vendor"].map(h => (
               <th key={h} className="th" style={{ textAlign: h === "Total" ? "right" : "left" }}>{h.toUpperCase()}</th>
             ))}</tr></thead>
             <tbody>{recentBills.map(b => {
