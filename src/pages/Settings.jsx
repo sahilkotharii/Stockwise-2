@@ -19,7 +19,7 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
   const T = useT();
   const { users, saveUsers, channels, saveChannels, user, actLog, invoiceSettings, saveInvoiceSettings } = ctx;
   const isAdmin = user.role === "admin";
-  const tabs = isAdmin ? ["profile", "users", "channels", "access", "export", "activity", "sessions", "invoice", "sheets"] : ["profile"];
+  const tabs = isAdmin ? ["profile", "users", "series", "access", "export", "activity", "sessions", "invoice", "sheets"] : ["profile"];
   const [tab, setTab] = useState("profile");
   const [localUrl, setLocalUrl] = useState(sheetsUrl || "");
 
@@ -28,9 +28,6 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
   const [uForm, setUForm] = useState({});
   const uf = (k, v) => setUForm(p => ({ ...p, [k]: v }));
 
-  const [chModal, setChModal] = useState(false);
-  const [ech, setEch] = useState(null);
-  const [chForm, setChForm] = useState({ name: "", color: "#C05C1E", logoUrl: "", gstType: "cgst_sgst" });
   const [invForm, setInvForm] = useState(invoiceSettings || {});
 
   const [pForm, setPForm] = useState({ name: user.name, newPass: "", confirmPass: "" });
@@ -49,12 +46,6 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
     setUModal(false);
   };
 
-  const saveCh = () => {
-    if (!chForm.name) return;
-    if (ech) saveChannels(channels.map(c => c.id === ech ? { id: ech, ...chForm } : c));
-    else saveChannels([...channels, { id: uid(), ...chForm }]);
-    setChModal(false);
-  };
 
   const toggleLock = (uid2, pid) => {
     const u = users.find(x => x.id === uid2);
@@ -63,7 +54,7 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
     saveUsers(users.map(x => x.id === uid2 ? { ...x, lockedPages: lk.includes(pid) ? lk.filter(p => p !== pid) : [...lk, pid] } : x));
   };
 
-  const tlbls = { profile: "Profile", users: "Users", channels: "Channels", access: "Access Control", export: "Export", activity: "Activity Log", sessions: "Login History", invoice: "Invoice", sheets: "Google Sheets" };
+  const tlbls = { profile: "Profile", users: "Users", series: "Bill Series", access: "Access Control", export: "Export", activity: "Activity Log", sessions: "Login History", invoice: "Invoice", sheets: "Google Sheets" };
   const myLog = isAdmin ? actLog : actLog.filter(l => l.userId === user.id);
 
   return <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -106,20 +97,30 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
       </div>
     </div>}
 
-    {tab === "channels" && isAdmin && <div className="glass" style={{ padding: 20, borderRadius: T.radius }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text }}>Sales Channels</div>
-        <GBtn sz="sm" onClick={() => { setChForm({ name: "", color: "#C05C1E", logoUrl: "", gstType: "cgst_sgst" }); setEch(null); setChModal(true); }} icon={<Plus size={13} />}>Add Channel</GBtn>
+    {tab === "series" && isAdmin && <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      <div className="glass" style={{ padding: 20, borderRadius: T.radius }}>
+        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 4 }}>📄 Sales Bill Series</div>
+        <div style={{ fontSize: 12, color: T.textMuted, marginBottom: 16 }}>Set the prefix and starting number for your sales invoice series.</div>
+        <div className="fgrid">
+          <Field label="Series Prefix" req>
+            <GIn value={invForm.saleSeries || ""} onChange={e => setInvForm(p => ({...p, saleSeries: e.target.value}))} placeholder="e.g. WL-2425- or INV-" />
+            <div style={{ fontSize: 10, color: T.textMuted, marginTop: 4 }}>Your invoices will be numbered: {invForm.saleSeries || "SALE-"}0001, {invForm.saleSeries || "SALE-"}0002…</div>
+          </Field>
+          <Field label="Starting Number">
+            <GIn type="number" min="1" value={invForm.saleSeriesStart || 1} onChange={e => setInvForm(p => ({...p, saleSeriesStart: e.target.value}))} placeholder="1" />
+            <div style={{ fontSize: 10, color: T.textMuted, marginTop: 4 }}>Next new bill will start from this number + existing count.</div>
+          </Field>
+        </div>
+        <div style={{ padding: "10px 14px", borderRadius: 10, background: T.accentBg, border: `1px solid ${T.accent}20`, fontSize: 12, color: T.accent, marginTop: 8 }}>
+          Preview: <strong>{invForm.saleSeries || "SALE-"}{String(Number(invForm.saleSeriesStart || 1)).padStart(4, "0")}</strong>
+        </div>
+        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 14 }}>
+          <GBtn onClick={() => { saveInvoiceSettings(invForm); alert("Bill series saved!"); }} icon={<Check size={13} />}>Save Series</GBtn>
+        </div>
       </div>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-        {channels.map(c => <div key={c.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 14px", borderRadius: 99, background: `${c.color}12`, border: `1.5px solid ${c.color}32` }}>
-          {c.logoUrl
-            ? <img src={c.logoUrl} alt="" style={{ width: 18, height: 18, borderRadius: 4, objectFit: "contain" }} onError={e => { e.target.style.display = "none"; }} />
-            : <div style={{ width: 9, height: 9, borderRadius: "50%", background: c.color }} />}
-          <span style={{ fontSize: 13, fontWeight: 600, color: c.color }}>{c.name}</span>
-          <button onClick={() => { setChForm({ name: c.name, color: c.color, logoUrl: c.logoUrl || "", gstType: c.gstType || "cgst_sgst" }); setEch(c.id); setChModal(true); }} style={{ border: "none", background: "none", cursor: "pointer", color: c.color, opacity: .6, padding: 0, display: "flex" }}><Edit2 size={11} /></button>
-          <button onClick={() => { if (window.confirm("Delete?")) saveChannels(channels.filter(x => x.id !== c.id)); }} style={{ border: "none", background: "none", cursor: "pointer", color: T.red, opacity: .6, padding: 0, display: "flex" }}><X size={11} /></button>
-        </div>)}
+      <div className="glass" style={{ padding: 20, borderRadius: T.radius }}>
+        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 14, color: T.text, marginBottom: 8 }}>Purchase Bills</div>
+        <div style={{ fontSize: 12, color: T.textMuted }}>Purchase bill numbers are entered manually from the vendor's invoice. No series needed.</div>
       </div>
     </div>}
 
@@ -241,6 +242,39 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
           <Field label="Footer / Terms" cl="s2"><GIn value={invForm.footerText || ""} onChange={e => setInvForm(p => ({ ...p, footerText: e.target.value }))} placeholder="Thank you for your business. Goods once sold will not be taken back." /></Field>
         </div>
       </div>
+      <div className="glass" style={{ padding: 20, borderRadius: T.radius }}>
+        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 14, color: T.text, marginBottom: 12 }}>Signature</div>
+        <Field label="Signature Image URL">
+          <GIn value={invForm.signatureUrl || ""} onChange={e => setInvForm(p => ({ ...p, signatureUrl: e.target.value }))} placeholder="https://your-cdn.com/signature.png (transparent PNG recommended)" />
+          {invForm.signatureUrl && <img src={invForm.signatureUrl} alt="signature preview" style={{ marginTop: 8, height: 50, borderRadius: 6, objectFit: "contain", border: `1px solid ${T.borderSubtle}`, padding: 4 }} onError={e => { e.target.style.display = "none"; }} />}
+          <div style={{ fontSize: 10, color: T.textMuted, marginTop: 4 }}>Upload to any image host (Imgur, Cloudinary, etc.) and paste the direct URL here.</div>
+        </Field>
+        <div style={{ marginTop: 12 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: T.textSub, marginBottom: 8 }}>Invoice Footer Points</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {(invForm.footerPoints || ["E & O.E.", "Subject to local jurisdiction."]).map((pt, idx) => (
+              <div key={idx} style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                <span style={{ fontSize: 12, color: T.textMuted, flexShrink: 0 }}>{idx + 1}.</span>
+                <input className="inp" style={{ flex: 1 }} value={pt}
+                  onChange={e => {
+                    const pts = [...(invForm.footerPoints || ["E & O.E.", "Subject to local jurisdiction."])];
+                    pts[idx] = e.target.value;
+                    setInvForm(p => ({ ...p, footerPoints: pts }));
+                  }} placeholder="Footer point…" />
+                <button type="button" className="btn-danger" style={{ padding: "5px 8px", flexShrink: 0 }}
+                  onClick={() => {
+                    const pts = (invForm.footerPoints || []).filter((_, i) => i !== idx);
+                    setInvForm(p => ({ ...p, footerPoints: pts }));
+                  }}>✕</button>
+              </div>
+            ))}
+            <button type="button" className="btn-ghost" style={{ padding: "6px 14px", borderRadius: 8, fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 6, width: "fit-content" }}
+              onClick={() => setInvForm(p => ({ ...p, footerPoints: [...(p.footerPoints || []), ""] }))}>
+              + Add footer point
+            </button>
+          </div>
+        </div>
+      </div>
       <div style={{ display: "flex", justifyContent: "flex-end" }}>
         <GBtn onClick={() => { saveInvoiceSettings(invForm); alert("Invoice settings saved!"); }} icon={<Check size={13} />}>Save Invoice Settings</GBtn>
       </div>
@@ -290,28 +324,5 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
       </div>
     </Modal>
 
-    <Modal open={chModal} onClose={() => setChModal(false)} title={ech ? "Edit Channel" : "Add Channel"} width={400}
-      footer={<><GBtn v="ghost" onClick={() => setChModal(false)}>Cancel</GBtn><GBtn onClick={saveCh}>{ech ? "Save" : "Add"}</GBtn></>}>
-      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-        <Field label="Channel Name" req>
-          <GIn value={chForm.name} onChange={e => setChForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Meesho" />
-        </Field>
-        <Field label="Logo URL (optional)">
-          <GIn value={chForm.logoUrl || ""} onChange={e => setChForm(p => ({ ...p, logoUrl: e.target.value }))} placeholder="https://example.com/logo.png" />
-          {chForm.logoUrl ? (
-            <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 8 }}>
-              <img src={chForm.logoUrl} alt="preview" style={{ width: 32, height: 32, borderRadius: 6, objectFit: "contain", background: "#fff", border: `1px solid ${T.borderSubtle}`, padding: 2 }} onError={e => { e.target.style.display = "none"; }} />
-              <span style={{ fontSize: 11, color: T.textMuted }}>Logo preview</span>
-            </div>
-          ) : null}
-        </Field>
-        <Field label="Brand Color">
-          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-            <input type="color" value={chForm.color} onChange={e => setChForm(p => ({ ...p, color: e.target.value }))} style={{ width: 42, height: 38, borderRadius: 8, border: `1.5px solid ${T.borderSubtle}`, padding: 3, background: "transparent", cursor: "pointer" }} />
-            <GIn value={chForm.color} onChange={e => setChForm(p => ({ ...p, color: e.target.value }))} />
-          </div>
-        </Field>
-      </div>
-    </Modal>
   </div>;
 }
