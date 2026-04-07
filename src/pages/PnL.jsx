@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import { TrendingUp, TrendingDown, DollarSign, BarChart2, Box, Download } from "lucide-react";
 import { useT } from "../theme";
 import { GBtn, GIn } from "../components/UI";
-import { fmtCur, toCSV, dlCSV } from "../utils";
+import { fmtCur, toCSV, dlCSV, calcBillGst } from "../utils";
 
 /* ── Safe date string: always returns YYYY-MM-DD or empty string ──────── */
 function safeDate(val) {
@@ -79,14 +79,6 @@ export default function PnL({ ctx }) {
   // ── REVENUE (from bills — ground truth) ─────────────────────────────────
   const grossSalesInclGst = useMemo(() =>
     saleBills.reduce((s, b) => s + Number(b.total || 0), 0), [saleBills]);
-
-  // Recalc GST from items — never trust stored saleGstInfo (can be corrupted)
-  const calcBillGst = b => (b.items || []).reduce((s, i) => {
-    const rate = Number(i.gstRate || 0);
-    if (!rate) return s;
-    const effPrice = Number(i.effectivePrice || i.price || 0);
-    return s + Number(i.qty || 0) * effPrice * rate / (100 + rate);
-  }, 0);
 
   const gstOnSales = useMemo(() =>
     saleBills.reduce((s, b) => s + calcBillGst(b), 0), [saleBills]);
