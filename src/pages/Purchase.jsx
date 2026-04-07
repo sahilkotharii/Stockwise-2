@@ -25,7 +25,7 @@ function getPresetDate(preset) {
 
 export default function Purchase({ ctx }) {
   const T = useT();
-  const { bills, saveBills, transactions, saveTransactions, products, vendors, channels, getStock, user, addLog, addChangeReq } = ctx;
+  const { bills, saveBills, transactions, saveTransactions, products, vendors, getStock, user, addLog, addChangeReq, invoiceSettings } = ctx;
   const isAdmin = user.role === "admin";
   const isManager = user.role === "manager";
 
@@ -128,7 +128,7 @@ export default function Purchase({ ctx }) {
     </div>
 
     {/* KPI Cards — 4 cards */}
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
+    <div className="kgrid" style={{ gap: 12 }}>
       <div className="kcard glass">
         <div style={{ position: "absolute", top: -20, right: -20, width: 70, height: 70, borderRadius: "50%", background: `${T.blue}12` }} />
         <div style={{ width: 36, height: 36, borderRadius: 10, background: `${T.blue}1A`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 12 }}><ShoppingCart size={17} color={T.blue} /></div>
@@ -231,12 +231,12 @@ export default function Purchase({ ctx }) {
 
     <Modal open={modal} onClose={() => setModal(false)} title="New Purchase Bill" width={720}
       footer={<><GBtn v="ghost" onClick={() => setModal(false)}>Cancel</GBtn><GBtn type="submit" form="purchase-form">Save Purchase Bill</GBtn></>}>
-      <BillForm type="purchase" bills={bills} onSave={handleSaveBill} products={products} vendors={vendors} channels={channels} getStock={getStock} />
+      <BillForm type="purchase" bills={bills} onSave={handleSaveBill} products={products} vendors={vendors} getStock={getStock} invoiceSettings={invoiceSettings} />
     </Modal>
 
     <Modal open={Boolean(editBill)} onClose={() => setEditBill(null)} title={`Edit: ${editBill?.billNo}`} width={720}
       footer={<><GBtn v="ghost" onClick={() => setEditBill(null)}>Cancel</GBtn><GBtn type="submit" form="purchase-form" icon={<Edit2 size={13} />}>Save Changes</GBtn></>}>
-      {editBill && <BillForm type="purchase" bills={bills} onSave={handleEditBill} products={products} vendors={vendors} channels={channels} getStock={getStock} existingBill={editBill} />}
+      {editBill && <BillForm type="purchase" bills={bills} onSave={handleEditBill} products={products} vendors={vendors} getStock={getStock} existingBill={editBill} invoiceSettings={invoiceSettings} />}
     </Modal>
   </div>;
 }
