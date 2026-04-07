@@ -103,6 +103,11 @@ export default function Returns({ ctx }) {
   };
 
   const deleteTxn = t => {
+    if (isManager) {
+      if (!window.confirm("Request admin to delete this return?")) return;
+      addChangeReq({ entity: "return", action: "delete", entityId: t.id, entityName: `${t.type} - ${products.find(p=>p.id===t.productId)?.name||t.productId}`, currentData: t, proposedData: null });
+      return;
+    }
     if (!window.confirm("Delete this return entry?")) return;
     saveTransactions(transactions.filter(x => x.id !== t.id));
   };
@@ -242,7 +247,7 @@ export default function Returns({ ctx }) {
       {selRets.size > 0 && (
         <div style={{ marginBottom: 10, padding: "8px 14px", borderRadius: 10, background: T.amberBg, display: "flex", alignItems: "center", gap: 10 }}>
           <span style={{ fontSize: 12, fontWeight: 600, color: T.amber }}>{selRets.size} selected</span>
-          {isAdmin && <GBtn v="danger" sz="sm" onClick={() => { if(window.confirm(`Delete ${selRets.size} entries?`)){saveTransactions(transactions.filter(t=>!selRets.has(t.id)));setSelRets(new Set());}}} icon={<Trash2 size={13} />}>Delete Selected</GBtn>}
+          <GBtn v="danger" sz="sm" onClick={() => { if(isManager){if(window.confirm(`Request admin to delete ${selRets.size} entries?`)){allReturns.filter(t=>selRets.has(t.id)).forEach(t=>addChangeReq({entity:'return',action:'delete',entityId:t.id,entityName:t.type,currentData:t,proposedData:null}));setSelRets(new Set());}}else if(window.confirm(`Delete ${selRets.size} entries?`)){saveTransactions(transactions.filter(t=>!selRets.has(t.id)));setSelRets(new Set());}}} icon={<Trash2 size={13} />}>{isManager?"Request Delete":"Delete Selected"}</GBtn>
           <button onClick={()=>setSelRets(new Set())} style={{marginLeft:"auto",background:"none",border:"none",cursor:"pointer",fontSize:11,color:T.textMuted}}>Clear</button>
         </div>
       )}
@@ -283,7 +288,7 @@ export default function Returns({ ctx }) {
                     {t.isDamaged ? <span style={{ fontSize: 10, fontWeight: 700, color: T.amber }}>⚠ YES</span> : <span style={{ color: T.textMuted, fontSize: 10 }}>—</span>}
                   </td>
                   <td className="td">
-                    {isAdmin && <button className="btn-danger" onClick={() => deleteTxn(t)} style={{ padding: "3px 6px" }}><Trash2 size={11} /></button>}
+                    <button className="btn-danger" onClick={() => deleteTxn(t)} style={{ padding: "3px 6px" }}><Trash2 size={11} /></button>
                   </td>
                 </tr>
               );
