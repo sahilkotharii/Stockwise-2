@@ -109,6 +109,11 @@ export default function Purchase({ ctx }) {
   };
 
   const deleteBill = b => {
+    if (isManager) {
+      if (!window.confirm(`Request admin to delete bill ${b.billNo}?`)) return;
+      addChangeReq({ entity: "purchase", action: "delete", entityId: b.id, entityName: b.billNo, currentData: b, proposedData: null });
+      return;
+    }
     if (!window.confirm(`Delete bill ${b.billNo}?`)) return;
     saveBills(bills.filter(x => x.id !== b.id));
     saveTransactions(transactions.filter(t => t.billId !== b.id));
@@ -175,7 +180,7 @@ export default function Purchase({ ctx }) {
       {selBills.size > 0 && (
         <div style={{ marginBottom: 10, padding: "8px 14px", borderRadius: 10, background: T.blueBg, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
           <span style={{ fontSize: 12, fontWeight: 600, color: T.blue }}>{selBills.size} selected</span>
-          {isAdmin && <GBtn v="danger" sz="sm" onClick={() => { if(window.confirm(`Delete ${selBills.size} bills?`)){purBills.filter(b=>selBills.has(b.id)).forEach(b=>{saveBills(bills.filter(x=>x.id!==b.id));saveTransactions(transactions.filter(t=>t.billId!==b.id));});setSelBills(new Set());}}} icon={<Trash2 size={13} />}>Delete Selected</GBtn>}
+          <GBtn v="danger" sz="sm" onClick={() => { if(isManager){if(window.confirm(`Request admin to delete ${selBills.size} bills?`)){purBills.filter(b=>selBills.has(b.id)).forEach(b=>addChangeReq({entity:'purchase',action:'delete',entityId:b.id,entityName:b.billNo,currentData:b,proposedData:null}));setSelBills(new Set());}}else if(window.confirm(`Delete ${selBills.size} bills?`)){purBills.filter(b=>selBills.has(b.id)).forEach(b=>{saveBills(bills.filter(x=>x.id!==b.id));saveTransactions(transactions.filter(t=>t.billId!==b.id));});setSelBills(new Set());}}} icon={<Trash2 size={13} />}>{isManager?"Request Delete":"Delete Selected"}</GBtn>
           <button onClick={()=>setSelBills(new Set())} style={{marginLeft:"auto",background:"none",border:"none",cursor:"pointer",fontSize:11,color:T.textMuted}}>Clear</button>
         </div>
       )}
@@ -207,7 +212,7 @@ export default function Purchase({ ctx }) {
                       {isAdmin && <button className="btn-ghost" onClick={() => setEditBill(b)} style={{ padding: "3px 6px" }}><Edit2 size={13} /></button>}
                     </div>
                   </td>
-                  <td className="td">{isAdmin && <button className="btn-danger" onClick={() => deleteBill(b)} style={{ padding: "3px 6px" }}><Trash2 size={11} /></button>}</td>
+                  <td className="td"><button className="btn-danger" onClick={() => deleteBill(b)} style={{ padding: "3px 6px" }}><Trash2 size={11} /></button></td>
                 </tr>
                 {exp[b.id] && <tr style={{ background: T.isDark ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.015)" }}>
                   <td colSpan={10} style={{ padding: "12px 20px", borderBottom: `1px solid ${T.borderSubtle}` }}>
