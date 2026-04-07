@@ -24,3 +24,21 @@ export const getLast12Months = () => {
   return months;
 };
 export const monthOf = d => d ? d.slice(0, 7) : "";
+
+// ── Reliable GST recalculation from bill items ─────────────────────────────
+// NEVER use stored bill.saleGstInfo — it can be corrupted in old bills.
+// For sales: MRP already includes GST, so GST = price × rate / (100 + rate)
+// For purchases: cost is ex-GST, so GST = price × rate / 100
+export const calcBillGst = (bill) => {
+  if (!bill || !bill.items) return 0;
+  const isPurchase = bill.type === "purchase";
+  return bill.items.reduce((s, i) => {
+    const rate = Number(i.gstRate || 0);
+    if (!rate) return s;
+    const price = Number(i.effectivePrice || i.price || 0);
+    const qty = Number(i.qty || 0);
+    return s + (isPurchase
+      ? qty * price * rate / 100
+      : qty * price * rate / (100 + rate));
+  }, 0);
+};
