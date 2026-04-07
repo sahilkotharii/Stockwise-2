@@ -311,13 +311,6 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
             <GIn value={chForm.color} onChange={e => setChForm(p => ({ ...p, color: e.target.value }))} />
           </div>
         </Field>
-        <Field label="GST Type" req>
-          <GS value={chForm.gstType || "cgst_sgst"} onChange={e => setChForm(p => ({ ...p, gstType: e.target.value }))}>
-            <option value="cgst_sgst">CGST + SGST (Intra-state)</option>
-            <option value="igst">IGST (Inter-state / Export)</option>
-          </GS>
-          <div style={{ fontSize: 10, color: T.textMuted, marginTop: 4 }}>Determines how GST is split on tax invoices for this channel.</div>
-        </Field>
       </div>
     </Modal>
   </div>;
