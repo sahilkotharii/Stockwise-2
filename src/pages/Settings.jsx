@@ -17,7 +17,7 @@ const LOCKABLE = [
 
 export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onTest }) {
   const T = useT();
-  const { users, saveUsers, channels, saveChannels, user, actLog, invoiceSettings, saveInvoiceSettings } = ctx;
+  const { users, saveUsers, user, actLog, invoiceSettings, saveInvoiceSettings } = ctx;
   const isAdmin = user.role === "admin";
   const tabs = isAdmin ? ["profile", "users", "series", "access", "export", "activity", "sessions", "invoice", "sheets"] : ["profile"];
   const [tab, setTab] = useState("profile");
@@ -152,11 +152,11 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
       <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 16 }}>Export Data</div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(180px,1fr))", gap: 12 }}>
         {[
-          { l: "Products", fn: () => dlCSV(toCSV(ctx.products, ["id", "name", "alias", "sku", "hsn", "mrp", "purchasePrice", "margin", "gstRate", "unit", "minStock", "categoryId", "description"]), "products") },
-          { l: "Sales Bills", fn: () => dlCSV(toCSV(ctx.bills.filter(b => b.type === "sale").map(b => ({ ...b, itemsSummary: b.items.map(i => `${i.productName} x${i.qty}`).join("|") })), ["billNo", "date", "channelId", "itemsSummary", "subtotal", "discAmount", "total", "notes"]), "sales_bills") },
-          { l: "Purchase Bills", fn: () => dlCSV(toCSV(ctx.bills.filter(b => b.type === "purchase").map(b => ({ ...b, itemsSummary: b.items.map(i => `${i.productName} x${i.qty}`).join("|") })), ["billNo", "date", "vendorId", "itemsSummary", "total", "notes"]), "purchase_bills") },
-          { l: "Transactions", fn: () => dlCSV(toCSV(ctx.transactions, ["date", "type", "productId", "qty", "price", "vendorId", "channelId", "userName", "billId", "notes"]), "transactions") },
-          { l: "Vendors", fn: () => dlCSV(toCSV(ctx.vendors, ["id", "name", "contact", "email", "city", "gstin"]), "vendors") },
+          { l: "Products", fn: () => dlCSV(toCSV((ctx.products||[]).map(p => ({ ...p, categoryName: (ctx.categories||[]).find(c=>c.id===p.categoryId)?.name||"" })), ["name", "alias", "sku", "hsn", "mrp", "purchasePrice", "margin", "gstRate", "unit", "minStock", "categoryName", "description"]), "products") },
+          { l: "Sales Bills", fn: () => dlCSV(toCSV((ctx.bills||[]).filter(b => b.type === "sale").map(b => ({ ...b, vendorName: (ctx.vendors||[]).find(v=>v.id===b.vendorId)?.name||"", itemsSummary: (b.items||[]).map(i => `${i.productName} x${i.qty} @₹${i.effectivePrice||i.price}`).join(" | ") })), ["billNo", "date", "vendorName", "gstType", "itemsSummary", "subtotal", "discAmount", "saleGstInfo", "total", "notes"]), "sales_bills") },
+          { l: "Purchase Bills", fn: () => dlCSV(toCSV((ctx.bills||[]).filter(b => b.type === "purchase").map(b => ({ ...b, vendorName: (ctx.vendors||[]).find(v=>v.id===b.vendorId)?.name||"", itemsSummary: (b.items||[]).map(i => `${i.productName} x${i.qty} @₹${i.price}`).join(" | ") })), ["billNo", "purchaseInvoiceNo", "date", "vendorName", "gstType", "itemsSummary", "subtotal", "totalGst", "total", "notes"]), "purchase_bills") },
+          { l: "Transactions", fn: () => dlCSV(toCSV((ctx.transactions||[]).map(t => ({ date: t.date, type: t.type, product: (ctx.products||[]).find(p=>p.id===t.productId)?.name||t.productId, sku: (ctx.products||[]).find(p=>p.id===t.productId)?.sku||"", qty: t.qty, price: t.price, effectivePrice: t.effectivePrice||t.price, gstRate: t.gstRate||"", gstAmount: t.gstAmount||"", value: Number(t.qty)*Number(t.effectivePrice||t.price), vendor: (ctx.vendors||[]).find(v=>v.id===t.vendorId)?.name||"", isDamaged: t.isDamaged||"", billId: t.billId||"", by: t.userName||"", notes: t.notes||"" })), ["date","type","product","sku","qty","price","effectivePrice","gstRate","gstAmount","value","vendor","isDamaged","billId","by","notes"]), "transactions") },
+          { l: "Vendors", fn: () => dlCSV(toCSV((ctx.vendors||[]), ["name", "contact", "phone", "email", "gstin", "address1", "address2", "city", "state", "pincode", "notes"]), "vendors") },
           { l: "Activity Log", fn: () => dlCSV(toCSV(ctx.actLog, ["ts", "userName", "role", "action", "entity", "entityName"]), "activity") },
           { l: "Change Requests", fn: () => dlCSV(toCSV(ctx.changeReqs, ["ts", "requestedByName", "entity", "action", "entityName", "status", "reviewedByName"]), "change_requests") },
         ].map((item, i) => <button key={i} onClick={item.fn} className="btn-ghost" style={{ padding: 16, borderRadius: 12, flexDirection: "column", gap: 10, alignItems: "flex-start", border: `1px solid ${T.borderSubtle}`, cursor: "pointer" }}>
