@@ -229,7 +229,7 @@ ${pages.join("\n")}
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
           <thead><tr>
             <th className="th" style={{ width: 36 }}>
-              <input type="checkbox" className="cb" checked={saleBills.slice((pg-1)*ps,pg*ps).length>0&&saleBills.slice((pg-1)*ps,pg*ps).every(b=>selBills.has(b.id))} onChange={e=>{ const paged=saleBills.slice((pg-1)*ps,pg*ps); if(e.target.checked){setSelBills(s=>{const n=new Set(s);paged.forEach(b=>n.add(b.id));return n;});}else{setSelBills(s=>{const n=new Set(s);paged.forEach(b=>n.delete(b.id));return n;});}}} />
+              <input type="checkbox" className="cb" checked={saleBills.length>0&&saleBills.every(b=>selBills.has(b.id))} onChange={e=>{if(e.target.checked){setSelBills(new Set(saleBills.map(b=>b.id)));}else{setSelBills(new Set());}}} />
             </th>
             {["Bill No", "Date", "Vendor", "Items", "Subtotal", "Disc", "GST", "Total", ""].map((h, i) => (
               <th key={i} className="th" style={{ textAlign: ["Subtotal", "Disc", "GST", "Total"].includes(h) ? "right" : "left" }}>{h.toUpperCase()}</th>
