@@ -3,7 +3,7 @@ import { Plus, X, Eye, Trash2, Send, Edit2, TrendingUp, DollarSign, FileText, Pa
 import { useT } from "../theme";
 import { KCard, GBtn, GIn, GS, Field, Modal, Pager } from "../components/UI";
 import BillForm from "../components/BillForm";
-import InvoiceModal from "../components/InvoiceModal";
+import InvoiceModal, { buildHTML } from "../components/InvoiceModal";
 import { uid, today, fmtCur, fmtDate, inRange, calcBillGst } from "../utils";
 
 const PRESETS = [
@@ -72,54 +72,57 @@ export default function Sales({ ctx }) {
 
   const pp = pid => Number(products.find(pr => pr.id === pid)?.purchasePrice || 0);
 
-  // ── Bulk invoice download ─────────────────────────────────────────────────
+  // ── Bulk invoice download — uses same buildHTML as single invoice ───────
   const downloadBulkInvoices = () => {
     const selected = saleBills.filter(b => selBills.has(b.id));
     if (selected.length === 0) return;
-    // Dynamically import buildHTML from InvoiceModal
+
+    // Build each invoice HTML using the same function as single view
     const pages = selected.map((b, idx) => {
       const vendor = (vendors||[]).find(v => v.id === b.vendorId) || null;
-      const inv = invoiceSettings || {};
-      const isIGST = (b.gstType || "cgst_sgst") === "igst";
-      const dateStr = b.date ? new Date(b.date).toLocaleDateString("en-IN",{day:"2-digit",month:"long",year:"numeric"}) : "";
-      const itemsData = (b.items||[]).map(it => {
-        const rate = Number(it.gstRate||0), effPrice = Number(it.effectivePrice||it.price||0), qty = Number(it.qty||0);
-        const taxablePerUnit = rate>0 ? effPrice*100/(100+rate) : effPrice;
-        return { ...it, taxablePerUnit, taxableTotal: qty*taxablePerUnit, gstTotal: qty*effPrice-qty*taxablePerUnit, rate, effPrice, qty };
-      });
-      const grandTaxable = itemsData.reduce((s,i)=>s+i.taxableTotal,0);
-      const grandGst = itemsData.reduce((s,i)=>s+i.gstTotal,0);
-      const grandTotal = Number(b.total||0);
-      const gstByRate = {};
-      itemsData.forEach(it => { if(!it.rate)return; if(!gstByRate[it.rate])gstByRate[it.rate]={taxable:0,gst:0}; gstByRate[it.rate].taxable+=it.taxableTotal; gstByRate[it.rate].gst+=it.gstTotal; });
-      const billToLines = vendor ? [
-        `<strong>${vendor.name}</strong>`,
-        [vendor.address1,vendor.address2].filter(Boolean).join(", "),
-        [vendor.city,vendor.state,vendor.pincode].filter(Boolean).join(", "),
-        vendor.gstin?`GSTIN: <strong>${vendor.gstin}</strong>`:"",
-        vendor.phone?`Ph: ${vendor.phone}`:"",
-      ].filter(Boolean) : [];
-      const gstRows = Object.entries(gstByRate).map(([r,v])=>isIGST?`<tr><td>IGST @${r}%</td><td style="text-align:right">₹${v.gst.toFixed(2)}</td></tr>`:`<tr><td>CGST @${(r/2).toFixed(1)}%</td><td style="text-align:right">₹${(v.gst/2).toFixed(2)}</td></tr><tr><td>SGST @${(r/2).toFixed(1)}%</td><td style="text-align:right">₹${(v.gst/2).toFixed(2)}</td></tr>`).join("");
-      const itemRows = itemsData.map((it,i)=>`<tr><td>${i+1}</td><td><b>${it.productName||""}</b>${it.hsn?`<br/><small>HSN: ${it.hsn}</small>`:""}</td><td>${it.unit||"Pcs"}</td><td style="text-align:right">${it.qty}</td><td style="text-align:right">₹${it.taxablePerUnit.toFixed(2)}</td><td style="text-align:right">₹${it.taxableTotal.toFixed(2)}</td><td style="text-align:right"><b>₹${(it.qty*it.effPrice).toFixed(2)}</b></td></tr>`).join("");
-      return `<div style="page-break-after:${idx<selected.length-1?"always":"auto"};font-family:Arial,sans-serif;font-size:12px;padding:24px;max-width:794px;margin:0 auto">
-        <div style="display:flex;justify-content:space-between;border-bottom:2px solid #333;padding-bottom:12px;margin-bottom:12px">
-          <div>${inv.logoUrl?`<img src="${inv.logoUrl}" style="height:48px" alt="logo"/><br/>`:""}<b style="font-size:18px;color:#B5541A">${inv.businessName||"Your Business"}</b><br/><span style="font-size:11px;color:#555">${[inv.address1,inv.city,inv.state].filter(Boolean).join(", ")}${inv.gstin?`<br/>GSTIN: ${inv.gstin}`:""}</span></div>
-          <div style="text-align:right"><b style="font-size:20px;letter-spacing:2px;color:#B5541A">TAX INVOICE</b><br/><b>No:</b> ${b.billNo||"—"}<br/><b>Date:</b> ${dateStr}<br/><span style="background:#e8f0fe;padding:2px 8px;border-radius:99px;font-size:10px">${isIGST?"IGST":"CGST+SGST"}</span></div>
-        </div>
-        <div style="display:flex;gap:0;border:1px solid #ddd;margin-bottom:12px">
-          <div style="flex:1;padding:10px;border-right:1px solid #ddd"><b style="font-size:10px;color:#888;text-transform:uppercase">Bill To</b><br/>${billToLines.join("<br/>")}</div>
-          <div style="flex:1;padding:10px"><b style="font-size:10px;color:#888;text-transform:uppercase">Ship To</b><br/>${billToLines.join("<br/>")}</div>
-        </div>
-        <table style="width:100%;border-collapse:collapse;margin-bottom:0"><thead><tr style="background:#f0f0f0"><th style="padding:6px;text-align:left;border:1px solid #ddd">#</th><th style="padding:6px;text-align:left;border:1px solid #ddd">Description</th><th style="padding:6px;border:1px solid #ddd">Unit</th><th style="padding:6px;text-align:right;border:1px solid #ddd">Qty</th><th style="padding:6px;text-align:right;border:1px solid #ddd">Rate (ex-GST)</th><th style="padding:6px;text-align:right;border:1px solid #ddd">Taxable</th><th style="padding:6px;text-align:right;border:1px solid #ddd">Total</th></tr></thead><tbody>${itemRows}</tbody><tfoot><tr style="background:#f9f9f9;font-weight:700"><td colspan="5" style="text-align:right;padding:6px">Totals</td><td style="text-align:right;padding:6px">₹${grandTaxable.toFixed(2)}</td><td style="text-align:right;padding:6px">₹${grandTotal.toFixed(2)}</td></tr></tfoot></table>
-        <div style="display:flex;border:1px solid #ddd;border-top:none">
-          <div style="flex:1;padding:10px;border-right:1px solid #ddd;font-size:11px"><b>GST Summary</b><table style="width:100%;margin-top:4px">${gstRows}<tr style="font-weight:700"><td>Total GST</td><td style="text-align:right">₹${grandGst.toFixed(2)}</td></tr></table></div>
-          <div style="min-width:220px;padding:10px"><table style="width:100%;font-size:12px"><tr><td>Subtotal (ex-GST)</td><td style="text-align:right">₹${grandTaxable.toFixed(2)}</td></tr>${Number(b.discAmount||0)>0?`<tr><td style="color:#c00">Discount</td><td style="text-align:right;color:#c00">-₹${Number(b.discAmount).toFixed(2)}</td></tr>`:""}<tr><td>Total GST</td><td style="text-align:right">₹${grandGst.toFixed(2)}</td></tr><tr style="font-weight:900;font-size:15px;color:#B5541A;border-top:2px solid #B5541A"><td>Grand Total</td><td style="text-align:right">₹${grandTotal.toFixed(2)}</td></tr></table></div>
-        </div>
-        ${inv.bankName||inv.upiId?`<div style="margin-top:12px;padding:8px;background:#fafafa;border:1px solid #ddd;font-size:11px"><b>Bank:</b> ${inv.bankName||""} | <b>A/C:</b> ${inv.bankAccount||""} | <b>IFSC:</b> ${inv.ifsc||""} | <b>UPI:</b> ${inv.upiId||""}</div>`:""}
-      </div>`;
+      const html = buildHTML(b, invoiceSettings || {}, vendor);
+      // Extract just the body content and wrap with page-break
+      const bodyMatch = html.match(/<body>([\s\S]*?)<\/body>/i);
+      const bodyContent = bodyMatch ? bodyMatch[1] : html;
+      const isLast = idx === selected.length - 1;
+      return `<div class="invoice-page${isLast ? "" : " break-after"}">${bodyContent}</div>`;
     });
-    const win = window.open("","_blank","width=900,height=700");
-    if(win){ win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>Invoices</title><style>@page{size:A4;margin:0}body{margin:0}@media print{.no-print{display:none}}</style></head><body>${pages.join("")}</body></html>`); win.document.close(); win.focus(); setTimeout(()=>win.print(),600); }
+
+    // Combine into single printable document
+    const combined = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8"/>
+<title>Invoices (${selected.length})</title>
+<style>
+  @page { size: A4; margin: 12mm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; background: #fff; }
+  .invoice-page { width: 100%; position: relative; }
+  .break-after { page-break-after: always; break-after: page; margin-bottom: 0; }
+  /* Ensure table headers repeat on multi-page invoices */
+  table.items thead { display: table-header-group; }
+  table.items tfoot { display: table-footer-group; }
+  /* Header/footer repeat on each physical page via fixed positioning */
+  @media print {
+    .no-print { display: none !important; }
+    .invoice-page { page-break-inside: auto; }
+    .break-after { page-break-after: always; }
+  }
+</style>
+</head>
+<body>
+${pages.join("\n")}
+</body>
+</html>`;
+
+    const win = window.open("", "_blank", "width=900,height=700");
+    if (win) {
+      win.document.write(combined);
+      win.document.close();
+      win.focus();
+      setTimeout(() => win.print(), 600);
+    }
     setSelBills(new Set());
   };
 
@@ -218,7 +221,7 @@ export default function Sales({ ctx }) {
         <div style={{ marginBottom: 10, padding: "8px 14px", borderRadius: 10, background: T.accentBg, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
           <span style={{ fontSize: 12, fontWeight: 600, color: T.accent }}>{selBills.size} selected</span>
           <GBtn sz="sm" onClick={downloadBulkInvoices} icon={<Download size={13} />}>Download {selBills.size} Invoice{selBills.size!==1?"s":""}</GBtn>
-          <GBtn v="danger" sz="sm" onClick={() => { if(isManager){if(window.confirm(`Request admin to delete ${selBills.size} bills?`)){saleBills.filter(b=>selBills.has(b.id)).forEach(b=>addChangeReq({entity:'sale',action:'delete',entityId:b.id,entityName:b.billNo,currentData:b,proposedData:null}));setSelBills(new Set());}}else if(window.confirm(`Delete ${selBills.size} bills?`)){saleBills.filter(b=>selBills.has(b.id)).forEach(b=>{saveBills(bills.filter(x=>x.id!==b.id));saveTransactions(transactions.filter(t=>t.billId!==b.id));});setSelBills(new Set());}}} icon={<Trash2 size={13} />}>{isManager?"Request Delete":"Delete Selected"}</GBtn>
+          <GBtn v="danger" sz="sm" onClick={() => { if(isManager){if(window.confirm(`Request admin to delete ${selBills.size} bills?`)){saleBills.filter(b=>selBills.has(b.id)).forEach(b=>addChangeReq({entity:'sale',action:'delete',entityId:b.id,entityName:b.billNo,currentData:b,proposedData:null}));setSelBills(new Set());}}else if(window.confirm(`Delete ${selBills.size} bills?`)){const toDelIds=new Set(selBills);saveBills(bills.filter(x=>!toDelIds.has(x.id)));saveTransactions(transactions.filter(t=>!toDelIds.has(t.billId)));setSelBills(new Set());}}} icon={<Trash2 size={13} />}>{isManager?"Request Delete":"Delete Selected"}</GBtn>
           <button onClick={() => setSelBills(new Set())} style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", fontSize: 11, color: T.textMuted }}>Clear</button>
         </div>
       )}
