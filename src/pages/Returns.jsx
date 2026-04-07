@@ -41,14 +41,13 @@ export default function Returns({ ctx }) {
   // ── Form state ──────────────────────────────────────────────────────────
   const [form, setForm] = useState({
     date: today(),
-    channelId: "",
     vendorId: "",
     gstType: "cgst_sgst",
     notes: "",
     items: [{ id: uid(), productId: "", qty: 1, price: "", isDamaged: false }]
   });
 
-  const resetForm = () => setForm({ date: today(), channelId: "", vendorId: "", gstType: "cgst_sgst", notes: "", items: [{ id: uid(), productId: "", qty: 1, price: "", isDamaged: false }] });
+  const resetForm = () => setForm({ date: today(), vendorId: "", gstType: "cgst_sgst", notes: "", items: [{ id: uid(), productId: "", qty: 1, price: "", isDamaged: false }] });
   const addItem = () => setForm(f => ({ ...f, items: [...f.items, { id: uid(), productId: "", qty: 1, price: "", isDamaged: false }] }));
   const remItem = id => setForm(f => ({ ...f, items: f.items.filter(i => i.id !== id) }));
   const upItem = (id, k, v) => setForm(f => ({
@@ -87,7 +86,6 @@ export default function Returns({ ctx }) {
           ? price * rate / (100 + rate) * Number(item.qty)
           : price * rate / 100 * Number(item.qty),
         vendorId: form.vendorId || null,
-        channelId: form.channelId || null,
         date: form.date,
         notes: form.notes || (returnType === "purchase_return" ? "Purchase return to vendor" : "Sales return from customer"),
         userId: user.id, userName: user.name,
