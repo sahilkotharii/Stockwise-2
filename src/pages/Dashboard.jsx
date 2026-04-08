@@ -129,7 +129,7 @@ export default function Dashboard({ ctx }) {
         </ResponsiveContainer>
       </div>
       <div className="glass" style={{ padding: 18, borderRadius: T.radius }}>
-        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 14 }}>🏆 Top Products</div>
+        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 14 }}> Top Products</div>
         {topProds.length === 0
           ? <div style={{ height: 160, display: "flex", alignItems: "center", justifyContent: "center", color: T.textMuted, fontSize: 13 }}>No sales yet</div>
           : <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
