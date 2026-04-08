@@ -203,26 +203,14 @@ export default function Returns({ ctx }) {
 
     {/* KPI Cards */}
     <div className="kgrid" style={{ gridTemplateColumns: "repeat(3,1fr)", gap: 14 }}>
-      <div className="kcard glass" style={{ cursor: "pointer" }} onClick={() => setTypeFilter(typeFilter === "sales_return" ? "all" : "sales_return")}>
-        <div style={{ position: "absolute", top: -20, right: -20, width: 70, height: 70, borderRadius: "50%", background: `${T.red}12` }} />
-        <div style={{ width: 36, height: 36, borderRadius: 10, background: `${T.red}1A`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 12 }}><RotateCcw size={17} color={T.red} /></div>
-        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 20, color: T.text }}>{fmtCur(salesRetValue)}</div>
-        <div style={{ fontSize: 12, fontWeight: 600, color: T.textSub, marginTop: 2 }}>Sales Returns</div>
-        <div style={{ fontSize:11, color: T.textMuted, marginTop: 3 }}>{salesRets.length} entries · {salesRets.reduce((s, t) => s + Number(t.qty), 0)} units</div>
+      <div onClick={() => setTypeFilter(typeFilter === "sales_return" ? "all" : "sales_return")} style={{ cursor: "pointer" }}>
+        <KCard label="Sales Returns" value={fmtCur(salesRetValue)} sub={`${salesRets.length} entries · ${salesRets.reduce((s,t)=>s+Number(t.qty),0)} units`} icon={RotateCcw} color={T.red} />
       </div>
-      <div className="kcard glass" style={{ cursor: "pointer" }} onClick={() => setTypeFilter(typeFilter === "purchase_return" ? "all" : "purchase_return")}>
-        <div style={{ position: "absolute", top: -20, right: -20, width: 70, height: 70, borderRadius: "50%", background: `${T.blue}12` }} />
-        <div style={{ width: 36, height: 36, borderRadius: 10, background: `${T.blue}1A`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 12 }}><Truck size={17} color={T.blue} /></div>
-        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 20, color: T.text }}>{fmtCur(purRetValue)}</div>
-        <div style={{ fontSize: 12, fontWeight: 600, color: T.textSub, marginTop: 2 }}>Purchase Returns</div>
-        <div style={{ fontSize:11, color: T.textMuted, marginTop: 3 }}>{purRets.length} entries · {purRets.reduce((s, t) => s + Number(t.qty), 0)} units</div>
+      <div onClick={() => setTypeFilter(typeFilter === "purchase_return" ? "all" : "purchase_return")} style={{ cursor: "pointer" }}>
+        <KCard label="Purchase Returns" value={fmtCur(purRetValue)} sub={`${purRets.length} entries · ${purRets.reduce((s,t)=>s+Number(t.qty),0)} units`} icon={Truck} color={T.blue} />
       </div>
-      <div className="kcard glass" style={{ cursor: "pointer" }} onClick={() => setTypeFilter(typeFilter === "damaged" ? "all" : "damaged")}>
-        <div style={{ position: "absolute", top: -20, right: -20, width: 70, height: 70, borderRadius: "50%", background: `${T.amber}12` }} />
-        <div style={{ width: 36, height: 36, borderRadius: 10, background: `${T.amber}1A`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 12 }}><AlertTriangle size={17} color={T.amber} /></div>
-        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 20, color: T.text }}>{totalDamagedUnits}</div>
-        <div style={{ fontSize: 12, fontWeight: 600, color: T.textSub, marginTop: 2 }}>Damaged in Inventory</div>
-        <div style={{ fontSize:11, color: T.textMuted, marginTop: 3 }}>Value: {fmtCur(damagedInvValue)} (ex-GST)</div>
+      <div onClick={() => setTypeFilter(typeFilter === "damaged" ? "all" : "damaged")} style={{ cursor: "pointer" }}>
+        <KCard label="Damaged in Inventory" value={String(totalDamagedUnits)} sub={`Value: ${fmtCur(damagedInvValue)} (ex-GST)`} icon={AlertTriangle} color={T.amber} />
       </div>
     </div>
 
@@ -250,7 +238,7 @@ export default function Returns({ ctx }) {
       <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 14 }}>Returns Log</div>
       <div className="filter-wrap" style={{ marginBottom: 12 }}>
         <div style={{ position: "relative", flex: "1 1 160px" }}>
-          <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: T.textMuted, fontSize: 12 }}></span>
+          
           <input className="inp" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search product, notes…" style={{ paddingLeft: 28 }} />
         </div>
         <div style={{ display: "flex", gap: 5 }}>
