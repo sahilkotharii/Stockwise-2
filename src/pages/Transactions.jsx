@@ -59,7 +59,7 @@ export default function Transactions({ ctx }) {
 
   return <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
-      <div className="glass" style={{ padding: "10px 14px", borderRadius: 12, fontSize: 12, color: T.textSub }}>📋 Raw transaction log — add Sales and Purchases from their dedicated pages</div>
+      <div className="glass" style={{ padding: "10px 14px", borderRadius: 12, fontSize: 12, color: T.textSub }}> Raw transaction log — add Sales and Purchases from their dedicated pages</div>
       {sel.size > 0 && user.role === "admin" && (
         <GBtn v="danger" sz="sm" icon={<Trash2 size={12} />} onClick={() => {
           if (window.confirm(`Delete ${sel.size} transactions?`)) {
@@ -117,7 +117,7 @@ export default function Transactions({ ctx }) {
                   </td>
                   <td className="td">
                     <span className="badge" style={{ background: `${tc}18`, color: tc, textTransform: "capitalize" }}>
-                      {typeLabel} {t.isDamaged ? "⚠" : ""}
+                      {typeLabel} {t.isDamaged ? "" : ""}
                     </span>
                   </td>
                   <td className="td r" style={{ fontWeight: 700 }}>{t.qty}</td>
