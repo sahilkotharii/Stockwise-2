@@ -254,7 +254,7 @@ ${sharedStyle}
                         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11 }}>
                           <thead><tr style={{ background: T.isDark?"rgba(255,255,255,0.04)":"rgba(0,0,0,0.04)" }}>
                             {["#","Description","HSN","Qty","Unit","Rate (ex-GST)","GST%","Line Total"].map((h,i) => (
-                              <th key={i} style={{ padding:"5px 8px", textAlign:["Qty","Rate (ex-GST)","GST%","Line Total"].includes(h)?"right":"left", fontWeight:700, fontSize:10, color:T.textMuted, letterSpacing:"0.04em", borderBottom:`1px solid ${T.borderSubtle}`, whiteSpace:"nowrap" }}>{h}</th>
+                              <th key={i} style={{ padding:"5px 8px", textAlign:["Qty","Rate (ex-GST)","GST%","Line Total"].includes(h)?"right":"left", fontWeight:700, fontSize:10, color:T.textMuted, background: T.isDark?"rgba(255,255,255,0.05)":"rgba(0,0,0,0.04)", letterSpacing:"0.04em", borderBottom:`1px solid ${T.borderSubtle}`, whiteSpace:"nowrap" }}>{h}</th>
                             ))}
                           </tr></thead>
                           <tbody>
