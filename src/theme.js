@@ -24,10 +24,13 @@ function buildTokens(accentKey = "copper", isDark = false, customColor = null) {
   const accentLight = accent + "CC";
   if (isDark) {
     return {
-      bg: "#0D0D0D", surface: "rgba(255,255,255,0.045)", surfaceStrong: "rgba(22,22,22,0.99)",
-      border: "rgba(255,255,255,0.08)", borderSubtle: "rgba(255,255,255,0.055)",
-      shadow: "0 4px 20px rgba(0,0,0,0.7)", shadowLg: "0 12px 40px rgba(0,0,0,0.8)", shadowXl: "0 24px 60px rgba(0,0,0,0.9)",
-      blur: "blur(24px)", accent, accentLight, accentDark: p.light, accentBg: accent + "22",
+      bg: "linear-gradient(145deg,#0a0a12 0%,#0d0d1a 40%,#120a1a 70%,#0a0d14 100%)",
+      surface: "rgba(255,255,255,0.06)", surfaceStrong: "rgba(255,255,255,0.11)",
+      border: "rgba(255,255,255,0.14)", borderSubtle: "rgba(255,255,255,0.07)",
+      shadow: "0 8px 32px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.08)",
+      shadowLg: "0 16px 48px rgba(0,0,0,0.75), inset 0 1px 0 rgba(255,255,255,0.10)",
+      shadowXl: "0 24px 64px rgba(0,0,0,0.85), inset 0 1px 0 rgba(255,255,255,0.12)",
+      blur: "saturate(180%) blur(40px)", accent, accentLight, accentDark: p.light, accentBg: accent + "22",
       text: "#EDEDED", textSub: "#BBBBBB", textMuted: "#888888",
       green: "#4ADE80", greenBg: "rgba(74,222,128,0.10)", blue: "#60A5FA", blueBg: "rgba(96,165,250,0.10)",
       red: "#F87171", redBg: "rgba(248,113,113,0.10)", amber: "#FBBF24", amberBg: "rgba(251,191,36,0.10)",
@@ -36,12 +39,14 @@ function buildTokens(accentKey = "copper", isDark = false, customColor = null) {
     };
   }
   return {
-    bg: "linear-gradient(135deg,#FDF3E9 0%,#F5E4CA 55%,#FDF0E8 100%)",
-    surface: "rgba(255,245,232,0.76)", surfaceStrong: "rgba(255,248,240,0.97)",
-    border: "rgba(255,245,232,0.90)", borderSubtle: accent + "18",
-    shadow: "0 4px 24px rgba(80,25,5,0.08)", shadowLg: "0 12px 48px rgba(80,25,5,0.11)", shadowXl: "0 24px 64px rgba(80,25,5,0.16)",
-    blur: "blur(20px)", accent, accentLight, accentDark, accentBg: accent + "18",
-    text: "#2C1204", textSub: "#6B3820", textMuted: "#A87A50",
+    bg: "linear-gradient(145deg,#e8f4f8 0%,#dde8f0 30%,#e4d5f5 60%,#f5e8e0 100%)",
+    surface: "rgba(255,255,255,0.18)", surfaceStrong: "rgba(255,255,255,0.72)",
+    border: "rgba(255,255,255,0.65)", borderSubtle: "rgba(255,255,255,0.35)",
+    shadow: "0 8px 32px rgba(0,0,40,0.08), inset 0 1px 0 rgba(255,255,255,0.8)", 
+    shadowLg: "0 16px 48px rgba(0,0,40,0.12), inset 0 1px 0 rgba(255,255,255,0.9)",
+    shadowXl: "0 24px 64px rgba(0,0,40,0.16), inset 0 1px 0 rgba(255,255,255,0.95)",
+    blur: "saturate(200%) blur(40px)", accent, accentLight, accentDark, accentBg: accent + "18",
+    text: "#1a1a2e", textSub: "#2d2d4a", textMuted: "#6b6b8a",
     green: "#16A34A", greenBg: "#DCFCE7", blue: "#2563EB", blueBg: "#DBEAFE",
     red: "#DC2626", redBg: "#FEE2E2", amber: "#D97706", amberBg: "#FEF3C7",
     purple: "#7C3AED", purpleBg: "#EDE9FE", cyan: "#0891B2",
@@ -54,10 +59,16 @@ function buildTokens(accentKey = "copper", isDark = false, customColor = null) {
 export const THEMES = {
   glass: {
     name: "Glass",
-    desc: "Frosted glass with gradients",
+    desc: "iOS26 liquid glass",
     icon: "◈",
-    light: (accent, cc) => ({ ...buildTokens(accent, false, cc) }),
-    dark:  (accent, cc) => ({ ...buildTokens(accent, true, cc) }),
+    light: (accent, cc) => {
+      const base = buildTokens(accent, false, cc);
+      return { ...base, isGlass: true, shimmer: "inset 0 1px 0 rgba(255,255,255,0.85), inset 0 -1px 0 rgba(255,255,255,0.15)" };
+    },
+    dark: (accent, cc) => {
+      const base = buildTokens(accent, true, cc);
+      return { ...base, isGlass: true, shimmer: "inset 0 1px 0 rgba(255,255,255,0.12), inset 0 -1px 0 rgba(0,0,0,0.3)" };
+    },
   },
   sharp: {
     name: "Sharp",
@@ -126,6 +137,7 @@ export const THEMES = {
         radius: "8px",
         radiusXl: "10px",
         sidebarBg: base.accent,
+        accentCard: true,
         text: "#18181B",
         textSub: "#3F3F46",
         textMuted: "#71717A",
@@ -148,6 +160,7 @@ export const THEMES = {
         radius: "8px",
         radiusXl: "10px",
         sidebarBg: base.accent,
+        accentCard: true,
         text: "#FAFAFA",
         textSub: "#A1A1AA",
         textMuted: "#71717A",
@@ -186,8 +199,8 @@ select option{background:${T.isDark?"#1a1a1a":"#fff"};color:${T.text}}
 @keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 .fade-up{animation:fadeUp .25s ease backwards}
-.glass{background:${T.surface};backdrop-filter:${T.blur};-webkit-backdrop-filter:${T.blur};border:1px solid ${T.border};box-shadow:${T.shadow}}
-.glass-strong{background:${T.surfaceStrong};backdrop-filter:${T.blur};-webkit-backdrop-filter:${T.blur};border:1px solid ${T.border};box-shadow:${T.shadowLg}}
+.glass{background:${T.surface};backdrop-filter:${T.blur};-webkit-backdrop-filter:${T.blur};border:1px solid ${T.border};box-shadow:${T.isGlass ? T.shadow + ", " + (T.shimmer||"none") : T.shadow}}
+.glass-strong{background:${T.surfaceStrong};backdrop-filter:${T.blur};-webkit-backdrop-filter:${T.blur};border:1px solid ${T.border};box-shadow:${T.isGlass ? T.shadowLg + ", " + (T.shimmer||"none") : T.shadowLg}}
 .btn-copper{background:${T.accent};color:#fff;border:${T.radius==="0px"?`2px solid ${T.accent}`:"none"};cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;border-radius:${T.radius};font-weight:600;transition:all .15s;box-shadow:${T.shadow};white-space:nowrap;letter-spacing:-0.01em}
 .btn-copper:hover{opacity:0.88;${T.radius!=="0px"?"transform:translateY(-1px)":""}}
 .btn-ghost{background:${T.isDark?"rgba(255,255,255,0.06)":"rgba(0,0,0,0.04)"};color:${T.textSub};border:1px solid ${T.border};cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;border-radius:${T.radius};font-weight:500;transition:all .15s;white-space:nowrap}
