@@ -129,13 +129,20 @@ export default function App() {
     setSyncSt("syncing");
     try {
       const data = await sheetsGet(url);
+      const fixDates = rows => rows.map(r => {
+        if (!r) return r;
+        const out = { ...r };
+        if (out.date) out.date = toYMD(out.date);
+        if (out.ts && typeof out.ts === "string" && out.ts.length > 10) out.ts = out.ts; // keep full ts
+        return out;
+      });
       if (data.products?.length) { setProducts(data.products); lsSet(SK.products, data.products); }
       if (data.categories?.length) { setCategories(data.categories); lsSet(SK.categories, data.categories); }
       if (data.vendors?.length) { setVendors(data.vendors); lsSet(SK.vendors, data.vendors); }
       if (data.channels?.length) { setChannels(data.channels); lsSet(SK.channels, data.channels); }
-      if (data.transactions?.length) { setTransactions(data.transactions); lsSet(SK.transactions, data.transactions); }
+      if (data.transactions?.length) { const rows = fixDates(data.transactions); setTransactions(rows); lsSet(SK.transactions, rows); }
       if (data.users?.length) { setUsers(data.users); lsSet(SK.users, data.users); }
-      if (data.bills?.length) { setBills(data.bills); lsSet(SK.bills, data.bills); }
+      if (data.bills?.length) { const rows = fixDates(data.bills); setBills(rows); lsSet(SK.bills, rows); }
       if (data.changeReqs?.length) { setChangeReqs(data.changeReqs); lsSet(SK.changeReqs, data.changeReqs); }
       // Merge actLog: keep local entries (like login events) not yet in Sheets
       if (data.actLog?.length) {
@@ -152,10 +159,21 @@ export default function App() {
   }
 
   // ── Enrich data with human-readable names before syncing to Sheets ───────
+  // Also normalises all date fields to YYYY-MM-DD to prevent full datetime strings
+  const toYMD = v => {
+    if (!v) return v;
+    if (typeof v === "string") {
+      if (/^\d{4}-\d{2}-\d{2}/.test(v)) return v.slice(0, 10);
+      const d = new Date(v); if (!isNaN(d)) return d.toISOString().split("T")[0];
+    }
+    if (v instanceof Date && !isNaN(v)) return v.toISOString().split("T")[0];
+    return v;
+  };
   function enrichForSync(entity, rows) {
     if (entity === "transactions") {
       return rows.map(t => ({
         ...t,
+        date: toYMD(t.date),
         productName: products.find(p => p.id === t.productId)?.name || "",
         vendorName:  vendors.find(v => v.id === t.vendorId)?.name || "",
       }));
@@ -163,6 +181,7 @@ export default function App() {
     if (entity === "bills") {
       return rows.map(b => ({
         ...b,
+        date: toYMD(b.date),
         vendorName: vendors.find(v => v.id === b.vendorId)?.name || "",
       }));
     }
