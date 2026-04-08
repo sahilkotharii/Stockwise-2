@@ -43,16 +43,33 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
   const [sessUser, setSessUser] = useState("");
   const pf = (k, v) => setPForm(p => ({ ...p, [k]: v }));
 
-  const saveProfile = () => {
+  const saveProfile = async () => {
     if (pForm.newPass && pForm.newPass !== pForm.confirmPass) { alert("Passwords don't match."); return; }
-    saveUsers(users.map(u => u.id === user.id ? { ...u, name: pForm.name, ...(pForm.newPass ? { password: pForm.newPass } : {}) } : u));
+    if (pForm.newPass && pForm.newPass.length < 6) { alert("Password must be at least 6 characters."); return; }
+    let update = { name: pForm.name };
+    if (pForm.newPass) {
+      const hashed = await hashPassword(pForm.newPass);
+      update.password = "sha256:" + hashed;
+    }
+    saveUsers(users.map(u => u.id === user.id ? { ...u, ...update } : u));
+    setPForm(p => ({ ...p, newPass: "", confirmPass: "" }));
     alert("Profile saved!");
   };
 
-  const saveUser = () => {
-    if (!uForm.username || !uForm.password || !uForm.name) return;
-    if (eu) saveUsers(users.map(u => u.id === eu ? { ...u, ...uForm } : u));
-    else saveUsers([...users, { id: uid(), ...uForm, createdAt: today(), lockedPages: [] }]);
+  const saveUser = async () => {
+    if (!uForm.username || !uForm.name) { alert("Username and name are required."); return; }
+    if (!eu && !uForm.password) { alert("Password is required for new users."); return; }
+    if (uForm.password && uForm.password.length < 6) { alert("Password must be at least 6 characters."); return; }
+    let finalForm = { ...uForm };
+    if (uForm.password && !uForm.password.startsWith("sha256:")) {
+      const hashed = await hashPassword(uForm.password);
+      finalForm.password = "sha256:" + hashed;
+    }
+    // Check username uniqueness
+    const exists = users.find(u => u.username === uForm.username && u.id !== eu);
+    if (exists) { alert("Username already taken."); return; }
+    if (eu) saveUsers(users.map(u => u.id === eu ? { ...u, ...finalForm } : u));
+    else saveUsers([...users, { id: uid(), ...finalForm, createdAt: today(), lockedPages: [] }]);
     setUModal(false);
   };
 
