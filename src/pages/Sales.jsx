@@ -142,6 +142,7 @@ ${sharedStyle}
       gstRate: item.gstRate || 0, gstAmount: item.gstAmount || 0,
       vendorId: updatedBill.vendorId, channelId: null, date: updatedBill.date,
       notes: `Bill: ${updatedBill.billNo} (edited)`,
+      gstType: updatedBill.gstType || "",
       userId: user.id, userName: user.name, billId: updatedBill.id, isDamaged: item.isDamaged
     }));
     saveBills(bills.map(b => b.id === updatedBill.id ? updatedBill : b));
