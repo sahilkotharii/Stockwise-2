@@ -56,7 +56,11 @@ export default function PnL({ ctx }) {
       (txnsByProduct[pid] || []).filter(t => {
         const d = safeDate(t.date);
         if (!d) return false;
-        return d < before;                      // strictly before period start
+        const type = t.type || "";
+        // Opening stock entries dated ON the period start count as the opening balance
+        // All other transaction types must be strictly before the period start
+        if (type === "opening") return d <= before;
+        return d < before;
       }).reduce((s, t) => {
         const type = t.type || "";
         if (["opening","purchase","return"].includes(type))      return s + (Number(t.qty)||0);
