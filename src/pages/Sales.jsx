@@ -4,7 +4,7 @@ import { useT } from "../theme";
 import { KCard, GBtn, GIn, GS, Field, Modal, Pager } from "../components/UI";
 import BillForm from "../components/BillForm";
 import InvoiceModal, { buildHTML } from "../components/InvoiceModal";
-import { uid, today, fmtCur, fmtDate, inRange, calcBillGst } from "../utils";
+import { uid, today, fmtCur, fmtDate, inRange, calcBillGst, safeDate } from "../utils";
 
 const PRESETS = [
   { k: "1d", l: "Today" }, { k: "7d", l: "7d" }, { k: "30d", l: "30d" },
@@ -50,7 +50,6 @@ export default function Sales({ ctx }) {
   const totalRevenueInclGst = periodSaleBills.reduce((s, b) => s + Number(b.total || 0), 0);
   const totalGstCollected = periodSaleBills.reduce((s, b) => s + calcBillGst(b), 0);
   const netRevenueExclGst = totalRevenueInclGst - totalGstCollected;
-  const totalOrders = periodSaleBills.length;
   const unitsSold = periodSaleBills.reduce((s, b) => s + (b.items || []).reduce((si, i) => si + Number(i.qty || 0), 0), 0);
 
   const retTxns = useMemo(() => transactions.filter(t => t.type === "return" && inRange(t.date, df, dt)), [transactions, df, dt]);
@@ -72,56 +71,47 @@ export default function Sales({ ctx }) {
 
   const pp = pid => Number(products.find(pr => pr.id === pid)?.purchasePrice || 0);
 
-  // ── Bulk invoice download — uses same buildHTML as single invoice ───────
+  // ── Bulk invoice download — same layout as single invoice PDF ────────────
   const downloadBulkInvoices = () => {
     const selected = saleBills.filter(b => selBills.has(b.id));
     if (selected.length === 0) return;
 
-    // Build each invoice HTML using the same function as single view
+    // buildHTML returns full HTML doc — extract just the .page div content
     const pages = selected.map((b, idx) => {
       const vendor = (vendors||[]).find(v => v.id === b.vendorId) || null;
       const html = buildHTML(b, invoiceSettings || {}, vendor);
-      // Extract just the body content and wrap with page-break
-      const bodyMatch = html.match(/<body>([\s\S]*?)<\/body>/i);
-      const bodyContent = bodyMatch ? bodyMatch[1] : html;
+      // Extract the content inside <div class="page">
+      const pageMatch = html.match(/<div class="page">([\s\S]*?)<\/div>\s*<\/body>/i);
+      const content = pageMatch ? pageMatch[1] : html.replace(/<html>[\s\S]*?<body>/, "").replace(/<\/body>[\s\S]*/, "");
       const isLast = idx === selected.length - 1;
-      return `<div class="invoice-page${isLast ? "" : " break-after"}">${bodyContent}</div>`;
+      return `<div class="page">${content}</div>${isLast ? "" : '<div style="page-break-after:always"></div>'}`;
     });
 
-    // Combine into single printable document
-    const combined = `<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8"/>
+    // Get the stylesheet from a single buildHTML call (shared across all pages)
+    const sampleHtml = buildHTML(selected[0], invoiceSettings || {}, (vendors||[]).find(v => v.id === selected[0].vendorId) || null);
+    const styleMatch = sampleHtml.match(/<style>([\s\S]*?)<\/style>/i);
+    const sharedStyle = styleMatch ? styleMatch[1] : "";
+
+    const combined = `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
 <title>Invoices (${selected.length})</title>
 <style>
-  @page { size: A4; margin: 12mm; }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: Arial, sans-serif; background: #fff; }
-  .invoice-page { width: 100%; position: relative; }
-  .break-after { page-break-after: always; break-after: page; margin-bottom: 0; }
-  /* Ensure table headers repeat on multi-page invoices */
-  table.items thead { display: table-header-group; }
-  table.items tfoot { display: table-footer-group; }
-  /* Header/footer repeat on each physical page via fixed positioning */
-  @media print {
-    .no-print { display: none !important; }
-    .invoice-page { page-break-inside: auto; }
-    .break-after { page-break-after: always; }
-  }
+${sharedStyle}
+/* Multi-invoice overrides */
+@page { size: A4; margin: 12mm; }
+.page { width: 794px; min-height: 1050px; margin: 0 auto; padding: 24px; display: flex; flex-direction: column; page-break-inside: avoid; }
+@media print {
+  .no-print { display: none !important; }
+  .page { page-break-inside: auto; break-inside: auto; }
+}
 </style>
-</head>
-<body>
-${pages.join("\n")}
-</body>
-</html>`;
+</head><body>${pages.join("\n")}</body></html>`;
 
     const win = window.open("", "_blank", "width=900,height=700");
     if (win) {
       win.document.write(combined);
       win.document.close();
       win.focus();
-      setTimeout(() => win.print(), 600);
+      setTimeout(() => win.print(), 800);
     }
     setSelBills(new Set());
   };
@@ -188,13 +178,12 @@ ${pages.join("\n")}
       <GBtn sz="md" onClick={() => setModal(true)} icon={<Plus size={14} />}>New Sale Bill</GBtn>
     </div>
 
-    {/* KPI Cards — 4 cards */}
+    {/* KPI Cards — 3 cards */}
     <div className="kgrid" style={{ gap: 12 }}>
       {[
-        { label: "Total Sales", value: finalRevenue, sub: "incl. GST · after returns", icon: TrendingUp, color: T.green },
-        { label: "Net Sales", value: finalNetExclGst, sub: "excl. GST · after returns", icon: DollarSign, color: T.accent },
-        { label: "Orders", value: totalOrders, sub: "sale bills in period", icon: FileText, color: T.blue, noFmt: true },
-        { label: "Units Sold", value: unitsSold, sub: "total qty in bills", icon: Package, color: T.purple, noFmt: true },
+        { label: "Total Sales", value: totalRevenueInclGst, sub: "incl. GST · all bills", icon: TrendingUp, color: T.green },
+        { label: "Net Sales", value: netRevenueExclGst, sub: "excl. GST · all bills", icon: DollarSign, color: T.accent },
+        { label: "Units Sold", value: unitsSold, sub: "total qty across bills", icon: Package, color: T.purple, noFmt: true },
       ].map((k, i) => (
         <div key={i} className="kcard glass">
           <div style={{ position: "absolute", top: -20, right: -20, width: 70, height: 70, borderRadius: "50%", background: `${k.color}12` }} />
