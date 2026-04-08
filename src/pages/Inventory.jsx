@@ -1,7 +1,7 @@
-import React, { useState, useMemo, useRef } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import { Box, CheckCircle, AlertTriangle, AlertOctagon, Download, Search, Edit2, X, Plus, Layers, Upload, DollarSign } from "lucide-react";
 import { useT } from "../theme";
-import { KCard, GBtn, GS, GIn, Field, Modal, StChip } from "../components/UI";
+import { KCard, GBtn, GS, GIn, Field, Modal, StChip, Pager } from "../components/UI";
 import { fmtCur, toCSV, dlCSV, uid, today, calcMgn } from "../utils";
 
 export default function Inventory({ ctx }) {
@@ -12,6 +12,9 @@ export default function Inventory({ ctx }) {
   const [catF, setCatF] = useState("");
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState("stock");
+  const [pg, setPg] = useState(1);
+  const [ps, setPs] = useState(50);
+  useEffect(() => setPg(1), [search, catF, sortBy]);
 
   // ── Bulk Opening Stock CSV ──────────────────────────────────────────────
   const csvRef = useRef(null);
@@ -220,7 +223,7 @@ export default function Inventory({ ctx }) {
             </tr>
           </thead>
           <tbody>
-            {filtered.map(p => {
+            {filtered.slice((pg-1)*ps, pg*ps).map(p => {
               const cat = categories.find(c => c.id === p.categoryId);
               return (
                 <tr key={p.id} className="trow">
