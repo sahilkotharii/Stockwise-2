@@ -123,7 +123,7 @@ ${sharedStyle}
       qty: item.qty, price: item.effectivePrice || item.price,
       effectivePrice: item.effectivePrice || item.price,
       gstRate: item.gstRate || 0, gstAmount: item.gstAmount || 0,
-      vendorId: bill.vendorId, channelId: null, date: bill.date,
+      vendorId: bill.vendorId, date: bill.date,
       notes: `Bill: ${bill.billNo}${bill.notes ? ` · ${bill.notes}` : ""}`,
       userId: user.id, userName: user.name, billId: bill.id, isDamaged: item.isDamaged
     }));
@@ -140,7 +140,7 @@ ${sharedStyle}
       qty: item.qty, price: item.effectivePrice || item.price,
       effectivePrice: item.effectivePrice || item.price,
       gstRate: item.gstRate || 0, gstAmount: item.gstAmount || 0,
-      vendorId: updatedBill.vendorId, channelId: null, date: updatedBill.date,
+      vendorId: updatedBill.vendorId, date: updatedBill.date,
       notes: `Bill: ${updatedBill.billNo} (edited)`,
       gstType: updatedBill.gstType || "",
       userId: user.id, userName: user.name, billId: updatedBill.id, isDamaged: item.isDamaged
