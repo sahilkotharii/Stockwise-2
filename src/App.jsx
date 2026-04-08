@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Layers } from "lucide-react";
 
-import { COPPER, DARK, ThemeCtx, makeCSS } from "./theme";
+import { buildTheme, ThemeCtx, makeCSS, THEMES, ACCENT_PRESETS } from "./theme";
 import { SK, lsGet, lsSet } from "./storage";
 import { sheetsGet, syncEnt } from "./sheets";
 import { uid, today } from "./utils";
@@ -307,7 +307,8 @@ export default function App() {
     getStock, saveProducts, saveCategories, saveVendors, saveTransactions,
     saveChannels, saveUsers, saveBills, changeReqs, saveChangeReqs,
     actLog, saveActLog, addChangeReq, addLog,
-    invoiceSettings, saveInvoiceSettings
+    invoiceSettings, saveInvoiceSettings,
+    themeId, setTheme, accentKey, setAccent, THEMES, ACCENT_PRESETS,
   };
 
   const T = theme;
