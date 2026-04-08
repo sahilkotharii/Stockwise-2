@@ -190,7 +190,7 @@ export default function Purchase({ ctx }) {
             {purBills.slice((pg - 1) * ps, pg * ps).map(b => {
               const v = vendors.find(x => x.id === b.vendorId);
               return <React.Fragment key={b.id}>
-                <tr className={`trow${selBills.has(b.id)?" sel":""}`} onClick={()=>tgBill(b.id)} style={{cursor:"pointer"}}>
+                <tr className={`trow${selBills.has(b.id)?" sel":""}`}>
                   <td className="td" onClick={e=>e.stopPropagation()}><input type="checkbox" className="cb" checked={selBills.has(b.id)} onChange={()=>tgBill(b.id)}/></td>
                   <td className="td" style={{ fontWeight: 600, color: T.blue }}>{b.billNo}</td>
                   <td className="td m">{fmtDate(b.date)}</td>
