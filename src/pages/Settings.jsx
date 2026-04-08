@@ -19,7 +19,7 @@ const LOCKABLE = [
 
 export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onTest }) {
   const T = useT();
-  const { users, saveUsers, user, actLog, invoiceSettings, saveInvoiceSettings } = ctx;
+  const { users, saveUsers, user, actLog, saveActLog, invoiceSettings, saveInvoiceSettings } = ctx;
   const isAdmin = user.role === "admin";
   const tabs = isAdmin ? ["profile", "users", "series", "access", "export", "activity", "sessions", "invoice", "sheets"] : ["profile"];
   const [tab, setTab] = useState("profile");
@@ -33,6 +33,14 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
   const [invForm, setInvForm] = useState(invoiceSettings || {});
 
   const [pForm, setPForm] = useState({ name: user.name, newPass: "", confirmPass: "" });
+
+  // ── Activity + Login History filters ──────────────────────────────────────
+  const [logDf, setLogDf] = useState("");
+  const [logDt, setLogDt] = useState("");
+  const [logUser, setLogUser] = useState("");
+  const [sessDf, setSessDf] = useState("");
+  const [sessDt, setSessDt] = useState("");
+  const [sessUser, setSessUser] = useState("");
   const pf = (k, v) => setPForm(p => ({ ...p, [k]: v }));
 
   const saveProfile = () => {
@@ -168,48 +176,88 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
       </div>
     </div>}
 
-    {tab === "activity" && <div className="glass" style={{ padding: 20, borderRadius: T.radius }}>
-      <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 16 }}>Activity Log</div>
-      {myLog.length === 0
-        ? <div style={{ padding: "32px 0", textAlign: "center", color: T.textMuted }}>No activity yet</div>
-        : <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-          {myLog.slice(0, 100).map((l, i) => <div key={l.id || i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "9px 12px", borderRadius: 10, background: T.isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.025)" }}>
-            <div style={{ width: 30, height: 30, borderRadius: 7, background: `${T.accent}14`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Activity size={13} color={T.accent} /></div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: T.text }}>
-                <span style={{ color: l.role === "admin" ? T.accent : T.blue }}>{l.userName}</span>{" "}
-                <span style={{ textTransform: "capitalize", color: T.textSub }}>{l.action}</span>{" "}
-                <strong>{l.entityName}</strong>
-              </div>
-            </div>
-            <div style={{ fontSize: 10, color: T.textMuted, flexShrink: 0, whiteSpace: "nowrap" }}>{fmtTs(l.ts)}</div>
-          </div>)}
-        </div>}
-    </div>}
-
-    {tab === "sessions" && isAdmin && <div className="glass" style={{ padding: 20, borderRadius: T.radius }}>
-      <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 4 }}>Login History</div>
-      <div style={{ fontSize: 12, color: T.textMuted, marginBottom: 16 }}>All login events across users, most recent first.</div>
-      {actLog.filter(l => l.action === "login").length === 0
-        ? <div style={{ padding: "32px 0", textAlign: "center", color: T.textMuted }}>No login history yet</div>
-        : <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          {actLog.filter(l => l.action === "login").slice(0, 100).map((l, i) => (
-            <div key={l.id || i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderRadius: 10, background: T.isDark ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.6)", border: `1px solid ${T.borderSubtle}` }}>
-              <div style={{ width: 34, height: 34, borderRadius: 9, background: l.role === "admin" ? `${T.accent}18` : `${T.blue}18`, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 13, color: l.role === "admin" ? T.accent : T.blue, flexShrink: 0 }}>
-                {(l.userName || "?")[0]}
-              </div>
+    {tab === "activity" && (() => {
+      const filtered = myLog.filter(l => {
+        if (logUser && !l.userName?.toLowerCase().includes(logUser.toLowerCase())) return false;
+        if (logDf && l.ts?.slice(0,10) < logDf) return false;
+        if (logDt && l.ts?.slice(0,10) > logDt) return false;
+        return true;
+      });
+      return <div className="glass" style={{ padding: 20, borderRadius: T.radius }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, flexWrap: "wrap", gap: 10 }}>
+          <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text }}>Activity Log</div>
+          {isAdmin && <GBtn v="danger" sz="sm" onClick={() => { if(window.confirm("Clear all activity log entries? This cannot be undone.")) { saveActLog([]); } }} icon={<X size={12}/>}>Clear All</GBtn>}
+        </div>
+        <div className="filter-wrap" style={{ marginBottom: 14 }}>
+          <input className="inp" value={logUser} onChange={e=>setLogUser(e.target.value)} placeholder="Filter by user…" style={{ flex:"1 1 120px" }}/>
+          <input type="date" className="inp" value={logDf} onChange={e=>setLogDf(e.target.value)} style={{ flex:"0 1 120px" }}/>
+          <span style={{ fontSize:12, color:T.textMuted }}>→</span>
+          <input type="date" className="inp" value={logDt} onChange={e=>setLogDt(e.target.value)} style={{ flex:"0 1 120px" }}/>
+          {(logUser||logDf||logDt) && <GBtn v="ghost" sz="sm" onClick={()=>{setLogUser("");setLogDf("");setLogDt("");}}>Clear</GBtn>}
+          <span style={{ fontSize:11, color:T.textMuted, marginLeft:"auto" }}>{filtered.length} entries</span>
+        </div>
+        {filtered.length === 0
+          ? <div style={{ padding: "32px 0", textAlign: "center", color: T.textMuted }}>No activity matching filters</div>
+          : <div style={{ display: "flex", flexDirection: "column", gap: 5, maxHeight: 400, overflowY: "auto" }}>
+            {filtered.slice(0, 200).map((l, i) => <div key={l.id || i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "9px 12px", borderRadius: 10, background: T.isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.025)" }}>
+              <div style={{ width: 30, height: 30, borderRadius: 7, background: `${T.accent}14`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Activity size={13} color={T.accent} /></div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{l.userName}</div>
-                <div style={{ fontSize: 11, color: T.textMuted, marginTop: 1, textTransform: "capitalize" }}>{l.role}</div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: T.text }}>
+                  <span style={{ color: l.role === "admin" ? T.accent : T.blue }}>{l.userName}</span>{" "}
+                  <span style={{ textTransform: "capitalize", color: T.textSub }}>{l.action}</span>{" "}
+                  <strong>{l.entityName}</strong>
+                </div>
+                {l.details && <div style={{ fontSize: 10, color: T.textMuted, marginTop: 1 }}>{l.details}</div>}
               </div>
-              <div style={{ textAlign: "right", flexShrink: 0 }}>
-                <div style={{ fontSize: 11, color: T.textSub }}>{fmtTs(l.ts)}</div>
-                <div style={{ fontSize: 10, color: T.textMuted, marginTop: 1 }}>{new Date(l.ts).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</div>
+              <div style={{ fontSize: 10, color: T.textMuted, flexShrink: 0, whiteSpace: "nowrap" }}>{fmtTs(l.ts)}</div>
+            </div>)}
+          </div>}
+      </div>;
+    })()}
+
+    {tab === "sessions" && isAdmin && (() => {
+      const allLogins = actLog.filter(l => l.action === "login");
+      const filteredLogins = allLogins.filter(l => {
+        if (sessUser && !l.userName?.toLowerCase().includes(sessUser.toLowerCase())) return false;
+        if (sessDf && l.ts?.slice(0,10) < sessDf) return false;
+        if (sessDt && l.ts?.slice(0,10) > sessDt) return false;
+        return true;
+      });
+      return <div className="glass" style={{ padding: 20, borderRadius: T.radius }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6, flexWrap: "wrap", gap: 10 }}>
+          <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text }}>Login History</div>
+          <GBtn v="danger" sz="sm" onClick={() => { if(window.confirm("Clear all login history? This cannot be undone.")) { saveActLog(actLog.filter(l => l.action !== "login")); } }} icon={<X size={12}/>}>Clear History</GBtn>
+        </div>
+        <div style={{ fontSize: 12, color: T.textMuted, marginBottom: 12 }}>All login events · most recent first</div>
+        <div className="filter-wrap" style={{ marginBottom: 14 }}>
+          <input className="inp" value={sessUser} onChange={e=>setSessUser(e.target.value)} placeholder="Filter by name…" style={{ flex:"1 1 120px" }}/>
+          <input type="date" className="inp" value={sessDf} onChange={e=>setSessDf(e.target.value)} style={{ flex:"0 1 120px" }}/>
+          <span style={{ fontSize:12, color:T.textMuted }}>→</span>
+          <input type="date" className="inp" value={sessDt} onChange={e=>setSessDt(e.target.value)} style={{ flex:"0 1 120px" }}/>
+          {(sessUser||sessDf||sessDt) && <GBtn v="ghost" sz="sm" onClick={()=>{setSessUser("");setSessDf("");setSessDt("");}}>Clear</GBtn>}
+          <span style={{ fontSize:11, color:T.textMuted, marginLeft:"auto" }}>{filteredLogins.length} of {allLogins.length}</span>
+        </div>
+        {filteredLogins.length === 0
+          ? <div style={{ padding: "32px 0", textAlign: "center", color: T.textMuted }}>No login history matching filters</div>
+          : <div style={{ display: "flex", flexDirection: "column", gap: 6, maxHeight: 400, overflowY: "auto" }}>
+            {filteredLogins.slice(0, 200).map((l, i) => (
+              <div key={l.id || i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderRadius: 10, background: T.isDark ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.6)", border: `1px solid ${T.borderSubtle}` }}>
+                <div style={{ width: 34, height: 34, borderRadius: 9, background: l.role === "admin" ? `${T.accent}18` : `${T.blue}18`, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 13, color: l.role === "admin" ? T.accent : T.blue, flexShrink: 0 }}>
+                  {(l.userName || "?")[0]}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{l.userName}</div>
+                  <div style={{ fontSize: 11, color: T.textMuted, marginTop: 1, textTransform: "capitalize" }}>{l.role}</div>
+                </div>
+                <div style={{ textAlign: "right", flexShrink: 0 }}>
+                  <div style={{ fontSize: 11, color: T.textSub }}>{fmtTs(l.ts)}</div>
+                  <div style={{ fontSize: 10, color: T.textMuted, marginTop: 1 }}>{new Date(l.ts).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}</div>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>}
-    </div>}
+            ))}
+          </div>}
+      </div>;
+    })()}
 
     {tab === "invoice" && isAdmin && <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       <div className="glass" style={{ padding: 20, borderRadius: T.radius }}>
