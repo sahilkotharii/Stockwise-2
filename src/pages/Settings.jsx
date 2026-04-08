@@ -57,20 +57,36 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
   };
 
   const saveUser = async () => {
-    if (!uForm.username || !uForm.name) { alert("Username and name are required."); return; }
-    if (!eu && !uForm.password) { alert("Password is required for new users."); return; }
-    if (uForm.password && uForm.password.length < 6) { alert("Password must be at least 6 characters."); return; }
-    let finalForm = { ...uForm };
-    if (uForm.password && !uForm.password.startsWith("sha256:")) {
-      const hashed = await hashPassword(uForm.password);
-      finalForm.password = "sha256:" + hashed;
+    try {
+      if (!uForm.username || !uForm.name) { alert("Username and name are required."); return; }
+      if (!eu && !uForm.password) { alert("Password is required for new users."); return; }
+      if (uForm.password && uForm.password.length < 6) { alert("Password must be at least 6 characters."); return; }
+
+      // Check username uniqueness
+      const exists = users.find(u => u.username === uForm.username && u.id !== eu);
+      if (exists) { alert("Username already taken."); return; }
+
+      let finalForm = { ...uForm };
+
+      if (uForm.password) {
+        // New password entered - hash it
+        const hashed = await hashPassword(uForm.password);
+        finalForm.password = "sha256:" + hashed;
+      } else if (eu) {
+        // Editing existing user, no new password - keep the existing stored password
+        const existing = users.find(u => u.id === eu);
+        finalForm.password = existing?.password || "";
+      }
+
+      if (eu) {
+        saveUsers(users.map(u => u.id === eu ? { ...u, ...finalForm } : u));
+      } else {
+        saveUsers([...users, { id: uid(), ...finalForm, createdAt: today(), lockedPages: [] }]);
+      }
+      setUModal(false);
+    } catch(e) {
+      alert("Error saving user: " + e.message);
     }
-    // Check username uniqueness
-    const exists = users.find(u => u.username === uForm.username && u.id !== eu);
-    if (exists) { alert("Username already taken."); return; }
-    if (eu) saveUsers(users.map(u => u.id === eu ? { ...u, ...finalForm } : u));
-    else saveUsers([...users, { id: uid(), ...finalForm, createdAt: today(), lockedPages: [] }]);
-    setUModal(false);
   };
 
 
@@ -113,7 +129,7 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
             </div>
           </div>
           <div style={{ display: "flex", gap: 7 }}>
-            <button className="btn-ghost" style={{ padding: "5px 8px" }} onClick={() => { setUForm(u); setEu(u.id); setUModal(true); }}><Edit2 size={13} /></button>
+            <button className="btn-ghost" style={{ padding: "5px 8px" }} onClick={() => { setUForm({ ...u, password: '' }); setEu(u.id); setUModal(true); }}><Edit2 size={13} /></button>
             <button className="btn-danger" style={{ padding: "5px 8px" }} onClick={() => {
               if (u.role === "admin" && users.filter(x => x.role === "admin").length <= 1) { alert("Cannot delete only admin."); return; }
               if (u.id === user.id) { alert("Cannot delete yourself."); return; }
@@ -482,7 +498,7 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
       <div className="fgrid">
         <Field label="Full Name" req cl="s2"><GIn value={uForm.name || ""} onChange={e => uf("name", e.target.value)} placeholder="Store Manager" /></Field>
         <Field label="Username" req><GIn value={uForm.username || ""} onChange={e => uf("username", e.target.value)} placeholder="manager1" /></Field>
-        <Field label="Password" req><GIn type="password" value={uForm.password || ""} onChange={e => uf("password", e.target.value)} placeholder="Min 6 chars" /></Field>
+        <Field label={eu ? "New Password" : "Password"} req={!eu}><GIn type="password" value={uForm.password || ""} onChange={e => uf("password", e.target.value)} placeholder={eu ? "Leave blank to keep current" : "Min 6 chars"} /></Field>
         <Field label="Role" cl="s2">
           <GS value={uForm.role || "manager"} onChange={e => uf("role", e.target.value)}>
             <option value="admin">Admin (Full Access)</option>
