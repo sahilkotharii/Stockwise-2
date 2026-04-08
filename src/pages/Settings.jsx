@@ -19,7 +19,7 @@ const LOCKABLE = [
 
 export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onTest }) {
   const T = useT();
-  const { users, saveUsers, user, actLog, saveActLog, invoiceSettings, saveInvoiceSettings } = ctx;
+  const { users, saveUsers, user, actLog, saveActLog, invoiceSettings, saveInvoiceSettings, themeId, setTheme, accentKey, setAccent, THEMES, ACCENT_PRESETS, changeReqs, saveChangeReqs } = ctx;
   const isAdmin = user.role === "admin";
   const tabs = isAdmin ? ["profile", "users", "series", "access", "export", "activity", "sessions", "invoice", "sheets"] : ["profile"];
   const [tab, setTab] = useState("profile");
@@ -81,7 +81,7 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
     saveUsers(users.map(x => x.id === uid2 ? { ...x, lockedPages: lk.includes(pid) ? lk.filter(p => p !== pid) : [...lk, pid] } : x));
   };
 
-  const tlbls = { profile: "Profile", users: "Users", series: "Bill Series", access: "Access Control", export: "Export", activity: "Activity Log", sessions: "Login History", invoice: "Invoice", sheets: "Google Sheets" };
+  const tlbls = { profile: "Profile", users: "Users", series: "Bill Series", access: "Access Control", export: "Export", activity: "Activity Log", sessions: "Login History", invoice: "Invoice", sheets: "Google Sheets", theme: "Theme" };
   const myLog = isAdmin ? actLog : actLog.filter(l => l.userId === user.id);
 
   return <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -339,6 +339,43 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
           </div>}
       </div>;
     })()}
+
+    {tab === "theme" && <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <div className="glass" style={{ padding: 20, borderRadius: T.radius }}>
+        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 4 }}>🎨 App Theme</div>
+        <div style={{ fontSize: 12, color: T.textMuted, marginBottom: 16 }}>Choose a visual style. Your preference is saved per device.</div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(160px,1fr))", gap: 12 }}>
+          {Object.entries(THEMES || {}).map(([tid, t]) => (
+            <button key={tid} onClick={() => setTheme && setTheme(tid)} style={{ padding: "14px 16px", borderRadius: T.radius, border: `2px solid ${themeId === tid ? T.accent : T.border}`, background: themeId === tid ? T.accentBg : "transparent", cursor: "pointer", textAlign: "left", transition: "all .15s" }}>
+              <div style={{ fontSize: 22, marginBottom: 6 }}>{t.icon}</div>
+              <div style={{ fontWeight: 700, color: T.text, fontSize: 14 }}>{t.name}</div>
+              <div style={{ fontSize: 11, color: T.textMuted, marginTop: 3 }}>{t.desc}</div>
+              {themeId === tid && <div style={{ marginTop: 8, fontSize: 11, fontWeight: 700, color: T.accent }}>✓ Active</div>}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="glass" style={{ padding: 20, borderRadius: T.radius }}>
+        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 4 }}>🌈 Accent Colour</div>
+        <div style={{ fontSize: 12, color: T.textMuted, marginBottom: 16 }}>Changes the primary action colour throughout the app.</div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+          {Object.entries(ACCENT_PRESETS || {}).map(([ak, preset]) => (
+            <button key={ak} onClick={() => setAccent && setAccent(ak)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", borderRadius: T.radius, border: `2px solid ${accentKey === ak ? preset.light : T.border}`, background: accentKey === ak ? preset.light + "15" : "transparent", cursor: "pointer", transition: "all .15s" }}>
+              <div style={{ width: 20, height: 20, borderRadius: "50%", background: preset.light, flexShrink: 0, boxShadow: accentKey === ak ? `0 0 0 3px ${preset.light}40` : "none" }} />
+              <span style={{ fontWeight: accentKey === ak ? 700 : 500, color: T.text, fontSize: 13 }}>{preset.name}</span>
+              {accentKey === ak && <span style={{ fontSize: 11, color: preset.light, fontWeight: 700 }}>✓</span>}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {isAdmin && <div className="glass" style={{ padding: 20, borderRadius: T.radius }}>
+        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 4 }}>🗂 Approvals History</div>
+        <div style={{ fontSize: 12, color: T.textMuted, marginBottom: 14 }}>Clear approved/declined requests from history. Pending requests are not affected.</div>
+        <GBtn v="danger" sz="sm" onClick={() => { if (window.confirm("Clear all approved/declined approval history? Pending requests will remain.")) { saveChangeReqs((changeReqs || []).filter(r => r.status === "pending")); } }}>Clear Approvals History</GBtn>
+      </div>}
+    </div>}
 
     {tab === "invoice" && isAdmin && <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       <div className="glass" style={{ padding: 20, borderRadius: T.radius }}>
