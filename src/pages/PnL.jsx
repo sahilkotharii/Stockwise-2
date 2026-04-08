@@ -86,17 +86,17 @@ export default function PnL({ ctx }) {
   const grossSalesExclGst = grossSalesInclGst - gstOnSales;
 
   const salesReturnInclGst = useMemo(() =>
-    retTxns.reduce((s, t) => s + Number(t.qty) * Number(t.price || 0), 0), [retTxns]);
+    retTxns.reduce((s, t) => s + (Number(t.qty)||0) * (Number(t.price)||0), 0), [retTxns]);
 
   const salesReturnGst = useMemo(() =>
     retTxns.reduce((s, t) => {
       const rate = Number(t.gstRate || products.find(p => p.id === t.productId)?.gstRate || 0);
-      return s + Number(t.qty) * Number(t.price || 0) * rate / (100 + rate);
+      return s + (Number(t.qty)||0) * (Number(t.price)||0) * rate / (100 + rate);
     }, 0), [retTxns, products]);
 
-  const salesReturnExclGst = salesReturnInclGst - salesReturnGst;
-  const netRevenueInclGst = grossSalesInclGst - salesReturnInclGst;
-  const netRevenueExclGst = grossSalesExclGst - salesReturnExclGst;
+  const salesReturnExclGst = (salesReturnInclGst||0) - (salesReturnGst||0);
+  const netRevenueInclGst = (grossSalesInclGst||0) - (salesReturnInclGst||0);
+  const netRevenueExclGst = (grossSalesExclGst||0) - (salesReturnExclGst||0);
 
   // ── Pre-index transactions by productId for O(1) lookup ─────────────────
   const txnsByProduct = useMemo(() => {
@@ -139,12 +139,12 @@ export default function PnL({ ctx }) {
     purBills.reduce((s, b) => s + Number(b.subtotal || 0), 0), [purBills]);
 
   const purchaseReturnValue = useMemo(() =>
-    purRetTxns.reduce((s, t) => s + Number(t.qty) * Number(t.price || 0), 0), [purRetTxns]);
+    purRetTxns.reduce((s, t) => s + (Number(t.qty)||0) * (Number(t.price)||0), 0), [purRetTxns]);
 
   const netPurchases = purchasesExclGst - purchaseReturnValue;
 
-  const cogs = openingStockValue + netPurchases - closingStockValue;
-  const grossProfit = netRevenueExclGst - cogs;
+  const cogs = (openingStockValue||0) + (netPurchases||0) - (closingStockValue||0);
+  const grossProfit = (netRevenueExclGst||0) - (cogs||0);
   const grossMargin = netRevenueExclGst > 0 ? (grossProfit / netRevenueExclGst * 100) : 0;
 
   // ── GST SUMMARY ──────────────────────────────────────────────────────────
@@ -154,7 +154,7 @@ export default function PnL({ ctx }) {
   const gstOnPurReturns = useMemo(() =>
     purRetTxns.reduce((s, t) => {
       const rate = Number(t.gstRate || products.find(p => p.id === t.productId)?.gstRate || 0);
-      return s + Number(t.qty) * Number(t.price || 0) * rate / 100;
+      return s + (Number(t.qty)||0) * (Number(t.price)||0) * rate / 100;
     }, 0), [purRetTxns, products]);
 
   const netInputCredit = gstOnPurchases - gstOnPurReturns;
