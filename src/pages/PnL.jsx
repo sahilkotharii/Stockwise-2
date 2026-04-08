@@ -98,23 +98,43 @@ export default function PnL({ ctx }) {
   const netRevenueInclGst = grossSalesInclGst - salesReturnInclGst;
   const netRevenueExclGst = grossSalesExclGst - salesReturnExclGst;
 
-  // ── COGS ─────────────────────────────────────────────────────────────────
-  // Opening stock = stock value at start of period (all txns BEFORE df)
-  const openingStockValue = useMemo(() => {
-    return products.reduce((s, pr) => {
-      const qty = transactions
-        .filter(t => t.productId === pr.id && safeDate(t.date) < df)
-        .reduce((ss, t) => {
-          const type = t.type || "";
-          if (["opening", "purchase", "return"].includes(type)) return ss + Number(t.qty);
-          if (["sale", "damaged", "purchase_return"].includes(type)) return ss - Number(t.qty);
-          return ss;
-        }, 0);
-      return s + Math.max(0, qty) * Number(pr.purchasePrice || 0);
-    }, 0);
-  }, [products, transactions, df]);
+  // ── Pre-index transactions by productId for O(1) lookup ─────────────────
+  const txnsByProduct = useMemo(() => {
+    const m = {};
+    transactions.forEach(t => {
+      if (!m[t.productId]) m[t.productId] = [];
+      m[t.productId].push(t);
+    });
+    return m;
+  }, [transactions]);
 
-  // Purchases ex-GST = sum of bill subtotals (ex-GST by definition)
+  const stockAtDate = (pid, beforeDate, upToDate) => {
+    const txns = txnsByProduct[pid] || [];
+    return txns
+      .filter(t => {
+        const d = safeDate(t.date);
+        if (beforeDate && d >= beforeDate) return false;
+        if (upToDate && d > upToDate) return false;
+        return true;
+      })
+      .reduce((ss, t) => {
+        const type = t.type || "";
+        if (["opening", "purchase", "return"].includes(type)) return ss + Number(t.qty);
+        if (["sale", "damaged", "purchase_return"].includes(type)) return ss - Number(t.qty);
+        return ss;
+      }, 0);
+  };
+
+  // ── COGS ─────────────────────────────────────────────────────────────────
+  const openingStockValue = useMemo(() =>
+    products.reduce((s, pr) => s + Math.max(0, stockAtDate(pr.id, df, null)) * Number(pr.purchasePrice || 0), 0),
+    [products, txnsByProduct, df]);
+
+  const closingStockValue = useMemo(() =>
+    products.reduce((s, pr) => s + Math.max(0, stockAtDate(pr.id, null, dt)) * Number(pr.purchasePrice || 0), 0),
+    [products, txnsByProduct, dt]);
+
+  // Purchases ex-GST = sum of bill subtotals
   const purchasesExclGst = useMemo(() =>
     purBills.reduce((s, b) => s + Number(b.subtotal || 0), 0), [purBills]);
 
@@ -122,21 +142,6 @@ export default function PnL({ ctx }) {
     purRetTxns.reduce((s, t) => s + Number(t.qty) * Number(t.price || 0), 0), [purRetTxns]);
 
   const netPurchases = purchasesExclGst - purchaseReturnValue;
-
-  // Closing stock = stock value at end of period (all txns UP TO dt)
-  const closingStockValue = useMemo(() => {
-    return products.reduce((s, pr) => {
-      const qty = transactions
-        .filter(t => t.productId === pr.id && safeDate(t.date) <= dt)
-        .reduce((ss, t) => {
-          const type = t.type || "";
-          if (["opening", "purchase", "return"].includes(type)) return ss + Number(t.qty);
-          if (["sale", "damaged", "purchase_return"].includes(type)) return ss - Number(t.qty);
-          return ss;
-        }, 0);
-      return s + Math.max(0, qty) * Number(pr.purchasePrice || 0);
-    }, 0);
-  }, [products, transactions, dt]);
 
   const cogs = openingStockValue + netPurchases - closingStockValue;
   const grossProfit = netRevenueExclGst - cogs;
