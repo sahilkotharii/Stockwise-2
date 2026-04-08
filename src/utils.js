@@ -8,7 +8,8 @@ export const calcMgn = (m, p) => m > 0 ? (((m - p) / m) * 100).toFixed(1) : "0";
 export const inRange = (d, f, t) => {
   if (!f && !t) return true;
   if (!d) return false;
-  const ds = typeof d === "string" ? d.slice(0,10) : (d instanceof Date ? d.toISOString().split("T")[0] : String(d).slice(0,10));
+  const ds = safeDate(d);
+  if (!ds) return false;
   if (f && ds < f) return false;
   if (t && ds > t) return false;
   return true;
@@ -31,11 +32,19 @@ export const monthOf = d => {
   return "";
 };
 
-// Safe date → always YYYY-MM-DD string (handles Date objects from Google Sheets)
+// Safe date → always YYYY-MM-DD string (handles any date format)
 export const safeDate = v => {
   if (!v) return "";
-  if (typeof v === "string") return v.slice(0, 10);
+  if (typeof v === "string") {
+    // Already YYYY-MM-DD
+    if (/^\d{4}-\d{2}-\d{2}/.test(v)) return v.slice(0, 10);
+    // Try parsing any other string (handles "Wed Apr 08 2026...", ISO etc.)
+    const d = new Date(v);
+    if (!isNaN(d)) return d.toISOString().split("T")[0];
+    return "";
+  }
   if (v instanceof Date && !isNaN(v)) return v.toISOString().split("T")[0];
+  if (typeof v === "number") return new Date(v).toISOString().split("T")[0];
   return "";
 };
 
