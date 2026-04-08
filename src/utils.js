@@ -23,7 +23,20 @@ export const getLast12Months = () => {
   }
   return months;
 };
-export const monthOf = d => d ? d.slice(0, 7) : "";
+export const monthOf = d => {
+  if (!d) return "";
+  if (typeof d === "string") return d.slice(0, 7);
+  if (d instanceof Date && !isNaN(d)) return d.toISOString().slice(0, 7);
+  return "";
+};
+
+// Safe date → always YYYY-MM-DD string (handles Date objects from Google Sheets)
+export const safeDate = v => {
+  if (!v) return "";
+  if (typeof v === "string") return v.slice(0, 10);
+  if (v instanceof Date && !isNaN(v)) return v.toISOString().split("T")[0];
+  return "";
+};
 
 // ── Reliable GST recalculation from bill items ─────────────────────────────
 // NEVER use stored bill.saleGstInfo — it can be corrupted in old bills.
