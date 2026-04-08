@@ -103,7 +103,7 @@ export default function Inventory({ ctx }) {
           effectivePrice: Number(editOsProduct.purchasePrice || 0),
           gstRate: 0,
           gstAmount: 0,
-          vendorId: null, channelId: null,
+          vendorId: null,
           date: editOsDate,
           notes: "Opening stock (edited)",
           userId: user.id, userName: user.name,
