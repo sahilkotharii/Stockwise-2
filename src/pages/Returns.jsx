@@ -23,8 +23,9 @@ function getPresetDate(preset) {
 
 export default function Returns({ ctx }) {
   const T = useT();
-  const { transactions, saveTransactions, products, vendors, getStock, user, addLog } = ctx;
+  const { transactions, saveTransactions, products, vendors, getStock, user, addLog, addChangeReq } = ctx;
   const isAdmin = user.role === "admin";
+  const isManager = user.role === "manager";
 
   const [modal, setModal] = useState(false);
   const [returnType, setReturnType] = useState("sales_return"); // "sales_return" | "purchase_return"
