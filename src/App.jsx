@@ -144,6 +144,18 @@ export default function App() {
       if (data.users?.length) { setUsers(data.users); lsSet(SK.users, data.users); }
       if (data.bills?.length) { const rows = fixDates(data.bills); setBills(rows); lsSet(SK.bills, rows); }
       if (data.changeReqs?.length) { setChangeReqs(data.changeReqs); lsSet(SK.changeReqs, data.changeReqs); }
+      // Load appConfig (invoice settings, bill series)
+      if (data.appConfig?.length) {
+        const cfg = {};
+        data.appConfig.forEach(row => {
+          if (!row.key) return;
+          try { cfg[row.key] = JSON.parse(row.value); } catch { cfg[row.key] = row.value; }
+        });
+        if (Object.keys(cfg).length > 0) {
+          setInvoiceSettings(cfg);
+          lsSet(SK.invoiceSettings, cfg);
+        }
+      }
       // Merge actLog: keep local entries (like login events) not yet in Sheets
       if (data.actLog?.length) {
         const localLog = await lsGet(SK.actLog, []);
@@ -226,7 +238,17 @@ export default function App() {
   const saveBills = async b => { setBills(b); await lsSet(SK.bills, b); push("bills", b); };
   const saveChangeReqs = async r => { setChangeReqs(r); await lsSet(SK.changeReqs, r); push("changeReqs", r); };
   const saveActLog = async l => { setActLog(l); await lsSet(SK.actLog, l); push("actLog", l); };
-  const saveInvoiceSettings = async s => { setInvoiceSettings(s); await lsSet(SK.invoiceSettings, s); };
+  const saveInvoiceSettings = async s => {
+    setInvoiceSettings(s);
+    await lsSet(SK.invoiceSettings, s);
+    // Persist to Sheets as key-value rows
+    const rows = Object.entries(s).map(([key, value]) => ({
+      key,
+      value: typeof value === "object" ? JSON.stringify(value) : String(value ?? ""),
+      updatedTs: new Date().toISOString()
+    }));
+    push("appConfig", rows);
+  };
 
   const addChangeReq = useCallback(async req => {
     if (!user) return;
