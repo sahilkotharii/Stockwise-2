@@ -39,19 +39,35 @@ export const safeDate = v => {
 };
 
 // ── Reliable GST recalculation from bill items ─────────────────────────────
-// NEVER use stored bill.saleGstInfo — it can be corrupted in old bills.
-// For sales: MRP already includes GST, so GST = price × rate / (100 + rate)
-// For purchases: cost is ex-GST, so GST = price × rate / 100
+// Works for both old bills (missing effectivePrice) and new bills.
+// Sale: MRP incl GST  →  GST = price × rate / (100 + rate)
+// Purchase: cost ex-GST →  GST = price × rate / 100
 export const calcBillGst = (bill) => {
-  if (!bill || !bill.items) return 0;
+  if (!bill) return 0;
   const isPurchase = bill.type === "purchase";
-  return bill.items.reduce((s, i) => {
-    const rate = Number(i.gstRate || 0);
-    if (!rate) return s;
-    const price = Number(i.effectivePrice || i.price || 0);
-    const qty = Number(i.qty || 0);
-    return s + (isPurchase
-      ? qty * price * rate / 100
-      : qty * price * rate / (100 + rate));
-  }, 0);
+
+  // Try items first (most accurate)
+  if (Array.isArray(bill.items) && bill.items.length > 0) {
+    const gstFromItems = bill.items.reduce((s, i) => {
+      const rate = Number(i.gstRate || 0);
+      if (!rate) return s;
+      // Use effectivePrice if available (after discount), else price
+      const price = Number(i.effectivePrice || i.price || i.mrp || 0);
+      const qty = Number(i.qty || 0);
+      if (!price || !qty) return s;
+      return s + (isPurchase
+        ? qty * price * rate / 100
+        : qty * price * rate / (100 + rate));
+    }, 0);
+    if (gstFromItems > 0) return gstFromItems;
+  }
+
+  // Fallback: use stored values if items yield 0 (e.g. all items have gstRate=0)
+  // For sales: saleGstInfo; for purchase: totalGst — only trust if they look sane
+  const total = Number(bill.total || 0);
+  const stored = isPurchase ? Number(bill.totalGst || 0) : Number(bill.saleGstInfo || 0);
+  // Sanity check: stored GST shouldn't exceed 40% of total
+  if (stored > 0 && stored < total * 0.40) return stored;
+
+  return 0;
 };
