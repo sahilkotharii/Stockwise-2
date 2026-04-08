@@ -96,7 +96,7 @@ export default function Approvals({ ctx }) {
           if (window.confirm("Clear all approved/declined history? Pending requests are not affected.")) {
             saveChangeReqs(changeReqs.filter(r => r.status === "pending"));
           }
-        }}>🗑 Clear History</button>
+        }}> Clear History</button>
       )}
     </div>
 
