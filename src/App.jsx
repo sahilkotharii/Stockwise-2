@@ -30,6 +30,7 @@ export default function App() {
   const [ready, setReady] = useState(false);
   const [user, setUser] = useState(null);
   const [page, setPage] = useState("dashboard");
+  const [settingsTab, setSettingsTab] = useState("profile");
   const [col, setCol] = useState(false);
 
   const [users, setUsers] = useState([]);
@@ -119,8 +120,35 @@ export default function App() {
         lsSet(SK.seeded, true)
       ]);
 
-      setReady(true);
+      // Pull from Sheets first — use Sheets users if available, THEN show UI
+      // This prevents seed users from overwriting saved credentials
       const url = sUrl || DEFAULT_SHEETS_URL;
+      if (url) {
+        try {
+          const { sheetsGet } = await import("./sheets");
+          const data = await sheetsGet(url);
+          // Always prefer Sheets users over seed users
+          if (data.users?.length) {
+            const fixedUsers = data.users;
+            setUsers(fixedUsers); await lsSet(SK.users, fixedUsers);
+            // Update fu to latest Sheets users for session restore below
+            fu.length = 0; fu.push(...fixedUsers);
+          }
+          if (data.products?.length) { setProducts(data.products); lsSet(SK.products, data.products); }
+          if (data.categories?.length) { setCategories(data.categories); lsSet(SK.categories, data.categories); }
+          if (data.vendors?.length) { setVendors(data.vendors); lsSet(SK.vendors, data.vendors); }
+          if (data.transactions?.length) { const rows = fixDatesLocal(data.transactions); setTransactions(rows); lsSet(SK.transactions, rows); }
+          if (data.bills?.length) { const rows = fixDatesLocal(data.bills); setBills(rows); lsSet(SK.bills, rows); }
+          if (data.changeReqs?.length) { setChangeReqs(data.changeReqs); lsSet(SK.changeReqs, data.changeReqs); }
+          if (data.appConfig?.length) {
+            const cfg = {};
+            data.appConfig.forEach(row => { if (!row.key) return; try { cfg[row.key] = JSON.parse(row.value); } catch { cfg[row.key] = row.value; } });
+            if (Object.keys(cfg).length > 0) { setInvoiceSettings(cfg); lsSet(SK.invoiceSettings, cfg); }
+          }
+        } catch(e) { /* Offline — use localStorage data */ }
+      }
+      setReady(true);
+      // Background auto-sync every 4 minutes
       if (url) pull(url);
 
       // ── Migrate plain-text passwords to hashed on first boot ───────────────
@@ -315,6 +343,7 @@ export default function App() {
     actLog, saveActLog, addChangeReq, addLog,
     invoiceSettings, saveInvoiceSettings,
     themeId, setTheme, accentKey, setAccent, customColor, setCustomColor, bgImage, setBgImage, THEMES, ACCENT_PRESETS,
+    settingsTab, setSettingsTab,
   };
 
   const T = theme;
