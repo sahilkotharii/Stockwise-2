@@ -180,6 +180,7 @@ export function buildHTML(bill, inv, vendor) {
         <div><strong>Invoice No:</strong> ${bill.billNo || "—"}</div>
         <div><strong>Date:</strong> ${dateStr}</div>
         ${bill.purchaseInvoiceNo ? `<div><strong>Ref No:</strong> ${bill.purchaseInvoiceNo}</div>` : ""}
+      ${bill.paymentMode ? `<div><strong>Payment:</strong> ${bill.paymentMode}</div>` : ""}
       </div>
       <div class="gst-badge">${isIGST ? "IGST (Inter-state)" : "CGST + SGST (Intra-state)"}</div>
     </div>
