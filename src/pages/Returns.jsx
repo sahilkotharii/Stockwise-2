@@ -229,7 +229,7 @@ export default function Returns({ ctx }) {
     {/* Damaged stock breakdown */}
     {totalDamagedUnits > 0 && (
       <div className="glass" style={{ padding: 16, borderRadius: T.radius, borderLeft: `4px solid ${T.amber}` }}>
-        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 14, color: T.amber, marginBottom: 10 }}>⚠️ Damaged Stock in Inventory</div>
+        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 14, color: T.amber, marginBottom: 10 }}> Damaged Stock in Inventory</div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
           {Object.entries(damagedStockByProduct).filter(([, q]) => q > 0).map(([pid, qty]) => {
             const pr = products.find(p => p.id === pid);
@@ -250,7 +250,7 @@ export default function Returns({ ctx }) {
       <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 14 }}>Returns Log</div>
       <div className="filter-wrap" style={{ marginBottom: 12 }}>
         <div style={{ position: "relative", flex: "1 1 160px" }}>
-          <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: T.textMuted, fontSize: 12 }}>🔍</span>
+          <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: T.textMuted, fontSize: 12 }}></span>
           <input className="inp" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search product, notes…" style={{ paddingLeft: 28 }} />
         </div>
         <div style={{ display: "flex", gap: 5 }}>
@@ -326,7 +326,7 @@ export default function Returns({ ctx }) {
                     {v?.name || "—"}
                   </td>
                   <td className="td">
-                    {t.isDamaged ? <span style={{ fontSize:11, fontWeight: 700, color: T.amber }}>⚠ YES</span> : <span style={{ color: T.textMuted, fontSize:11 }}>—</span>}
+                    {t.isDamaged ? <span style={{ fontSize:11, fontWeight: 700, color: T.amber }}> YES</span> : <span style={{ color: T.textMuted, fontSize:11 }}>—</span>}
                   </td>
                   <td className="td">
                     <div style={{ display: "flex", gap: 3 }}>
@@ -354,7 +354,7 @@ export default function Returns({ ctx }) {
         <div>
           <div style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, marginBottom: 8, letterSpacing: "0.05em" }}>RETURN TYPE</div>
           <div style={{ display: "flex", gap: 8 }}>
-            {[{ k: "sales_return", l: "📦 Sales Return", sub: "Customer returns product to you" },
+            {[{ k: "sales_return", l: " Sales Return", sub: "Customer returns product to you" },
               { k: "purchase_return", l: "🚚 Purchase Return", sub: "You return product to vendor" }].map(rt => (
               <button key={rt.k} onClick={() => setReturnType(rt.k)} style={{
                 flex: 1, padding: "12px 16px", borderRadius: 12, border: `2px solid ${returnType === rt.k ? T.accent : T.borderSubtle}`,
@@ -371,7 +371,7 @@ export default function Returns({ ctx }) {
         {/* Info banner */}
         <div style={{ padding: "10px 14px", borderRadius: 10, background: returnType === "sales_return" ? T.redBg : T.blueBg, border: `1px solid ${returnType === "sales_return" ? T.red + "30" : T.blue + "30"}`, fontSize: 12, color: returnType === "sales_return" ? T.red : T.blue }}>
           {returnType === "sales_return"
-            ? "📦 Sales Return: Product added back to your inventory. If damaged, it stays in stock but is flagged as damaged."
+            ? " Sales Return: Product added back to your inventory. If damaged, it stays in stock but is flagged as damaged."
             : "🚚 Purchase Return: Product removed from your inventory. Applicable for defective/wrong items sent back to vendor."}
         </div>
 
@@ -497,7 +497,7 @@ export default function Returns({ ctx }) {
               { l: "GST Rate", v: viewTxn.gstRate ? viewTxn.gstRate + "%" : "—" },
               { l: "GST Type", v: viewTxn.gstType === "igst" ? "IGST" : "CGST + SGST" },
               { l: "Vendor", v: v?.name || "—" },
-              { l: "Damaged?", v: viewTxn.isDamaged ? "⚠ Yes" : "No" },
+              { l: "Damaged?", v: viewTxn.isDamaged ? " Yes" : "No" },
               { l: "Notes", v: viewTxn.notes || "—" },
               { l: "By", v: viewTxn.userName || "—" },
             ].map(row => (
