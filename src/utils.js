@@ -3,7 +3,6 @@ export const today = () => new Date().toISOString().split("T")[0];
 export const fmtCur = n => "₹" + Number(n || 0).toLocaleString("en-IN");
 export const fmtDate = d => d ? new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—";
 export const fmtTs = ts => new Date(ts).toLocaleString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
-export const fmtMon = d => new Date(d + "T00:00:00").toLocaleDateString("en-IN", { month: "short", year: "2-digit" });
 export const calcMgn = (m, p) => m > 0 ? (((m - p) / m) * 100).toFixed(1) : "0";
 export const inRange = (d, f, t) => {
   if (!f && !t) return true;
