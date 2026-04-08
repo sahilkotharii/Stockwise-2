@@ -109,9 +109,9 @@ export default function Vendors({ ctx }) {
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 12, color: T.textSub }}>
-              {(v.address1 || v.city) && <div>📍 {[v.address1, v.address2, v.city, v.state, v.pincode].filter(Boolean).join(", ")}</div>}
-              {v.phone && <div>📞 {v.phone}{v.contact ? ` · ${v.contact}` : ""}</div>}
-              {v.email && <div>✉ {v.email}</div>}
+              {(v.address1 || v.city) && <div> {[v.address1, v.address2, v.city, v.state, v.pincode].filter(Boolean).join(", ")}</div>}
+              {v.phone && <div> {v.phone}{v.contact ? ` · ${v.contact}` : ""}</div>}
+              {v.email && <div> {v.email}</div>}
               {v.notes && <div style={{ fontStyle: "italic", color: T.textMuted, fontSize: 11 }}>{v.notes}</div>}
             </div>
 
