@@ -3,6 +3,7 @@ import { Plus, X, FileText, Search, ChevronDown, ChevronUp, Truck } from "lucide
 import { useT } from "../theme";
 import { uid, today, fmtCur } from "../utils";
 import { GIn, GS, GTa, GBtn, Lbl, Field } from "./UI";
+import VendorSearch from "./VendorSearch";
 
 /* ─── Searchable product autocomplete ──────────────────────────────────── */
 function ProductSearch({ value, onChange, products, placeholder }) {
@@ -69,6 +70,7 @@ export default function BillForm({ type, bills, onSave, products, vendors, getSt
   const [discType, setDiscType] = useState(existingBill?.discType || "percent");
   const [notes, setNotes] = useState(existingBill?.notes || "");
   const [gstType, setGstType] = useState(existingBill?.gstType || "cgst_sgst");
+  const [paymentMode, setPaymentMode] = useState(existingBill?.paymentMode || "");
   const [purchaseInvoiceNo, setPurchaseInvoiceNo] = useState(existingBill?.purchaseInvoiceNo || "");
   // Ship-to (for sales)
   const [shipTo, setShipTo] = useState(existingBill?.shipTo || "");
@@ -229,9 +231,7 @@ export default function BillForm({ type, bills, onSave, products, vendors, getSt
       <div className="fgrid">
         <Field label="Date" req><GIn type="date" value={date} onChange={e => setDate(e.target.value)} /></Field>
         <Field label="Vendor" req>
-          <GS value={vendorId} onChange={e => setVendorId(e.target.value)} placeholder="Select vendor">
-            {(vendors||[]).map(v => <option key={v.id} value={v.id}>{v.name}{v.city ? ` — ${v.city}` : ""}</option>)}
-          </GS>
+          <VendorSearch value={vendorId} onChange={v => setVendorId(v)} vendors={vendors||[]} placeholder="Search vendor by name, city, GSTIN…" />
         </Field>
       </div>
 
@@ -401,6 +401,16 @@ export default function BillForm({ type, bills, onSave, products, vendors, getSt
           )}
         </div>
       )}
+
+      {/* Payment Mode */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+        <span style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, letterSpacing: "0.05em" }}>PAYMENT MODE</span>
+        <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+          {["Cash", "NEFT / RTGS", "UPI", "Cheque", "Credit", "On Account"].map(pm => (
+            <button type="button" key={pm} onClick={() => setPaymentMode(paymentMode === pm ? "" : pm)} style={{ padding: "4px 12px", borderRadius: 99, fontSize: 11, fontWeight: 600, border: `1px solid ${paymentMode === pm ? T.accent : T.borderSubtle}`, cursor: "pointer", background: paymentMode === pm ? T.accent : "transparent", color: paymentMode === pm ? "#fff" : T.textSub, transition: "all .15s" }}>{pm}</button>
+          ))}
+        </div>
+      </div>
 
       <Field label="Notes / Reference">
         <GTa value={notes} onChange={e => setNotes(e.target.value)} rows={2} placeholder="Remarks, reference, instructions…" />
