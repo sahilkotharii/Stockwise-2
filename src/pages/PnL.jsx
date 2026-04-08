@@ -23,19 +23,6 @@ export default function PnL({ ctx }) {
     return m;
   }, [transactions]);
 
-  const stockAt = (pid, before, upTo) =>
-    (txnsByProduct[pid] || []).filter(t => {
-      const d = safeDate(t.date);
-      if (before && d >= before) return false;
-      if (upTo   && d >  upTo)   return false;
-      return true;
-    }).reduce((s, t) => {
-      const type = t.type || "";
-      if (["opening","purchase","return"].includes(type))         return s + (Number(t.qty)||0);
-      if (["sale","damaged","purchase_return"].includes(type))    return s - (Number(t.qty)||0);
-      return s;
-    }, 0);
-
   // ── Bills in period ───────────────────────────────────────────────────────
   const saleBills = useMemo(() => bills.filter(b => b.type === "sale"     && inP(b.date)), [bills, df, dt]);
   const purBills  = useMemo(() => bills.filter(b => b.type === "purchase" && inP(b.date)), [bills, df, dt]);
@@ -64,13 +51,35 @@ export default function PnL({ ctx }) {
   const netPurchases         = (purchasesExclGst||0) - (purReturnValue||0);
 
   // ── COGS ─────────────────────────────────────────────────────────────────
-  const openingStock = useMemo(() =>
-    products.reduce((s,pr)=>s+Math.max(0,stockAt(pr.id,df,null))*(Number(pr.purchasePrice)||0),0),
-    [products, txnsByProduct, df]);
+  const openingStock = useMemo(() => {
+    const stockAt = (pid, before) =>
+      (txnsByProduct[pid] || []).filter(t => {
+        const d = safeDate(t.date);
+        if (!d) return false;
+        return d < before;                      // strictly before period start
+      }).reduce((s, t) => {
+        const type = t.type || "";
+        if (["opening","purchase","return"].includes(type))      return s + (Number(t.qty)||0);
+        if (["sale","damaged","purchase_return"].includes(type)) return s - (Number(t.qty)||0);
+        return s;
+      }, 0);
+    return products.reduce((s,pr) => s + Math.max(0, stockAt(pr.id, df)) * (Number(pr.purchasePrice)||0), 0);
+  }, [products, txnsByProduct, df]);
 
-  const closingStock = useMemo(() =>
-    products.reduce((s,pr)=>s+Math.max(0,stockAt(pr.id,null,dt))*(Number(pr.purchasePrice)||0),0),
-    [products, txnsByProduct, dt]);
+  const closingStock = useMemo(() => {
+    const stockAt = (pid, upTo) =>
+      (txnsByProduct[pid] || []).filter(t => {
+        const d = safeDate(t.date);
+        if (!d) return false;
+        return d <= upTo;                       // on or before period end
+      }).reduce((s, t) => {
+        const type = t.type || "";
+        if (["opening","purchase","return"].includes(type))      return s + (Number(t.qty)||0);
+        if (["sale","damaged","purchase_return"].includes(type)) return s - (Number(t.qty)||0);
+        return s;
+      }, 0);
+    return products.reduce((s,pr) => s + Math.max(0, stockAt(pr.id, dt)) * (Number(pr.purchasePrice)||0), 0);
+  }, [products, txnsByProduct, dt]);
 
   const cogs        = (openingStock||0) + (netPurchases||0) - (closingStock||0);
   const grossProfit = (netSalesExclGst||0) - (cogs||0);
