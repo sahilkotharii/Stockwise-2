@@ -31,14 +31,12 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [page, setPage] = useState("dashboard");
   const [settingsTab, setSettingsTab] = useState("profile");
-  const [col, setCol] = useState(false);
 
   const [users, setUsers] = useState([]);
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [vendors, setVendors] = useState([]);
   const [transactions, setTransactions] = useState([]);
-  const [channels, setChannels] = useState([]);
   const [bills, setBills] = useState([]);
 
   const [sheetsUrl, setSheetsUrl] = useState(DEFAULT_SHEETS_URL);
@@ -62,6 +60,13 @@ export default function App() {
     setTimeout(() => setToast(null), 3500);
   };
 
+  // Debounce helper for push — prevents rapid sequential saves from flooding GAS
+  const pushTimers = {};
+  const debouncedPush = (entity, rows, delay = 1500) => {
+    if (pushTimers[entity]) clearTimeout(pushTimers[entity]);
+    pushTimers[entity] = setTimeout(() => push(entity, rows), delay);
+  };
+
   // ── Boot ──────────────────────────────────────────────────────────────────
   useEffect(() => {
     const lnk = document.createElement("link");
@@ -70,9 +75,9 @@ export default function App() {
     document.head.appendChild(lnk);
 
     (async () => {
-      const [u, p, c, v, t, ch, b, sUrl, ok, dp, cr, al, tid, ak, cc, bgi] = await Promise.all([
+      const [u, p, c, v, t, b, sUrl, ok, dp, cr, al, tid, ak, cc, bgi] = await Promise.all([
         lsGet(SK.users, null), lsGet(SK.products, null), lsGet(SK.categories, null),
-        lsGet(SK.vendors, null), lsGet(SK.transactions, null), lsGet(SK.channels, null),
+        lsGet(SK.vendors, null), lsGet(SK.transactions, null),
         lsGet(SK.bills, []), lsGet(SK.sheetsUrl, DEFAULT_SHEETS_URL), lsGet(SK.seeded, false),
         lsGet(SK.theme, false), lsGet(SK.changeReqs, []), lsGet(SK.actLog, []),
         lsGet("sw_theme_id", "glass"), lsGet("sw_accent_key", "copper"),
@@ -84,7 +89,7 @@ export default function App() {
         { id: "u2", name: "Store Manager", username: "manager", password: "store123", role: "manager", createdAt: today(), lockedPages: [] }
       ];
 
-      const fu = u || SEED_USERS, fp = p || [], fc = c || [], fv = v || [], fch = ch || [];
+      const fu = u || SEED_USERS, fp = p || [], fc = c || [], fv = v || [];
       // Sanitize dates from localStorage (may have old "Wed Apr 08 2026..." strings)
       const fixDatesLocal = rows => (rows || []).map(r => {
         if (!r || !r.date) return r;
@@ -94,7 +99,7 @@ export default function App() {
       const ft = fixDatesLocal(t);
       const fb = fixDatesLocal(b);
       setUsers(fu); setProducts(fp); setCategories(fc); setVendors(fv);
-      setChannels(fch); setTransactions(ft); setBills(fb || []);
+      setTransactions(ft); setBills(fb || []);
       setSheetsUrl(sUrl || DEFAULT_SHEETS_URL); setIsDark(dp || false);
       setThemeId(tid || "glass"); setAccentKey(ak || "copper");
       setCustomColorState(cc || ""); setBgImageState(bgi || "");
@@ -116,7 +121,7 @@ export default function App() {
 
       if (!ok) await Promise.all([
         lsSet(SK.users, fu), lsSet(SK.products, fp), lsSet(SK.categories, fc),
-        lsSet(SK.vendors, fv), lsSet(SK.channels, fch), lsSet(SK.transactions, ft),
+        lsSet(SK.vendors, fv), lsSet(SK.transactions, ft),
         lsSet(SK.seeded, true)
       ]);
 
@@ -131,8 +136,12 @@ export default function App() {
           if (data.users?.length) {
             const fixedUsers = data.users;
             setUsers(fixedUsers); await lsSet(SK.users, fixedUsers);
-            // Update fu to latest Sheets users for session restore below
-            fu.length = 0; fu.push(...fixedUsers);
+            // Re-resolve session user from Sheets data (fixes stale seed user object)
+            const savedSession2 = await lsGet(SK.session, null);
+            if (savedSession2?.userId) {
+              const freshUser = fixedUsers.find(x => x.id === savedSession2.userId);
+              if (freshUser) setUser(freshUser);
+            }
           }
           if (data.products?.length) { setProducts(data.products); lsSet(SK.products, data.products); }
           if (data.categories?.length) { setCategories(data.categories); lsSet(SK.categories, data.categories); }
@@ -203,7 +212,6 @@ export default function App() {
       if (data.products?.length) { setProducts(data.products); lsSet(SK.products, data.products); }
       if (data.categories?.length) { setCategories(data.categories); lsSet(SK.categories, data.categories); }
       if (data.vendors?.length) { setVendors(data.vendors); lsSet(SK.vendors, data.vendors); }
-      if (data.channels?.length) { setChannels(data.channels); lsSet(SK.channels, data.channels); }
       if (data.transactions?.length) { const rows = fixDates(data.transactions); setTransactions(rows); lsSet(SK.transactions, rows); }
       if (data.users?.length) { setUsers(data.users); lsSet(SK.users, data.users); }
       if (data.bills?.length) { const rows = fixDates(data.bills); setBills(rows); lsSet(SK.bills, rows); }
@@ -296,10 +304,9 @@ export default function App() {
   const saveProducts = async p => { setProducts(p); await lsSet(SK.products, p); push("products", p); };
   const saveCategories = async c => { setCategories(c); await lsSet(SK.categories, c); push("categories", c); };
   const saveVendors = async v => { setVendors(v); await lsSet(SK.vendors, v); push("vendors", v); };
-  const saveTransactions = async t => { setTransactions(t); await lsSet(SK.transactions, t); push("transactions", t); };
+  const saveTransactions = async t => { setTransactions(t); await lsSet(SK.transactions, t); debouncedPush("transactions", t); };
   const saveUsers = async u => { setUsers(u); await lsSet(SK.users, u); push("users", u); };
-  const saveChannels = async c => { setChannels(c); await lsSet(SK.channels, c); push("channels", c); };
-  const saveBills = async b => { setBills(b); await lsSet(SK.bills, b); push("bills", b); };
+  const saveBills = async b => { setBills(b); await lsSet(SK.bills, b); debouncedPush("bills", b); };
   const saveChangeReqs = async r => { setChangeReqs(r); await lsSet(SK.changeReqs, r); push("changeReqs", r); };
   const saveActLog = async l => { setActLog(l); await lsSet(SK.actLog, l); push("actLog", l); };
   const saveInvoiceSettings = async s => {
@@ -326,7 +333,9 @@ export default function App() {
     if (!user) return;
     const entry = { id: uid(), ts: new Date().toISOString(), userId: user.id, userName: user.name, role: user.role, action, entity, entityName, details };
     const updated = [entry, ...actLog].slice(0, 500);
-    setActLog(updated); await lsSet(SK.actLog, updated); push("actLog", updated);
+    setActLog(updated); await lsSet(SK.actLog, updated);
+    // Batch: only push to Sheets every 10 log entries to reduce API calls
+    if (updated.length % 10 === 0) push("actLog", updated);
   }, [user, actLog]);
 
   const onTest = async url => {
@@ -337,9 +346,9 @@ export default function App() {
 
   // ── Context bundle ────────────────────────────────────────────────────────
   const ctx = {
-    user, products, categories, vendors, transactions, channels, users, bills,
+    user, products, categories, vendors, transactions, users, bills,
     getStock, saveProducts, saveCategories, saveVendors, saveTransactions,
-    saveChannels, saveUsers, saveBills, changeReqs, saveChangeReqs,
+    saveUsers, saveBills, changeReqs, saveChangeReqs,
     actLog, saveActLog, addChangeReq, addLog,
     invoiceSettings, saveInvoiceSettings,
     themeId, setTheme, accentKey, setAccent, customColor, setCustomColor, bgImage, setBgImage, THEMES, ACCENT_PRESETS,
@@ -347,7 +356,7 @@ export default function App() {
   };
 
   const T = theme;
-  const ml = `${(col ? T.sidebarC : T.sidebarW) + 24}px`;
+  const ml = `${T.sidebarW + 24}px`;
   const locked = user?.lockedPages || [];
 
   // ── Page guard (respect locked pages for managers) ────────────────────────
