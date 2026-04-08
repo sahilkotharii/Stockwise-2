@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { Plus, Search, X, Eye, Trash2, RotateCcw, Package, Truck, AlertTriangle, ChevronDown, ChevronRight } from "lucide-react";
+import { Plus, Search, X, Eye, Trash2, RotateCcw, Package, Truck, AlertTriangle, Edit2 } from "lucide-react";
 import { useT } from "../theme";
 import { KCard, GBtn, GIn, GS, GTa, Field, Modal, Pager } from "../components/UI";
 import VendorSearch from "../components/VendorSearch";
@@ -36,6 +36,8 @@ export default function Returns({ ctx }) {
   const [search, setSearch] = useState("");
   const [selRets, setSelRets] = useState(new Set());
   const tgRet = id => setSelRets(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const [viewTxn, setViewTxn] = useState(null);
+  const [editTxn, setEditTxn] = useState(null);
   useEffect(() => setPg(1), [df, dt, typeFilter, search, ps]);
 
   const handlePreset = k => { setPreset(k); setDf(getPresetDate(k)); setDt(today()); };
@@ -97,8 +99,16 @@ export default function Returns({ ctx }) {
         gstType: form.gstType || "cgst_sgst"
       };
     });
-    saveTransactions([...newTxns, ...transactions]);
-    addLog("recorded", returnType === "purchase_return" ? "purchase return" : "sales return", `${valid.length} product(s)`);
+    if (editTxn) {
+      // Update mode: replace the single existing transaction
+      const updated = { ...editTxn, ...newTxns[0], id: editTxn.id };
+      saveTransactions(transactions.map(x => x.id === editTxn.id ? updated : x));
+      addLog("edited", "return", updated.type);
+    } else {
+      saveTransactions([...newTxns, ...transactions]);
+      addLog("recorded", returnType === "purchase_return" ? "purchase return" : "sales return", `${valid.length} product(s)`);
+    }
+    setEditTxn(null);
     setModal(false);
     resetForm();
   };
@@ -292,7 +302,7 @@ export default function Returns({ ctx }) {
               const typeColor = t.type === "return" ? T.red : t.type === "purchase_return" ? T.blue : T.amber;
               const typeLabel = t.type === "return" ? "Sales Return" : t.type === "purchase_return" ? "Purchase Return" : "Damaged";
               return (
-                <tr key={t.id} className={`trow${selRets.has(t.id)?" sel":""}`} onClick={()=>tgRet(t.id)} style={{cursor:"pointer"}}>
+                <tr key={t.id} className={`trow${selRets.has(t.id)?" sel":""}`}>
                   <td className="td" onClick={e=>e.stopPropagation()}><input type="checkbox" className="cb" checked={selRets.has(t.id)} onChange={()=>tgRet(t.id)}/></td>
                   <td className="td m">{fmtDate(t.date)}</td>
                   <td className="td">
@@ -312,7 +322,11 @@ export default function Returns({ ctx }) {
                     {t.isDamaged ? <span style={{ fontSize: 10, fontWeight: 700, color: T.amber }}>⚠ YES</span> : <span style={{ color: T.textMuted, fontSize: 10 }}>—</span>}
                   </td>
                   <td className="td">
-                    <button className="btn-danger" onClick={() => deleteTxn(t)} style={{ padding: "3px 6px" }}><Trash2 size={11} /></button>
+                    <div style={{ display: "flex", gap: 3 }}>
+                      <button className="btn-ghost" onClick={() => setViewTxn(t)} style={{ padding: "3px 6px" }} title="View"><Eye size={13} /></button>
+                      {isAdmin && <button className="btn-ghost" onClick={() => { setEditTxn(t); setReturnType(t.type === "purchase_return" ? "purchase_return" : "sales_return"); setForm({ date: t.date, vendorId: t.vendorId || "", gstType: t.gstType || "cgst_sgst", notes: t.notes || "", items: [{ id: uid(), productId: t.productId, qty: t.qty, price: t.price || "", isDamaged: t.isDamaged || false }] }); setModal(true); }} style={{ padding: "3px 6px" }} title="Edit"><Edit2 size={13} /></button>}
+                      <button className="btn-danger" onClick={e => { e.stopPropagation(); deleteTxn(t); }} style={{ padding: "3px 6px" }}><Trash2 size={11} /></button>
+                    </div>
                   </td>
                 </tr>
               );
@@ -325,8 +339,8 @@ export default function Returns({ ctx }) {
     </div>
 
     {/* New Return Modal */}
-    <Modal open={modal} onClose={() => { setModal(false); resetForm(); }} title="Record Return" width={620}
-      footer={<><GBtn v="ghost" onClick={() => { setModal(false); resetForm(); }}>Cancel</GBtn><GBtn onClick={handleSave} icon={<RotateCcw size={13} />}>Save Return</GBtn></>}>
+    <Modal open={modal} onClose={() => { setModal(false); resetForm(); setEditTxn(null); }} title={editTxn ? "Edit Return" : "Record Return"} width={620}
+      footer={<><GBtn v="ghost" onClick={() => { setModal(false); resetForm(); setEditTxn(null); }}>Cancel</GBtn><GBtn onClick={handleSave} icon={<RotateCcw size={13} />}>Save Return</GBtn></>}>
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 
         {/* Type selector */}
@@ -453,5 +467,41 @@ export default function Returns({ ctx }) {
         </div>
       </div>
     </Modal>
+    {/* View Return Detail Modal */}
+    {viewTxn && (() => {
+      const pr = products.find(p => p.id === viewTxn.productId);
+      const v = vendors?.find(x => x.id === viewTxn.vendorId);
+      const typeColor = viewTxn.type === "return" ? T.red : viewTxn.type === "purchase_return" ? T.blue : T.amber;
+      const typeLabel = viewTxn.type === "return" ? "Sales Return" : viewTxn.type === "purchase_return" ? "Purchase Return" : "Damaged";
+      return (
+        <Modal open={true} onClose={() => setViewTxn(null)} title="Return Detail" width={420}
+          footer={<GBtn v="ghost" onClick={() => setViewTxn(null)}>Close</GBtn>}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12, fontSize: 13 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span className="badge" style={{ background: typeColor+"18", color: typeColor, fontSize: 12, padding: "4px 12px" }}>{typeLabel}</span>
+              <span style={{ color: T.textMuted, fontSize: 12 }}>{fmtDate(viewTxn.date)}</span>
+            </div>
+            {[
+              { l: "Product", v: pr?.name || "—" },
+              { l: "SKU", v: pr?.sku || "—" },
+              { l: "Qty", v: viewTxn.qty },
+              { l: "Price / Unit", v: fmtCur(viewTxn.price || 0) },
+              { l: "Total Value", v: fmtCur(Number(viewTxn.qty) * Number(viewTxn.price || 0)), bold: true },
+              { l: "GST Rate", v: viewTxn.gstRate ? viewTxn.gstRate + "%" : "—" },
+              { l: "GST Type", v: viewTxn.gstType === "igst" ? "IGST" : "CGST + SGST" },
+              { l: "Vendor", v: v?.name || "—" },
+              { l: "Damaged?", v: viewTxn.isDamaged ? "⚠ Yes" : "No" },
+              { l: "Notes", v: viewTxn.notes || "—" },
+              { l: "By", v: viewTxn.userName || "—" },
+            ].map(row => (
+              <div key={row.l} style={{ display: "flex", justifyContent: "space-between", borderBottom: `1px solid ${T.borderSubtle}`, paddingBottom: 6 }}>
+                <span style={{ color: T.textMuted }}>{row.l}</span>
+                <span style={{ fontWeight: row.bold ? 700 : 500, color: row.bold ? T.accent : T.text }}>{row.v}</span>
+              </div>
+            ))}
+          </div>
+        </Modal>
+      );
+    })()}
   </div>;
 }
