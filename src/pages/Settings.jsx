@@ -19,10 +19,12 @@ const LOCKABLE = [
 
 export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onTest }) {
   const T = useT();
-  const { users, saveUsers, user, actLog, saveActLog, invoiceSettings, saveInvoiceSettings, themeId, setTheme, accentKey, setAccent, customColor, setCustomColor, bgImage, setBgImage, THEMES, ACCENT_PRESETS, changeReqs, saveChangeReqs } = ctx;
+  const { users, saveUsers, user, actLog, saveActLog, invoiceSettings, saveInvoiceSettings, themeId, setTheme, accentKey, setAccent, customColor, setCustomColor, bgImage, setBgImage, THEMES, ACCENT_PRESETS, changeReqs, saveChangeReqs, settingsTab } = ctx;
   const isAdmin = user.role === "admin";
   const tabs = isAdmin ? ["profile", "theme", "users", "series", "access", "export", "activity", "sessions", "invoice", "sheets"] : ["profile", "theme"];
-  const [tab, setTab] = useState("profile");
+  const [tab, setTab] = useState(ctx?.settingsTab || "profile");
+  // Sync with ctx settingsTab when it changes
+  React.useEffect(() => { if (ctx?.settingsTab) setTab(ctx.settingsTab); }, [ctx?.settingsTab]);
   const [localUrl, setLocalUrl] = useState(sheetsUrl || "");
 
   const [uModal, setUModal] = useState(false);
