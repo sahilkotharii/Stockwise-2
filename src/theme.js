@@ -209,7 +209,7 @@ select option{background:${T.isDark?"#1a1a1a":"#fff"};color:${T.text}}
 .btn-green:hover{opacity:0.88}
 .btn-danger{background:${T.redBg};color:${T.red};border:1px solid ${T.red}25;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:4px;border-radius:${T.radius};font-weight:500;transition:all .15s}
 .btn-danger:hover{filter:brightness(1.1)}
-.inp{width:100%;background:${T.isDark?"rgba(255,255,255,0.07)":T.surface};border:1.5px solid ${T.border};border-radius:${T.radius};padding:9px 12px;color:${T.text};outline:none;transition:all .15s}
+.inp{width:100%;background:${T.isDark?"rgba(255,255,255,0.07)":T.surface};border:1.5px solid ${T.border};border-radius:${T.radius};padding:9px 12px;color:${T.text};outline:none;transition:all .15s;font-size:13px}
 .inp:focus{border-color:${T.accent};box-shadow:0 0 0 3px ${T.accent}20}
 .inp::placeholder{color:${T.textSub}}
 .sel{width:100%;background:${T.isDark?"rgba(255,255,255,0.07)":T.surface};border:1.5px solid ${T.border};border-radius:${T.radius};padding:9px 12px;color:${T.text};outline:none;appearance:none;transition:all .15s;cursor:pointer}
@@ -221,9 +221,9 @@ select option{background:${T.isDark?"#1a1a1a":"#fff"};color:${T.text}}
 .trow:hover{background:${T.isDark?"rgba(255,255,255,0.04)":"rgba(0,0,0,0.03)"}}
 .trow.row-sel{background:${T.accent}18!important}
 .tag{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:${T.radius==="0px"?"2px":"99px"};font-size:11px;font-weight:600}
-.kcard{border-radius:${T.radiusXl};padding:20px;position:relative;overflow:hidden;transition:transform .2s,box-shadow .2s;border:1px solid ${T.border}}
+.kcard{border-radius:${T.radiusXl};padding:20px;position:relative;overflow:hidden;transition:transform .2s,box-shadow .2s;border:1px solid ${T.border};display:flex;flex-direction:column;min-height:140px}
 .kcard:hover{${T.radius!=="0px"?"transform:translateY(-2px);":""};box-shadow:${T.shadowLg}}
-.kgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.kgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;align-items:stretch}
 .fgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .fgrid .s2{grid-column:1/-1}
 .cb{width:15px;height:15px;accent-color:${T.accent};cursor:pointer;flex-shrink:0}
