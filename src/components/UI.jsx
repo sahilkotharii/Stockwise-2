@@ -83,15 +83,19 @@ export function Modal({ open, onClose, title, children, footer, width = 520 }) {
 
 export function KCard({ label, value, sub, icon: Icon, color, delta }) {
   const T = useT();
-  return <div className="kcard glass">
-    <div style={{ position: "absolute", top: -20, right: -20, width: 80, height: 80, borderRadius: "50%", background: `${color}12` }} />
+  // Solid theme: card gets a tinted background using the card's color
+  const cardStyle = T.accentCard
+    ? { background: color + "15", border: `1px solid ${color}30` }
+    : {};
+  return <div className="kcard glass" style={cardStyle}>
+    <div style={{ position: "absolute", top: -20, right: -20, width: 80, height: 80, borderRadius: "50%", background: T.accentCard ? color + "20" : `${color}12` }} />
     <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 14 }}>
-      <div style={{ width: 40, height: 40, borderRadius: 12, background: `${color}1A`, display: "flex", alignItems: "center", justifyContent: "center" }}><Icon size={19} color={color} /></div>
+      <div style={{ width: 40, height: 40, borderRadius: 12, background: T.accentCard ? color + "25" : `${color}1A`, display: "flex", alignItems: "center", justifyContent: "center" }}><Icon size={19} color={color} /></div>
       {delta !== undefined && <span className="badge" style={{ background: delta >= 0 ? T.greenBg : T.redBg, color: delta >= 0 ? T.green : T.red }}>{delta >= 0 ? "↑" : "↓"}{Math.abs(delta).toFixed(1)}%</span>}
     </div>
-    <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 24, color: T.text, letterSpacing: "-0.03em" }}>{value}</div>
-    <div style={{ fontSize: 12, fontWeight: 600, color: T.textSub, marginTop: 2 }}>{label}</div>
-    {sub && <div style={{ fontSize: 12, color: T.textSub, marginTop: 4 }}>{sub}</div>}
+    <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 24, color: T.accentCard ? color : T.text, letterSpacing: "-0.03em" }}>{value}</div>
+    <div style={{ fontSize: 12, fontWeight: 600, color: T.accentCard ? color + "CC" : T.textSub, marginTop: 2 }}>{label}</div>
+    {sub && <div style={{ fontSize: 12, color: T.accentCard ? color + "99" : T.textSub, marginTop: 4 }}>{sub}</div>}
   </div>;
 }
 
