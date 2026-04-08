@@ -104,10 +104,17 @@ export default function BillForm({ type, bills, onSave, products, vendors, getSt
     if (type === "sale") {
       const prefix = invoiceSettings?.saleSeries || "SALE-";
       const startNum = Number(invoiceSettings?.saleSeriesStart || 1);
-      const existing = (bills||[]).filter(b => b.type === "sale").length;
-      return `${prefix}${String(startNum + existing).padStart(4, "0")}`;
+      // Use max existing number to avoid duplicates after deletions
+      const saleBills = (bills||[]).filter(b => b.type === "sale");
+      let maxNum = startNum - 1;
+      saleBills.forEach(b => {
+        const noStr = b.billNo?.replace(prefix, "");
+        const n = parseInt(noStr, 10);
+        if (!isNaN(n) && n > maxNum) maxNum = n;
+      });
+      return `${prefix}${String(maxNum + 1).padStart(4, "0")}`;
     } else {
-      // Purchase: no auto number — user enters vendor's invoice number
+      // Purchase: user enters vendor's invoice number
       return purchaseInvoiceNo || "";
     }
   }, [bills, type, isEdit, existingBill, invoiceSettings, purchaseInvoiceNo]);
