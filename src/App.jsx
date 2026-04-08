@@ -77,9 +77,17 @@ export default function App() {
         { id: "u2", name: "Store Manager", username: "manager", password: "store123", role: "manager", createdAt: today(), lockedPages: [] }
       ];
 
-      const fu = u || SEED_USERS, fp = p || [], fc = c || [], fv = v || [], fch = ch || [], ft = t || [];
+      const fu = u || SEED_USERS, fp = p || [], fc = c || [], fv = v || [], fch = ch || [];
+      // Sanitize dates from localStorage (may have old "Wed Apr 08 2026..." strings)
+      const fixDatesLocal = rows => (rows || []).map(r => {
+        if (!r || !r.date) return r;
+        const ds = toYMD(r.date);
+        return ds !== r.date ? { ...r, date: ds } : r;
+      });
+      const ft = fixDatesLocal(t);
+      const fb = fixDatesLocal(b);
       setUsers(fu); setProducts(fp); setCategories(fc); setVendors(fv);
-      setChannels(fch); setTransactions(ft); setBills(b || []);
+      setChannels(fch); setTransactions(ft); setBills(fb || []);
       setSheetsUrl(sUrl || DEFAULT_SHEETS_URL); setIsDark(dp || false);
       setChangeReqs(cr || []); setActLog(al || []);
       const invS = await lsGet(SK.invoiceSettings, {});
