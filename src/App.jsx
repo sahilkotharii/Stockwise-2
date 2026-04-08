@@ -371,12 +371,11 @@ export default function App() {
 
       <Sidebar
         page={actualPage} setPage={setPage} user={user} onLogout={handleLogout}
-        col={col} setCol={setCol} syncSt={syncSt} lastSync={lastSync}
-        onSync={() => pull(sheetsUrl)} toggleTheme={toggleTheme} isDark={isDark}
-        pendingCnt={changeReqs.filter(r => r.status === "pending").length}
+        isDark={isDark} toggleTheme={toggleTheme} ctx={ctx}
       />
       <MobNav
         page={actualPage} setPage={setPage} user={user}
+        onLogout={handleLogout} isDark={isDark} toggleTheme={toggleTheme}
         pendingCnt={changeReqs.filter(r => r.status === "pending").length}
       />
 
@@ -384,7 +383,7 @@ export default function App() {
         <TopBar
           page={actualPage} user={user} syncSt={syncSt} lastSync={lastSync}
           onSync={() => pull(sheetsUrl)} toggleTheme={toggleTheme} isDark={isDark}
-          setPage={setPage} ctx={ctx}
+          setPage={setPage} ctx={ctx} onLogout={handleLogout}
         />
         <div className="fade-up">
           {actualPage === "dashboard"    && <Dashboard    ctx={ctx} />}
