@@ -195,7 +195,7 @@ ${sharedStyle}
       <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 14 }}>Sales Bills</div>
       <div className="filter-wrap" style={{ marginBottom: 12 }}>
         <div style={{ position: "relative", flex: "1 1 160px" }}>
-          <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", fontSize: 12, color: T.textMuted }}></span>
+          
           <input className="inp" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search bill no, product…" style={{ paddingLeft: 28 }} />
         </div>
         <GS value={vendorF} onChange={e => setVendorF(e.target.value)} placeholder="All Vendors">{vendors.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}</GS>
