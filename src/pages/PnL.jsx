@@ -174,7 +174,7 @@ export default function PnL({ ctx }) {
 
         {/* P&L Table */}
         <div className="glass" style={{padding:20,borderRadius:T.radius}}>
-          <div style={{fontFamily:T.displayFont,fontWeight:700,fontSize:15,color:T.text,marginBottom:12}}>📊 Profit & Loss</div>
+          <div style={{fontFamily:T.displayFont,fontWeight:700,fontSize:15,color:T.text,marginBottom:12}}>Profit & Loss</div>
           <table style={{width:"100%",borderCollapse:"collapse"}}>
             <tbody>
               <Row label="SALES" bold/>
@@ -200,7 +200,7 @@ export default function PnL({ ctx }) {
         {/* Inventory & Purchase Summary */}
         <div style={{display:"flex",flexDirection:"column",gap:14}}>
           <div className="glass" style={{padding:20,borderRadius:T.radius}}>
-            <div style={{fontFamily:T.displayFont,fontWeight:700,fontSize:15,color:T.text,marginBottom:12}}>📦 Inventory</div>
+            <div style={{fontFamily:T.displayFont,fontWeight:700,fontSize:15,color:T.text,marginBottom:12}}>Inventory</div>
             <table style={{width:"100%",borderCollapse:"collapse"}}>
               <tbody>
                 <Row label="Opening Stock Value"  value={openingStock}  indent={1}/>
@@ -214,7 +214,7 @@ export default function PnL({ ctx }) {
           </div>
 
           <div className="glass" style={{padding:20,borderRadius:T.radius}}>
-            <div style={{fontFamily:T.displayFont,fontWeight:700,fontSize:15,color:T.text,marginBottom:12}}>🛒 Purchase Summary</div>
+            <div style={{fontFamily:T.displayFont,fontWeight:700,fontSize:15,color:T.text,marginBottom:12}}>Purchase Summary</div>
             <table style={{width:"100%",borderCollapse:"collapse"}}>
               <tbody>
                 <Row label="Total Paid (incl. GST)" value={totalPurchaseInclGst} bold color={T.blue}/>
@@ -229,7 +229,7 @@ export default function PnL({ ctx }) {
       </div>
 
       <div style={{padding:"10px 14px",borderRadius:10,background:T.amberBg,fontSize:11,color:T.amber,border:`1px solid ${T.amber}30`}}>
-        ⚠️ This is an indicative summary only. For certified accounts or GST filing, please consult your CA with the full CSV export.
+         This is an indicative summary only. For certified accounts or GST filing, please consult your CA with the full CSV export.
       </div>
     </div>
   );
