@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Plus, Edit2, Trash2, Check, RefreshCw, Wifi, Download, Activity, Lock, Unlock, CheckCircle, XCircle, Loader, X } from "lucide-react";
 import { useT } from "../theme";
 import { GBtn, GIn, GTa, GS, Field, Modal } from "../components/UI";
-import { uid, today, fmtTs, toCSV, dlCSV } from "../utils";
+import { uid, today, fmtTs, fmtCur, toCSV, dlCSV, hashPassword } from "../utils";
 import { lsSet } from "../storage";
 
 const LOCKABLE = [
@@ -21,7 +21,7 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
   const T = useT();
   const { users, saveUsers, user, actLog, saveActLog, invoiceSettings, saveInvoiceSettings, themeId, setTheme, accentKey, setAccent, THEMES, ACCENT_PRESETS, changeReqs, saveChangeReqs } = ctx;
   const isAdmin = user.role === "admin";
-  const tabs = isAdmin ? ["profile", "users", "series", "access", "export", "activity", "sessions", "invoice", "sheets"] : ["profile"];
+  const tabs = isAdmin ? ["profile", "theme", "users", "series", "access", "export", "activity", "sessions", "invoice", "sheets"] : ["profile", "theme"];
   const [tab, setTab] = useState("profile");
   const [localUrl, setLocalUrl] = useState(sheetsUrl || "");
 
