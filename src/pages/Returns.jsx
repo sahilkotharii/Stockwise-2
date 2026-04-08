@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import { Plus, Search, X, Eye, Trash2, RotateCcw, Package, Truck, AlertTriangle, ChevronDown, ChevronRight } from "lucide-react";
 import { useT } from "../theme";
 import { KCard, GBtn, GIn, GS, GTa, Field, Modal, Pager } from "../components/UI";
+import VendorSearch from "../components/VendorSearch";
 import { uid, today, fmtCur, fmtDate, inRange } from "../utils";
 
 const PRESETS = [
@@ -356,7 +357,7 @@ export default function Returns({ ctx }) {
         {/* Date + Channel/Vendor */}
         <div className="fgrid">
           <Field label="Date" req><GIn type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} /></Field>
-          <Field label="Vendor" req><GS value={form.vendorId} onChange={e => setForm(f => ({ ...f, vendorId: e.target.value }))} placeholder="Select vendor">{vendors.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}</GS></Field>
+          <Field label="Vendor" req><VendorSearch value={form.vendorId} onChange={id => setForm(f => ({ ...f, vendorId: id }))} vendors={vendors||[]} /></Field>
         </div>
 
         {/* GST Type */}
