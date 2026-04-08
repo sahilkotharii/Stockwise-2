@@ -89,3 +89,18 @@ export const calcBillGst = (bill) => {
 
   return 0;
 };
+
+// ── Password hashing (SHA-256, no backend needed) ─────────────────────────
+export const hashPassword = async (pass) => {
+  const msgBuffer = new TextEncoder().encode("sw2026:" + pass);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+};
+export const checkPassword = async (pass, stored) => {
+  if (!stored) return false;
+  // Legacy: plain text stored (first-run migration)
+  if (!stored.startsWith("sha256:")) return pass === stored;
+  const hashed = await hashPassword(pass);
+  return "sha256:" + hashed === stored;
+};
