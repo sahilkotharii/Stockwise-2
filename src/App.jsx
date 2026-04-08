@@ -9,7 +9,7 @@ import { uid, today } from "./utils";
 // ── Default Google Sheets Web App URL ────────────────────────────────────────
 const DEFAULT_SHEETS_URL = "https://script.google.com/macros/s/AKfycbxiLGcaBsuNtUrT7tBFSzAe0LOmMqTKWIfjZAR6YCE7kTfLjAF-7FeeMY1VRyuTSHVh/exec";
 
-import { Sidebar, MobNav, TopBar, ALL_NAV } from "./components/Nav";
+import Sidebar, { MobNav, TopBar, ALL_NAV } from "./components/Nav";
 import Login from "./components/Login";
 import { Toast } from "./components/UI";
 
@@ -45,12 +45,14 @@ export default function App() {
   const [lastSync, setLastSync] = useState(null);
   const [testStatus, setTestStatus] = useState(null);
   const [isDark, setIsDark] = useState(false);
+  const [themeId, setThemeId] = useState("glass");
+  const [accentKey, setAccentKey] = useState("copper");
   const [changeReqs, setChangeReqs] = useState([]);
   const [actLog, setActLog] = useState([]);
   const [toast, setToast] = useState(null);
   const [invoiceSettings, setInvoiceSettings] = useState({});
 
-  const theme = isDark ? DARK : COPPER;
+  const theme = buildTheme(themeId, accentKey, isDark);
 
   const showToast = (msg, type = "success") => {
     setToast({ msg, type });
@@ -65,11 +67,12 @@ export default function App() {
     document.head.appendChild(lnk);
 
     (async () => {
-      const [u, p, c, v, t, ch, b, sUrl, ok, dp, cr, al] = await Promise.all([
+      const [u, p, c, v, t, ch, b, sUrl, ok, dp, cr, al, tid, ak] = await Promise.all([
         lsGet(SK.users, null), lsGet(SK.products, null), lsGet(SK.categories, null),
         lsGet(SK.vendors, null), lsGet(SK.transactions, null), lsGet(SK.channels, null),
         lsGet(SK.bills, []), lsGet(SK.sheetsUrl, DEFAULT_SHEETS_URL), lsGet(SK.seeded, false),
-        lsGet(SK.theme, false), lsGet(SK.changeReqs, []), lsGet(SK.actLog, [])
+        lsGet(SK.theme, false), lsGet(SK.changeReqs, []), lsGet(SK.actLog, []),
+        lsGet("sw_theme_id", "glass"), lsGet("sw_accent_key", "copper")
       ]);
 
       const SEED_USERS = [
@@ -89,6 +92,7 @@ export default function App() {
       setUsers(fu); setProducts(fp); setCategories(fc); setVendors(fv);
       setChannels(fch); setTransactions(ft); setBills(fb || []);
       setSheetsUrl(sUrl || DEFAULT_SHEETS_URL); setIsDark(dp || false);
+      setThemeId(tid || "glass"); setAccentKey(ak || "copper");
       setChangeReqs(cr || []); setActLog(al || []);
       const invS = await lsGet(SK.invoiceSettings, {});
       setInvoiceSettings(invS || {});
@@ -146,6 +150,8 @@ export default function App() {
   }, [isDark, theme]);
 
   const toggleTheme = () => { const n = !isDark; setIsDark(n); lsSet(SK.theme, n); };
+  const setTheme = (tid) => { setThemeId(tid); lsSet("sw_theme_id", tid); };
+  const setAccent = (ak) => { setAccentKey(ak); lsSet("sw_accent_key", ak); };
 
   // ── Sheets sync ───────────────────────────────────────────────────────────
   async function pull(url) {
