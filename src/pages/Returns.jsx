@@ -302,7 +302,7 @@ export default function Returns({ ctx }) {
               const typeColor = t.type === "return" ? T.red : t.type === "purchase_return" ? T.blue : T.amber;
               const typeLabel = t.type === "return" ? "Sales Return" : t.type === "purchase_return" ? "Purchase Return" : "Damaged";
               return (
-                <tr key={t.id} className={`trow${selRets.has(t.id)?" sel":""}`}>
+                <tr key={t.id} className={`trow${selRets.has(t.id)?" row-sel":""}`}>
                   <td className="td" onClick={e=>e.stopPropagation()}><input type="checkbox" className="cb" checked={selRets.has(t.id)} onChange={()=>tgRet(t.id)}/></td>
                   <td className="td m">{fmtDate(t.date)}</td>
                   <td className="td">
