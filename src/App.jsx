@@ -115,6 +115,22 @@ export default function App() {
       const url = sUrl || DEFAULT_SHEETS_URL;
       if (url) pull(url);
 
+      // ── Migrate plain-text passwords to hashed on first boot ───────────────
+      (async () => {
+        const { hashPassword } = await import("./utils");
+        const needsMigration = fu.some(u => u.password && !u.password.startsWith("sha256:"));
+        if (needsMigration) {
+          const migrated = await Promise.all(fu.map(async u => {
+            if (!u.password || u.password.startsWith("sha256:")) return u;
+            const h = await hashPassword(u.password);
+            return { ...u, password: "sha256:" + h };
+          }));
+          setUsers(migrated);
+          await lsSet(SK.users, migrated);
+          push("users", migrated);
+        }
+      })();
+
       // ── Auto-sync every 4 minutes ──────────────────────────────────────────
       const interval = setInterval(() => pull(url), 4 * 60 * 1000);
       return () => clearInterval(interval);
