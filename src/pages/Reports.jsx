@@ -109,13 +109,13 @@ export default function Reports({ ctx }) {
       const cat = categories.find(c => c.id === p?.categoryId);
       const n = cat?.name || "Other"; const col = cat?.color || T.textMuted;
       if (!m[n]) m[n] = { name: n, revenue: 0, units: 0, cost: 0, color: col };
-      m[n].revenue += Number(t.qty) * Number(t.price); m[n].units += Number(t.qty); m[n].cost += Number(t.qty) * pp(t.productId);
+      m[n].revenue += Number(t.qty) * (Number(t.effectivePrice)||Number(t.price)); m[n].units += Number(t.qty); m[n].cost += Number(t.qty) * pp(t.productId);
     });
     rets.forEach(t => {
       const p = products.find(pr => pr.id === t.productId);
       const cat = categories.find(c => c.id === p?.categoryId);
       const n = cat?.name || "Other";
-      if (m[n]) { m[n].revenue -= Number(t.qty) * Number(t.price); m[n].units -= Number(t.qty); m[n].cost -= Number(t.qty) * pp(t.productId); }
+      if (m[n]) { m[n].revenue -= Number(t.qty) * (Number(t.effectivePrice)||Number(t.price)); m[n].units -= Number(t.qty); m[n].cost -= Number(t.qty) * pp(t.productId); }
     });
     return Object.values(m).map(x => ({ ...x, profit: x.revenue - x.cost, margin: x.revenue > 0 ? ((x.revenue - x.cost) / x.revenue * 100).toFixed(1) : "0" })).sort((a, b) => b.revenue - a.revenue);
   }, [sales, rets, products, categories]);
@@ -138,11 +138,11 @@ export default function Reports({ ctx }) {
     const m = {};
     sales.forEach(t => {
       if (!m[t.productId]) m[t.productId] = { p: products.find(pr => pr.id === t.productId), units: 0, revenue: 0, cost: 0 };
-      m[t.productId].units += Number(t.qty); m[t.productId].revenue += Number(t.qty) * Number(t.price); m[t.productId].cost += Number(t.qty) * pp(t.productId);
+      m[t.productId].units += Number(t.qty); m[t.productId].revenue += Number(t.qty) * (Number(t.effectivePrice)||Number(t.price)); m[t.productId].cost += Number(t.qty) * pp(t.productId);
     });
     rets.forEach(t => {
       if (!m[t.productId]) m[t.productId] = { p: products.find(pr => pr.id === t.productId), units: 0, revenue: 0, cost: 0 };
-      m[t.productId].units -= Number(t.qty); m[t.productId].revenue -= Number(t.qty) * Number(t.price); m[t.productId].cost -= Number(t.qty) * pp(t.productId);
+      m[t.productId].units -= Number(t.qty); m[t.productId].revenue -= Number(t.qty) * (Number(t.effectivePrice)||Number(t.price)); m[t.productId].cost -= Number(t.qty) * pp(t.productId);
     });
     return Object.values(m).filter(x => x.p).map(x => ({ ...x, profit: x.revenue - x.cost, margin: x.revenue > 0 ? ((x.revenue - x.cost) / x.revenue * 100).toFixed(1) : "0", currentStock: getStock(x.p.id) })).sort((a, b) => b.revenue - a.revenue);
   }, [sales, rets, products, getStock]);
