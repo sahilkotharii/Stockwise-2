@@ -38,7 +38,7 @@ select option{background:${T.isDark?"#1a1a1a":"#FFF8F0"};color:${T.text}}
 .nav-item.active{background:${T.accent}1C;color:${T.accent};font-weight:600}
 .badge{display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:99px;font-size:11px;font-weight:600;letter-spacing:.01em}
 .trow:hover{background:${T.isDark?"rgba(255,255,255,0.04)":"rgba(255,255,255,0.55)"}}
-.trow.sel{background:${T.accent}12!important}
+.trow.row-sel{background:${T.accent}12!important}
 .tag{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:99px;font-size:11px;font-weight:600}
 .kcard{border-radius:${T.radiusXl};padding:20px;position:relative;overflow:hidden;transition:transform .2s,box-shadow .2s}
 .kcard:hover{transform:translateY(-2px);box-shadow:${T.shadowLg}}
@@ -62,6 +62,8 @@ select option{background:${T.isDark?"#1a1a1a":"#FFF8F0"};color:${T.text}}
   .desktop-sidebar{display:none!important}
   .main-wrap{margin-left:0!important;padding:8px 10px 76px!important;overflow-x:hidden!important}
   .kgrid{grid-template-columns:1fr 1fr!important;gap:10px!important}
+  .kcard{padding:14px!important}
+  .kcard .kcard-val{font-size:17px!important}
   .chart-row{grid-template-columns:1fr!important}
   .pgrid{grid-template-columns:1fr 1fr!important}
   .fgrid{grid-template-columns:1fr!important}
@@ -69,15 +71,15 @@ select option{background:${T.isDark?"#1a1a1a":"#FFF8F0"};color:${T.text}}
   .filter-wrap{gap:6px!important}
   .filter-wrap>*{min-width:0;flex-shrink:1}
   .filter-wrap input[type="date"]{flex:1 1 100px!important;min-width:80px!important}
-  .bill-item-row{grid-template-columns:1fr 60px 80px 80px 40px 28px!important;gap:5px!important;padding:6px 8px!important}
+  .bill-item-row{grid-template-columns:1fr 55px 85px 75px 28px!important;gap:4px!important;padding:6px 8px!important}
   .bill-item-hdr{display:none!important}
   .hide-mob{display:none!important}
   table{font-size:11px!important}
   .td{padding:8px 10px!important}
   .th{padding:8px 10px!important}
 }
-@media(max-width:480px){
-  .kgrid{grid-template-columns:1fr 1fr!important}
+@media(max-width:400px){
+  .kgrid{grid-template-columns:1fr!important}
   .pgrid{grid-template-columns:1fr!important}
   .main-wrap{padding:6px 8px 76px!important}
 }
