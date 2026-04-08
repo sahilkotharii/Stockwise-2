@@ -82,7 +82,7 @@ export default function Purchase({ ctx }) {
       effectivePrice: item.price,
       gstRate: item.gstRate || 0,
       gstAmount: item.gstAmount || 0,
-      vendorId: bill.vendorId, channelId: null, date: bill.date,
+      vendorId: bill.vendorId, date: bill.date,
       notes: `Bill: ${bill.billNo}${bill.notes ? ` · ${bill.notes}` : ""}`,
       userId: user.id, userName: user.name, billId: bill.id, isDamaged: item.isDamaged
     }));
@@ -93,12 +93,16 @@ export default function Purchase({ ctx }) {
   };
 
   const handleEditBill = updatedBill => {
+    if (isManager) {
+      addChangeReq({ entity: "purchase", action: "update", entityId: updatedBill.id, entityName: updatedBill.billNo, currentData: bills.find(b => b.id === updatedBill.id), proposedData: updatedBill });
+      setEditBill(null); return;
+    }
     const filteredTxns = transactions.filter(t => t.billId !== updatedBill.id);
     const newTxns = updatedBill.items.map(item => ({
       id: uid(), productId: item.productId, type: item.isDamaged ? "damaged" : "purchase",
-      qty: item.qty, price: item.price, effectivePrice: item.price,
+      qty: item.qty, price: item.effectivePrice || item.price, effectivePrice: item.effectivePrice || item.price,
       gstRate: item.gstRate || 0, gstAmount: item.gstAmount || 0,
-      vendorId: updatedBill.vendorId, channelId: null, date: updatedBill.date,
+      vendorId: updatedBill.vendorId, date: updatedBill.date,
       notes: `Bill: ${updatedBill.billNo} (edited)`,
       gstType: updatedBill.gstType || "",
       userId: user.id, userName: user.name, billId: updatedBill.id, isDamaged: item.isDamaged
