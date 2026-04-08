@@ -28,7 +28,13 @@ export default function Sidebar({ page, setPage, user, onLogout, isDark, toggleT
   const { changeReqs } = ctx;
   const pendingCnt = (changeReqs || []).filter(r => r.status === "pending").length;
 
-  return <div className="desktop-sidebar" style={{ position: "fixed", left: 0, top: 0, bottom: 0, width: T.sidebarW, display: "flex", flexDirection: "column", background: T.sidebarBg ? T.sidebarBg : T.surfaceStrong, backdropFilter: T.blur, borderRight: `1px solid ${T.border}`, zIndex: 50, overflow: "hidden" }}>
+  const sidebarStyle = T.isGlass
+    ? { background: T.surface, backdropFilter: T.blur, WebkitBackdropFilter: T.blur, borderRight: `1px solid ${T.border}`, boxShadow: T.shadowLg + (T.shimmer ? ", " + T.shimmer : "") }
+    : T.sidebarBg
+    ? { background: T.sidebarBg, borderRight: "none" }
+    : { background: T.surfaceStrong, borderRight: `1px solid ${T.border}` };
+
+  return <div className="desktop-sidebar" style={{ position: "fixed", left: 0, top: 0, bottom: 0, width: T.sidebarW, display: "flex", flexDirection: "column", zIndex: 50, overflow: "hidden", ...sidebarStyle }}>
     {/* Logo */}
     <div style={{ padding: "20px 14px 14px", borderBottom: `1px solid ${T.borderSubtle}` }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
