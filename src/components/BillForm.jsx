@@ -311,7 +311,7 @@ export default function BillForm({ type, bills, onSave, products, vendors, getSt
                   <ProductSearch value={item.productId} onChange={v => upItem(item.id, "productId", v)} products={products} placeholder={`Product ${i + 1}`} />
                   {stk !== null && (
                     <div style={{ fontSize:11, marginTop: 2, color: stk <= 0 ? T.red : stk <= (pr?.minStock || 5) ? T.amber : T.textMuted }}>
-                      Stock: {stk}{type === "sale" && stk < Number(item.qty || 0) ? " ⚠️" : ""}
+                      Stock: {stk}{type === "sale" && stk < Number(item.qty || 0) ? " " : ""}
                       {rate > 0 && <span style={{ marginLeft: 6, color: T.textMuted }}>GST {rate}%</span>}
                     </div>
                   )}
