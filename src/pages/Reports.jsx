@@ -72,9 +72,9 @@ export default function Reports({ ctx }) {
 
   // ── Monthly 12m from bills ───────────────────────────────────────────────
   const monthly12 = useMemo(() => months.map(m => {
-    const mb = bills.filter(b => b.type === "sale" && monthOf(b.date) === m.key);
-    const mp = bills.filter(b => b.type === "purchase" && monthOf(b.date) === m.key);
-    const mr = transactions.filter(t => t.type === "return" && monthOf(t.date) === m.key);
+    const mb = bills.filter(b => b.type === "sale" && monthOf(safeDate(b.date)) === m.key);
+    const mp = bills.filter(b => b.type === "purchase" && monthOf(safeDate(b.date)) === m.key);
+    const mr = transactions.filter(t => t.type === "return" && monthOf(safeDate(t.date)) === m.key);
     const rev = mb.reduce((s, b) => s + Number(b.total || 0), 0);
     const gstOnSales = mb.reduce((s, b) => s + calcBillGst(b), 0);
     const rAmt = mr.reduce((s, t) => s + Number(t.qty) * Number(t.price || 0), 0);
