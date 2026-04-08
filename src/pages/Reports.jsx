@@ -382,7 +382,7 @@ export default function Reports({ ctx }) {
         </div>
 
         {deadStock.length > 0 && <div className="glass" style={{ padding: 18, borderRadius: T.radius, borderLeft: `4px solid ${T.red}` }}>
-          <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.red, marginBottom: 14 }}>⚠️ Dead Stock — No Sales in Period ({deadStock.length} products)</div>
+          <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.red, marginBottom: 14 }}> Dead Stock — No Sales in Period ({deadStock.length} products)</div>
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
               <thead><tr>{["Product", "SKU", "Category", "Stock", "Value"].map(h => <th key={h} className="th" style={{ textAlign: ["Stock", "Value"].includes(h) ? "right" : "left" }}>{h.toUpperCase()}</th>)}</tr></thead>
