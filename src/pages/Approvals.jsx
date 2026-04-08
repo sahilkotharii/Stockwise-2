@@ -35,14 +35,35 @@ export default function Approvals({ ctx }) {
         const newT = bill.items.map(item => ({
           id: uid(), productId: item.productId,
           type: item.isDamaged ? "damaged" : req.entity,
-          qty: item.qty, price: item.price,
-          vendorId: bill.vendorId || null, channelId: bill.channelId || null,
+          qty: item.qty,
+          price: item.effectivePrice || item.price,
+          effectivePrice: item.effectivePrice || item.price,
+          gstRate: item.gstRate || 0, gstAmount: item.gstAmount || 0,
+          vendorId: bill.vendorId || null,
+          gstType: bill.gstType || "",
           date: bill.date, notes: `Bill: ${bill.billNo}`,
           userId: req.requestedBy, userName: req.requestedByName,
           billId: bill.id, isDamaged: item.isDamaged
         }));
         saveBills([bill, ...bills]);
         saveTransactions([...newT, ...transactions]);
+      } else if ((req.entity === "sale" || req.entity === "purchase") && req.action === "update") {
+        const bill = req.proposedData;
+        const newT = bill.items.map(item => ({
+          id: uid(), productId: item.productId,
+          type: item.isDamaged ? "damaged" : req.entity,
+          qty: item.qty,
+          price: item.effectivePrice || item.price,
+          effectivePrice: item.effectivePrice || item.price,
+          gstRate: item.gstRate || 0, gstAmount: item.gstAmount || 0,
+          vendorId: bill.vendorId || null,
+          gstType: bill.gstType || "",
+          date: bill.date, notes: `Bill: ${bill.billNo} (edited)`,
+          userId: req.requestedBy, userName: req.requestedByName,
+          billId: bill.id, isDamaged: item.isDamaged
+        }));
+        saveBills(bills.map(b => b.id === bill.id ? bill : b));
+        saveTransactions([...newT, ...transactions.filter(t => t.billId !== bill.id)]);
       } else if ((req.entity === "sale" || req.entity === "purchase") && req.action === "delete") {
         saveBills(bills.filter(b => b.id !== req.entityId));
         saveTransactions(transactions.filter(t => t.billId !== req.entityId));
