@@ -82,8 +82,8 @@ export function buildHTML(bill, inv, vendor) {
       <td style="padding:6px 8px;text-align:center;border-bottom:1px solid #eee">${idx+1}</td>
       <td style="padding:6px 8px;border-bottom:1px solid #eee">
         <div style="font-weight:600">${it.productName || ""}</div>
-        ${it.hsnCode || it.hsn ? `<div style="font-size:10px;color:#666">HSN: ${it.hsnCode || it.hsn}</div>` : ""}
       </td>
+      <td style="padding:6px 8px;text-align:center;border-bottom:1px solid #eee;font-family:monospace;font-size:11px;color:#555">${it.hsnCode || it.hsn || "—"}</td>
       <td style="padding:6px 8px;text-align:center;border-bottom:1px solid #eee">${it.unit || "Pcs"}</td>
       <td style="padding:6px 8px;text-align:right;border-bottom:1px solid #eee">${it.qty}</td>
       <td style="padding:6px 8px;text-align:right;border-bottom:1px solid #eee">₹${it.taxablePerUnit.toFixed(2)}</td>
@@ -223,6 +223,7 @@ export function buildHTML(bill, inv, vendor) {
       <tr>
         <th style="width:30px">#</th>
         <th style="text-align:left">Description of Goods / Services</th>
+        <th style="width:80px;text-align:center">HSN / SAC</th>
         <th style="width:50px">Unit</th>
         <th style="width:45px">Qty</th>
         <th style="width:100px;text-align:right">Rate (ex-GST)</th>
@@ -235,7 +236,7 @@ export function buildHTML(bill, inv, vendor) {
     </tbody>
     <tfoot>
       <tr>
-        <td colspan="5" style="text-align:right;padding:7px 8px">Totals</td>
+        <td colspan="6" style="text-align:right;padding:7px 8px">Totals</td>
         <td style="text-align:right;padding:7px 8px">₹${grandTaxable.toFixed(2)}</td>
         <td style="text-align:right;padding:7px 8px">₹${grandTotal.toFixed(2)}</td>
       </tr>
