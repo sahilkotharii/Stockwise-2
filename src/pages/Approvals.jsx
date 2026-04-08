@@ -46,6 +46,10 @@ export default function Approvals({ ctx }) {
       } else if ((req.entity === "sale" || req.entity === "purchase") && req.action === "delete") {
         saveBills(bills.filter(b => b.id !== req.entityId));
         saveTransactions(transactions.filter(t => t.billId !== req.entityId));
+      } else if (req.entity === "return" && req.action === "create") {
+        saveTransactions([{ ...req.proposedData, id: req.proposedData.id || uid() }, ...transactions]);
+      } else if (req.entity === "return" && req.action === "update") {
+        saveTransactions(transactions.map(t => t.id === req.entityId ? req.proposedData : t));
       } else if (req.entity === "return" && req.action === "delete") {
         saveTransactions(transactions.filter(t => t.id !== req.entityId));
       }
