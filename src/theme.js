@@ -8,11 +8,16 @@ export const ACCENT_PRESETS = {
   rose:    { name: "Rose",    light: "#E11D48", dark: "#FB7185" },
   sky:     { name: "Sky",     light: "#0284C7", dark: "#38BDF8" },
   violet:  { name: "Violet",  light: "#7C3AED", dark: "#A78BFA" },
+  custom:  { name: "Custom",   light: "#C05C1E", dark: "#D4763A" },
 };
 
 // ── Build a full token set from accent + dark flag ────────────────────────────
-function buildTokens(accentKey = "copper", isDark = false) {
-  const p = ACCENT_PRESETS[accentKey] || ACCENT_PRESETS.copper;
+function buildTokens(accentKey = "copper", isDark = false, customColor = null) {
+  let p = ACCENT_PRESETS[accentKey] || ACCENT_PRESETS.copper;
+  // If custom color passed, override the preset
+  if (customColor && /^#[0-9a-fA-F]{6}$/.test(customColor)) {
+    p = { light: customColor, dark: customColor };
+  }
   const accent = isDark ? p.dark : p.light;
   // Darken/lighten accent by mixing
   const accentDark = isDark ? p.light : p.light;
@@ -27,7 +32,7 @@ function buildTokens(accentKey = "copper", isDark = false) {
       green: "#4ADE80", greenBg: "rgba(74,222,128,0.10)", blue: "#60A5FA", blueBg: "rgba(96,165,250,0.10)",
       red: "#F87171", redBg: "rgba(248,113,113,0.10)", amber: "#FBBF24", amberBg: "rgba(251,191,36,0.10)",
       purple: "#C084FC", purpleBg: "rgba(192,132,252,0.10)", cyan: "#22D3EE",
-      sidebarW: 224, sidebarC: 68, radius: "14px", radiusXl: "20px", isDark: true, displayFont: "'Montserrat',sans-serif"
+      sidebarBg: "", sidebarW: 224, sidebarC: 68, radius: "14px", radiusXl: "20px", isDark: true, displayFont: "'Montserrat',sans-serif"
     };
   }
   return {
@@ -40,7 +45,7 @@ function buildTokens(accentKey = "copper", isDark = false) {
     green: "#16A34A", greenBg: "#DCFCE7", blue: "#2563EB", blueBg: "#DBEAFE",
     red: "#DC2626", redBg: "#FEE2E2", amber: "#D97706", amberBg: "#FEF3C7",
     purple: "#7C3AED", purpleBg: "#EDE9FE", cyan: "#0891B2",
-    sidebarW: 224, sidebarC: 68, radius: "14px", radiusXl: "20px", isDark: false, displayFont: "'Montserrat',sans-serif"
+    sidebarBg: "", sidebarW: 224, sidebarC: 68, radius: "14px", radiusXl: "20px", isDark: false, displayFont: "'Montserrat',sans-serif"
   };
 }
 
@@ -51,15 +56,15 @@ export const THEMES = {
     name: "Glass",
     desc: "Frosted glass with gradients",
     icon: "◈",
-    light: (accent) => ({ ...buildTokens(accent, false) }),
-    dark:  (accent) => ({ ...buildTokens(accent, true) }),
+    light: (accent, cc) => ({ ...buildTokens(accent, false, cc) }),
+    dark:  (accent, cc) => ({ ...buildTokens(accent, true, cc) }),
   },
   sharp: {
     name: "Sharp",
     desc: "Minimal, Balenciaga-style",
     icon: "▪",
-    light: (accent) => {
-      const base = buildTokens(accent, false);
+    light: (accent, cc) => {
+      const base = buildTokens(accent, false, cc);
       return {
         ...base,
         bg: "#FFFFFF",
@@ -79,8 +84,8 @@ export const THEMES = {
         displayFont: "'Helvetica Neue','Arial',sans-serif",
       };
     },
-    dark: (accent) => {
-      const base = buildTokens(accent, true);
+    dark: (accent, cc) => {
+      const base = buildTokens(accent, true, cc);
       return {
         ...base,
         bg: "#000000",
@@ -105,8 +110,8 @@ export const THEMES = {
     name: "Solid",
     desc: "Clean blocks, flat colours",
     icon: "■",
-    light: (accent) => {
-      const base = buildTokens(accent, false);
+    light: (accent, cc) => {
+      const base = buildTokens(accent, false, cc);
       return {
         ...base,
         bg: "#F4F4F5",
@@ -120,14 +125,15 @@ export const THEMES = {
         shadowXl: "0 8px 24px rgba(0,0,0,0.12)",
         radius: "8px",
         radiusXl: "10px",
+        sidebarBg: base.accent,
         text: "#18181B",
         textSub: "#3F3F46",
         textMuted: "#71717A",
         displayFont: "'Montserrat',sans-serif",
       };
     },
-    dark: (accent) => {
-      const base = buildTokens(accent, true);
+    dark: (accent, cc) => {
+      const base = buildTokens(accent, true, cc);
       return {
         ...base,
         bg: "#09090B",
@@ -141,6 +147,7 @@ export const THEMES = {
         shadowXl: "0 8px 24px rgba(0,0,0,0.7)",
         radius: "8px",
         radiusXl: "10px",
+        sidebarBg: base.accent,
         text: "#FAFAFA",
         textSub: "#A1A1AA",
         textMuted: "#71717A",
@@ -150,9 +157,14 @@ export const THEMES = {
   },
 };
 
-export function buildTheme(themeId = "glass", accentKey = "copper", isDark = false) {
+export function buildTheme(themeId = "glass", accentKey = "copper", isDark = false, customColor = null, bgImage = "") {
   const preset = THEMES[themeId] || THEMES.glass;
-  return isDark ? preset.dark(accentKey) : preset.light(accentKey);
+  const base = isDark ? preset.dark(accentKey, customColor) : preset.light(accentKey, customColor);
+  // Inject bgImage for glass theme
+  if (bgImage && themeId === "glass") {
+    return { ...base, bg: `url("${bgImage}") center/cover fixed, ${base.bg}` };
+  }
+  return base;
 }
 
 export const ThemeCtx = createContext(buildTheme());
