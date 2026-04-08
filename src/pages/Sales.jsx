@@ -163,7 +163,7 @@ ${sharedStyle}
   };
 
   return <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-    {isManager && <div style={{ padding: "10px 14px", borderRadius: 12, background: T.amberBg, border: `1px solid ${T.amber}30`, fontSize: 12, color: T.amber, fontWeight: 600 }}>⚠️ Manager mode — new sales require admin approval</div>}
+    {isManager && <div style={{ padding: "10px 14px", borderRadius: 12, background: T.amberBg, border: `1px solid ${T.amber}30`, fontSize: 12, color: T.amber, fontWeight: 600 }}> Manager mode — new sales require admin approval</div>}
 
     {/* Filter + Actions */}
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
@@ -186,13 +186,7 @@ ${sharedStyle}
         { label: "Net Sales", value: netRevenueExclGst, sub: "excl. GST · all bills", icon: DollarSign, color: T.accent },
         { label: "Units Sold", value: unitsSold, sub: "total qty across bills", icon: Package, color: T.purple, noFmt: true },
       ].map((k, i) => (
-        <div key={i} className="kcard glass">
-          <div style={{ position: "absolute", top: -20, right: -20, width: 70, height: 70, borderRadius: "50%", background: `${k.color}12` }} />
-          <div style={{ width: 36, height: 36, borderRadius: 10, background: `${k.color}1A`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 12 }}><k.icon size={17} color={k.color} /></div>
-          <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 20, color: T.text }}>{k.noFmt ? k.value : fmtCur(k.value)}</div>
-          <div style={{ fontSize: 12, fontWeight: 600, color: T.textSub, marginTop: 2 }}>{k.label}</div>
-          <div style={{ fontSize:11, color: T.textMuted, marginTop: 3 }}>{k.sub}</div>
-        </div>
+        <KCard key={i} label={k.label} value={k.noFmt ? String(k.value) : fmtCur(k.value)} sub={k.sub} icon={k.icon} color={k.color} />
       ))}
     </div>
 
@@ -201,7 +195,7 @@ ${sharedStyle}
       <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 14 }}>Sales Bills</div>
       <div className="filter-wrap" style={{ marginBottom: 12 }}>
         <div style={{ position: "relative", flex: "1 1 160px" }}>
-          <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", fontSize: 12, color: T.textMuted }}>🔍</span>
+          <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", fontSize: 12, color: T.textMuted }}></span>
           <input className="inp" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search bill no, product…" style={{ paddingLeft: 28 }} />
         </div>
         <GS value={vendorF} onChange={e => setVendorF(e.target.value)} placeholder="All Vendors">{vendors.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}</GS>
@@ -268,7 +262,7 @@ ${sharedStyle}
                               return (
                                 <tr key={idx} style={{ borderBottom:`1px solid ${T.borderSubtle}40` }}>
                                   <td style={{ padding:"5px 8px", color:T.textMuted }}>{idx+1}</td>
-                                  <td style={{ padding:"5px 8px", fontWeight:600, color:T.text }}>{it.productName||"—"}{it.isDamaged&&<span style={{color:T.red,fontSize:11,marginLeft:6}}>⚠ DMG</span>}</td>
+                                  <td style={{ padding:"5px 8px", fontWeight:600, color:T.text }}>{it.productName||"—"}{it.isDamaged&&<span style={{color:T.red,fontSize:11,marginLeft:6}}> DMG</span>}</td>
                                   <td style={{ padding:"5px 8px", color:T.textSub, fontFamily:"monospace" }}>{it.hsn||"—"}</td>
                                   <td style={{ padding:"5px 8px", textAlign:"right", fontWeight:600 }}>{qty}</td>
                                   <td style={{ padding:"5px 8px", color:T.textMuted }}>{it.unit||"pcs"}</td>
@@ -292,7 +286,7 @@ ${sharedStyle}
                           </tbody>
                         </table>
                       </div>
-                      {b.ewayBill && <div style={{ marginTop:8, fontSize:11, color:T.blue, padding:"6px 10px", borderRadius:8, background:T.blueBg }}>📦 E-Way: {b.ewayBillNo} · {b.transportName} · {b.vehicleNo}</div>}
+                      {b.ewayBill && <div style={{ marginTop:8, fontSize:11, color:T.blue, padding:"6px 10px", borderRadius:8, background:T.blueBg }}> E-Way: {b.ewayBillNo} · {b.transportName} · {b.vehicleNo}</div>}
                       {b.notes && <div style={{ fontSize:11, color:T.textSub, marginTop:6, fontStyle:"italic" }}>Note: {b.notes}</div>}
                     </div>
                   </td>
