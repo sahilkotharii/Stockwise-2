@@ -61,8 +61,8 @@ export default function Sidebar({ page, setPage, user, onLogout, isDark, toggleT
           {isDark ? <Sun size={14} color={T.amber} /> : <Moon size={14} color={T.accent} />}
           <span style={{ fontSize: 11 }}>{isDark ? "Light" : "Dark"}</span>
         </button>
-        <button onClick={() => setPage("settings")} className="btn-ghost" style={{ flex: 1, padding: "7px", borderRadius: T.radius, justifyContent: "center", background: T.sidebarBg ? "rgba(255,255,255,0.15)" : undefined, borderColor: T.sidebarBg ? "rgba(255,255,255,0.25)" : undefined, color: T.sidebarBg ? "#fff" : undefined }} title="Theme Settings">
-          <Palette size={14} color={T.accent} />
+        <button onClick={() => { setPage("settings"); if(ctx?.setSettingsTab) ctx.setSettingsTab("theme"); }} className="btn-ghost" style={{ flex: 1, padding: "7px", borderRadius: T.radius, justifyContent: "center", background: T.sidebarBg ? "rgba(255,255,255,0.15)" : undefined, borderColor: T.sidebarBg ? "rgba(255,255,255,0.25)" : undefined, color: T.sidebarBg ? "#fff" : undefined }} title="Theme Settings">
+          <Palette size={14} color={T.accentCard ? "#fff" : T.accent} />
           <span style={{ fontSize: 11 }}>Theme</span>
         </button>
       </div>
