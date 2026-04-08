@@ -74,7 +74,6 @@ export default function Returns({ ctx }) {
     if (valid.length === 0) { alert("Add at least one product"); return; }
     if (!form.vendorId) { alert("Select a vendor"); return; }
 
-
     const newTxns = valid.map(item => {
       const pr = products.find(p => p.id === item.productId);
       const rate = Number(pr?.gstRate || 0);
@@ -102,9 +101,16 @@ export default function Returns({ ctx }) {
     });
     if (editTxn) {
       // Update mode: replace the single existing transaction
-      const updated = { ...editTxn, ...newTxns[0], id: editTxn.id };
-      saveTransactions(transactions.map(x => x.id === editTxn.id ? updated : x));
-      addLog("edited", "return", updated.type);
+      if (isManager) {
+        addChangeReq({ entity: "return", action: "update", entityId: editTxn.id, entityName: editTxn.type, currentData: editTxn, proposedData: { ...editTxn, ...newTxns[0], id: editTxn.id } });
+      } else {
+        const updated = { ...editTxn, ...newTxns[0], id: editTxn.id };
+        saveTransactions(transactions.map(x => x.id === editTxn.id ? updated : x));
+        addLog("edited", "return", updated.type);
+      }
+    } else if (isManager) {
+      // Manager: send for approval
+      newTxns.forEach(t => addChangeReq({ entity: "return", action: "create", entityId: null, entityName: t.type, currentData: null, proposedData: t }));
     } else {
       saveTransactions([...newTxns, ...transactions]);
       addLog("recorded", returnType === "purchase_return" ? "purchase return" : "sales return", `${valid.length} product(s)`);
@@ -340,7 +346,7 @@ export default function Returns({ ctx }) {
     </div>
 
     {/* New Return Modal */}
-    <Modal open={modal} onClose={() => { setModal(false); resetForm(); setEditTxn(null); }} title={editTxn ? "Edit Return" : "Record Return"} width={620}
+    <Modal open={modal} onClose={() => { setModal(false); resetForm(); setEditTxn(null); }} title={`${editTxn ? "Edit" : "Record"} Return${isManager ? " (Requires Approval)" : ""}`} width={620}
       footer={<><GBtn v="ghost" onClick={() => { setModal(false); resetForm(); setEditTxn(null); }}>Cancel</GBtn><GBtn onClick={handleSave} icon={<RotateCcw size={13} />}>Save Return</GBtn></>}>
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 
