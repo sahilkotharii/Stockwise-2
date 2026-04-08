@@ -28,19 +28,19 @@ export default function Sidebar({ page, setPage, user, onLogout, isDark, toggleT
   const { changeReqs } = ctx;
   const pendingCnt = (changeReqs || []).filter(r => r.status === "pending").length;
 
-  return <div className="desktop-sidebar" style={{ position: "fixed", left: 0, top: 0, bottom: 0, width: T.sidebarW, display: "flex", flexDirection: "column", background: T.surfaceStrong, backdropFilter: T.blur, borderRight: `1px solid ${T.border}`, zIndex: 50, overflow: "hidden" }}>
+  return <div className="desktop-sidebar" style={{ position: "fixed", left: 0, top: 0, bottom: 0, width: T.sidebarW, display: "flex", flexDirection: "column", background: T.sidebarBg ? T.sidebarBg : T.surfaceStrong, backdropFilter: T.blur, borderRight: `1px solid ${T.border}`, zIndex: 50, overflow: "hidden" }}>
     {/* Logo */}
     <div style={{ padding: "20px 14px 14px", borderBottom: `1px solid ${T.borderSubtle}` }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         <div style={{ width: 38, height: 38, borderRadius: T.radiusXl, background: `linear-gradient(135deg,${T.accent},${T.accentDark})`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Layers size={18} color="#fff" /></div>
-        <div><div style={{ fontFamily: T.displayFont, fontWeight: 800, fontSize: 16, color: T.text, letterSpacing: "-0.03em" }}>StockWise</div><div style={{ fontSize: 10, color: T.textMuted, marginTop: 1 }}>{user?.name?.split(" ")[0] || "Pipal Home"}</div></div>
+        <div><div style={{ fontFamily: T.displayFont, fontWeight: 800, fontSize: 16, color: T.sidebarBg ? '#fff' : T.text, letterSpacing: "-0.03em" }}>StockWise</div><div style={{ fontSize: 10, color: T.sidebarBg ? 'rgba(255,255,255,0.7)' : T.textMuted, marginTop: 1 }}>{user?.name?.split(" ")[0] || "Pipal Home"}</div></div>
       </div>
     </div>
 
     {/* Nav items */}
     <div style={{ flex: 1, overflowY: "auto", padding: "8px 8px", display: "flex", flexDirection: "column", gap: 1 }}>
       {visNav(user).map(n => (
-        <button key={n.id} className={`nav-item${page === n.id ? " active" : ""}`} onClick={() => setPage(n.id)}>
+        <button key={n.id} className={`nav-item${page === n.id ? " active" : ""}`} onClick={() => setPage(n.id)} style={T.sidebarBg ? { color: page === n.id ? "#fff" : "rgba(255,255,255,0.75)", background: page === n.id ? "rgba(255,255,255,0.2)" : "transparent" } : {}}>
           <n.icon size={16} />
           <span>{n.label}</span>
           {n.id === "approvals" && pendingCnt > 0 && <span style={{ marginLeft: "auto", minWidth: 18, height: 18, borderRadius: 99, background: T.red, color: "#fff", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 3px" }}>{pendingCnt}</span>}
@@ -51,11 +51,11 @@ export default function Sidebar({ page, setPage, user, onLogout, isDark, toggleT
     {/* Bottom controls */}
     <div style={{ padding: "8px", borderTop: `1px solid ${T.borderSubtle}` }}>
       <div style={{ display: "flex", gap: 4, marginBottom: 6 }}>
-        <button onClick={toggleTheme} className="btn-ghost" style={{ flex: 1, padding: "7px", borderRadius: T.radius, justifyContent: "center" }} title={isDark ? "Light Mode" : "Dark Mode"}>
+        <button onClick={toggleTheme} className="btn-ghost" style={{ flex: 1, padding: "7px", borderRadius: T.radius, justifyContent: "center", background: T.sidebarBg ? "rgba(255,255,255,0.15)" : undefined, borderColor: T.sidebarBg ? "rgba(255,255,255,0.25)" : undefined, color: T.sidebarBg ? "#fff" : undefined }} title={isDark ? "Light Mode" : "Dark Mode"}>
           {isDark ? <Sun size={14} color={T.amber} /> : <Moon size={14} color={T.accent} />}
           <span style={{ fontSize: 11 }}>{isDark ? "Light" : "Dark"}</span>
         </button>
-        <button onClick={() => setPage("settings")} className="btn-ghost" style={{ flex: 1, padding: "7px", borderRadius: T.radius, justifyContent: "center" }} title="Theme Settings">
+        <button onClick={() => setPage("settings")} className="btn-ghost" style={{ flex: 1, padding: "7px", borderRadius: T.radius, justifyContent: "center", background: T.sidebarBg ? "rgba(255,255,255,0.15)" : undefined, borderColor: T.sidebarBg ? "rgba(255,255,255,0.25)" : undefined, color: T.sidebarBg ? "#fff" : undefined }} title="Theme Settings">
           <Palette size={14} color={T.accent} />
           <span style={{ fontSize: 11 }}>Theme</span>
         </button>
@@ -63,8 +63,8 @@ export default function Sidebar({ page, setPage, user, onLogout, isDark, toggleT
       <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 8px", borderRadius: T.radius }}>
         <div style={{ width: 28, height: 28, borderRadius: T.radius, background: `${T.accent}18`, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 12, color: T.accent, flexShrink: 0 }}>{(user?.name || "?")[0]}</div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: T.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user?.name}</div>
-          <div style={{ fontSize: 10, color: T.textMuted, textTransform: "capitalize" }}>{user?.role}</div>
+          <div style={{ fontSize: 12, fontWeight: 600, color: T.sidebarBg ? '#fff' : T.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user?.name}</div>
+          <div style={{ fontSize: 10, color: T.sidebarBg ? 'rgba(255,255,255,0.65)' : T.textMuted, textTransform: "capitalize" }}>{user?.role}</div>
         </div>
       </div>
       <button className="btn-ghost" onClick={onLogout} style={{ width: "100%", marginTop: 4, color: T.red, justifyContent: "center", padding: "8px" }}>
