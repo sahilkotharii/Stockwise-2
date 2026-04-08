@@ -122,12 +122,13 @@ export default function Inventory({ ctx }) {
     const opening = all.filter(t => t.type === "opening").reduce((s, t) => s + Number(t.qty), 0);
     const purchased = all.filter(t => t.type === "purchase").reduce((s, t) => s + Number(t.qty), 0);
     const sold = all.filter(t => t.type === "sale").reduce((s, t) => s + Number(t.qty), 0);
-    const returned = all.filter(t => t.type === "return").reduce((s, t) => s + Number(t.qty), 0);
-    const damaged = all.filter(t => t.type === "damaged" || t.isDamaged).reduce((s, t) => s + Number(t.qty), 0);
+    const salesReturned = all.filter(t => t.type === "return").reduce((s, t) => s + (Number(t.qty)||0), 0);
+    const purReturned = all.filter(t => t.type === "purchase_return").reduce((s, t) => s + (Number(t.qty)||0), 0);
+    const damaged = all.filter(t => t.type === "damaged" || t.isDamaged).reduce((s, t) => s + (Number(t.qty)||0), 0);
     const stock = getStock(p.id);
     // Inventory value ALWAYS ex-GST (using product's purchasePrice which is ex-GST)
     const value = stock * Number(p.purchasePrice || 0);
-    return { ...p, opening, purchased, sold, returned, damaged, stock, value };
+    return { ...p, opening, purchased, sold, salesReturned, purReturned, damaged, stock, value };
   }), [products, transactions, getStock]);
 
   const filtered = useMemo(() => {
@@ -154,7 +155,7 @@ export default function Inventory({ ctx }) {
 
     {/* KPIs */}
     <div className="kgrid" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14 }}>
-      <KCard label="Inventory Value" value={fmtCur(totalValue)} sub={`ex-GST · ${filtered.length} products`} icon={Box} color={T.accent} delta={`${filtered.length} SKUs in stock`} />
+      <KCard label="Inventory Value" value={fmtCur(totalValue)} sub={`ex-GST · ${filtered.length} products`} icon={Box} color={T.accent} />
       <KCard label="Healthy Stock" value={healthy.length.toString()} sub="Above min level" icon={CheckCircle} color={T.green} />
       <KCard label="Low Stock" value={low.length.toString()} sub="Below min level" icon={AlertTriangle} color={T.amber} />
       <KCard label="Out of Stock" value={oos.length.toString()} sub="Needs restocking" icon={AlertOctagon} color={T.red} />
@@ -192,7 +193,7 @@ export default function Inventory({ ctx }) {
               <GBtn sz="sm" v="ghost" onClick={() => csvRef.current?.click()} icon={<Upload size={13} />}>Import Opening Stock</GBtn>
               <input ref={csvRef} type="file" accept=".csv" onChange={handleOsCsvFile} style={{ display: "none" }} />
             </>}
-            <GBtn v="ghost" sz="sm" onClick={() => dlCSV(toCSV(filtered.map(p => ({ name: p.name, sku: p.sku, opening: p.opening, purchased: p.purchased, sold: p.sold, returned: p.returned, stock: p.stock, value: p.value })), ["name","sku","opening","purchased","sold","returned","stock","value"]), "inventory")} icon={<Download size={13} />}>Export Register</GBtn>
+            <GBtn v="ghost" sz="sm" onClick={() => dlCSV(toCSV(filtered.map(p => ({ name: p.name, sku: p.sku, opening: p.opening, purchased: p.purchased, sold: p.sold, salesReturned: p.salesReturned, purReturned: p.purReturned, damaged: p.damaged, stock: p.stock, value: p.value })), ["name","sku","opening","purchased","sold","salesReturned","purReturned","damaged","stock","value"]), "inventory")} icon={<Download size={13} />}>Export Register</GBtn>
           </div>
         </div>
         <div className="filter-wrap">
@@ -215,8 +216,8 @@ export default function Inventory({ ctx }) {
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
           <thead>
             <tr style={{ background: T.isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.025)" }}>
-              {["Product", "SKU", "Category", "Opening", "+Purchased", "-Sold", "+Returns", "-Damaged", "= Stock", "Value (ex-GST)", "Status", isAdmin ? "Edit" : ""].filter(Boolean).map(h => (
-                <th key={h} className="th" style={{ textAlign: ["Opening", "+Purchased", "-Sold", "+Returns", "-Damaged", "= Stock", "Value (ex-GST)"].includes(h) ? "right" : "left" }}>
+              {["Product", "SKU", "Category", "Opening", "+Purchased", "-Sold", "+Sale Ret", "-Pur Ret", "-Damaged", "= Stock", "Value (ex-GST)", "Status", isAdmin ? "Edit" : ""].filter(Boolean).map(h => (
+                <th key={h} className="th" style={{ textAlign: ["Opening", "+Purchased", "-Sold", "+Sale Ret", "-Pur Ret", "-Damaged", "= Stock", "Value (ex-GST)"].includes(h) ? "right" : "left" }}>
                   {h.toUpperCase()}
                 </th>
               ))}
@@ -241,7 +242,8 @@ export default function Inventory({ ctx }) {
                   <td className="td r">{p.opening}</td>
                   <td className="td r" style={{ color: T.blue }}>{p.purchased}</td>
                   <td className="td r" style={{ color: T.red }}>-{p.sold}</td>
-                  <td className="td r" style={{ color: T.green }}>+{p.returned}</td>
+                  <td className="td r" style={{ color: T.green }}>+{p.salesReturned}</td>
+                  <td className="td r" style={{ color: T.red }}>-{p.purReturned}</td>
                   <td className="td r" style={{ color: T.amber }}>-{p.damaged}</td>
                   <td className="td r" style={{ fontWeight: 700, fontSize: 14, color: p.stock <= 0 ? T.red : p.stock <= Number(p.minStock || 0) ? T.amber : T.text }}>{p.stock}</td>
                   <td className="td r" style={{ fontWeight: 600, color: T.accent }}>{fmtCur(p.value)}</td>
