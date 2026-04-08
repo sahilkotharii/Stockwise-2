@@ -14,7 +14,15 @@ export const inRange = (d, f, t) => {
   if (t && ds > t) return false;
   return true;
 };
-export const toCSV = (rows, hs) => [hs.join(","), ...rows.map(r => hs.map(k => `"${String(r[k] || "").replace(/"/g, '""')}"`).join(","))].join("\n");
+export const toCSV = (rows, hs) => [hs.join(","), ...rows.map(r => hs.map(k => {
+  const v = r[k];
+  if (v === null || v === undefined || v === "") return '""';
+  if (typeof v === "number") return isNaN(v) ? '""' : String(v);
+  const s = String(v);
+  // If looks like a pure number (no spaces, letters), output raw
+  if (/^-?\d+(\.\d+)?$/.test(s)) return s;
+  return `"${s.replace(/"/g, '""')}"`;
+}).join(","))].join("\n");
 export const dlCSV = (csv, name) => { const a = document.createElement("a"); a.href = "data:text/csv;charset=utf-8," + encodeURIComponent(csv); a.download = name + ".csv"; a.click(); };
 export const getLast12Months = () => {
   const months = [];
@@ -76,8 +84,8 @@ export const calcBillGst = (bill) => {
   // For sales: saleGstInfo; for purchase: totalGst — only trust if they look sane
   const total = Number(bill.total || 0);
   const stored = isPurchase ? Number(bill.totalGst || 0) : Number(bill.saleGstInfo || 0);
-  // Sanity check: stored GST shouldn't exceed 40% of total
-  if (stored > 0 && stored < total * 0.40) return stored;
+  // Sanity check: max GST in India is 28%, so stored GST should be < 30% of total
+  if (stored > 0 && stored < total * 0.30) return stored;
 
   return 0;
 };
