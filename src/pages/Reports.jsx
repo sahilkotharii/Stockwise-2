@@ -50,17 +50,17 @@ export default function Reports({ ctx }) {
   // Net revenue = bill.total - bill.saleGstInfo (excl GST)
   const revenue = periodSaleBills.reduce((s, b) => s + Number(b.total || 0), 0);
   const saleGstTotal = periodSaleBills.reduce((s, b) => s + calcBillGst(b), 0);
-  const retAmt = rets.reduce((s, t) => s + Number(t.qty) * Number(t.price || 0), 0);
+  const retAmt = rets.reduce((s, t) => s + (Number(t.qty)||0) * (Number(t.price)||0), 0);
   const retGst = rets.reduce((s, t) => {
     const rate = Number(t.gstRate || products.find(p => p.id === t.productId)?.gstRate || 0);
-    return s + Number(t.qty) * Number(t.price || 0) * rate / (100 + rate);
+    return s + (Number(t.qty)||0) * (Number(t.price)||0) * rate / (100 + rate);
   }, 0);
   const finalRevenue = revenue - retAmt;                            // incl GST after returns
   const netRev = (revenue - saleGstTotal) - (retAmt - retGst);     // excl GST after returns
 
   // COGS = units sold * ex-GST purchasePrice (from product record)
-  const cogsSales = periodSaleBills.reduce((s, b) => s + (b.items || []).reduce((si, i) => si + Number(i.qty) * pp(i.productId), 0), 0);
-  const cogsRet = rets.reduce((s, t) => s + Number(t.qty) * pp(t.productId), 0);
+  const cogsSales = periodSaleBills.reduce((s, b) => s + (b.items || []).reduce((si, i) => si + (Number(i.qty)||0) * pp(i.productId), 0), 0);
+  const cogsRet = rets.reduce((s, t) => s + (Number(t.qty)||0) * pp(t.productId), 0);
   const netCogs = cogsSales - cogsRet;
   const gp = netRev - netCogs;
 
@@ -77,8 +77,8 @@ export default function Reports({ ctx }) {
     const mr = transactions.filter(t => t.type === "return" && monthOf(safeDate(t.date)) === m.key);
     const rev = mb.reduce((s, b) => s + Number(b.total || 0), 0);
     const gstOnSales = mb.reduce((s, b) => s + calcBillGst(b), 0);
-    const rAmt = mr.reduce((s, t) => s + Number(t.qty) * Number(t.price || 0), 0);
-    const rGst = mr.reduce((s, t) => { const rate = Number(t.gstRate || products.find(p => p.id === t.productId)?.gstRate || 0); return s + Number(t.qty) * Number(t.price || 0) * rate / (100 + rate); }, 0);
+    const rAmt = mr.reduce((s, t) => s + (Number(t.qty)||0) * (Number(t.price)||0), 0);
+    const rGst = mr.reduce((s, t) => { const rate = Number(t.gstRate || products.find(p => p.id === t.productId)?.gstRate || 0); return s + (Number(t.qty)||0) * (Number(t.price)||0) * rate / (100 + rate); }, 0);
     const net = (rev - gstOnSales) - (rAmt - rGst);  // excl GST
     const cogs = mb.reduce((s, b) => s + (b.items || []).reduce((si, i) => si + Number(i.qty) * pp(i.productId), 0), 0);
     const cogsR = mr.reduce((s, t) => s + Number(t.qty) * pp(t.productId), 0);
