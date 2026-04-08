@@ -190,7 +190,7 @@ export default function Purchase({ ctx }) {
             {purBills.slice((pg - 1) * ps, pg * ps).map(b => {
               const v = vendors.find(x => x.id === b.vendorId);
               return <React.Fragment key={b.id}>
-                <tr className={`trow${selBills.has(b.id)?" sel":""}`}>
+                <tr className={`trow${selBills.has(b.id)?" row-sel":""}`}>
                   <td className="td" onClick={e=>e.stopPropagation()}><input type="checkbox" className="cb" checked={selBills.has(b.id)} onChange={()=>tgBill(b.id)}/></td>
                   <td className="td" style={{ fontWeight: 600, color: T.blue }}>{b.billNo}</td>
                   <td className="td m">{fmtDate(b.date)}</td>
@@ -207,29 +207,52 @@ export default function Purchase({ ctx }) {
                   </td>
                   <td className="td"><button className="btn-danger" onClick={() => deleteBill(b)} style={{ padding: "3px 6px" }}><Trash2 size={11} /></button></td>
                 </tr>
-                {exp[b.id] && <tr style={{ background: T.isDark ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.015)" }}>
-                  <td colSpan={10} style={{ padding: "12px 20px", borderBottom: `1px solid ${T.borderSubtle}` }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: T.textMuted, marginBottom: 8 }}>BILL ITEMS</div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 5, marginBottom: 10 }}>
-                      {(b.items || []).map((it, idx) => {
-                        const lineBase = Number(it.qty) * Number(it.price);
-                        const gstAmt = it.gstAmount || (it.gstRate ? lineBase * Number(it.gstRate) / 100 : 0);
-                        return <div key={idx} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: T.text }}>
-                          <span>
-                            {it.productName} × {it.qty} @ ₹{Number(it.price).toLocaleString("en-IN")} ex-GST
-                            {it.gstRate > 0 && <span style={{ color: T.amber, fontSize: 10, marginLeft: 8 }}>+GST @{it.gstRate}%: {fmtCur(gstAmt)}</span>}
-                            {it.isDamaged && <span style={{ color: T.red, fontWeight: 600, fontSize: 10, marginLeft: 8 }}>REJECTED</span>}
-                          </span>
-                          <span style={{ fontWeight: 600 }}>{fmtCur(lineBase + gstAmt)}</span>
-                        </div>;
-                      })}
+                {exp[b.id] && <tr style={{ background: T.isDark ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.012)" }}>
+                  <td colSpan={10} style={{ padding: "0", borderBottom: `1px solid ${T.borderSubtle}` }}>
+                    <div style={{ padding: "12px 20px 14px" }}>
+                      <div style={{ overflowX: "auto", marginBottom: 10 }}>
+                        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11 }}>
+                          <thead><tr style={{ background: T.isDark?"rgba(255,255,255,0.04)":"rgba(0,0,0,0.04)" }}>
+                            {["#","Description","HSN","Qty","Unit","Cost (ex-GST)","GST%","GST Amt","Line Total"].map((h,i) => (
+                              <th key={i} style={{ padding:"5px 8px", textAlign:["Qty","Cost (ex-GST)","GST%","GST Amt","Line Total"].includes(h)?"right":"left", fontWeight:700, fontSize:10, color:T.textMuted, letterSpacing:"0.04em", borderBottom:`1px solid ${T.borderSubtle}`, whiteSpace:"nowrap" }}>{h}</th>
+                            ))}
+                          </tr></thead>
+                          <tbody>
+                            {(b.items||[]).map((it, idx) => {
+                              const rate = Number(it.gstRate||0);
+                              const price = Number(it.price||0);
+                              const qty = Number(it.qty||0);
+                              const gstAmt = it.gstAmount || (rate ? qty * price * rate / 100 : 0);
+                              const lineTotal = qty * price + gstAmt;
+                              return (
+                                <tr key={idx} style={{ borderBottom:`1px solid ${T.borderSubtle}40` }}>
+                                  <td style={{ padding:"5px 8px", color:T.textMuted }}>{idx+1}</td>
+                                  <td style={{ padding:"5px 8px", fontWeight:600, color:T.text }}>{it.productName||"—"}</td>
+                                  <td style={{ padding:"5px 8px", color:T.textMuted, fontFamily:"monospace" }}>{it.hsn||"—"}</td>
+                                  <td style={{ padding:"5px 8px", textAlign:"right", fontWeight:600 }}>{qty}</td>
+                                  <td style={{ padding:"5px 8px", color:T.textMuted }}>{it.unit||"pcs"}</td>
+                                  <td style={{ padding:"5px 8px", textAlign:"right" }}>{fmtCur(price)}</td>
+                                  <td style={{ padding:"5px 8px", textAlign:"right", color:T.amber }}>{rate > 0 ? rate+"%" : "—"}</td>
+                                  <td style={{ padding:"5px 8px", textAlign:"right", color:T.amber }}>{gstAmt > 0 ? fmtCur(gstAmt) : "—"}</td>
+                                  <td style={{ padding:"5px 8px", textAlign:"right", fontWeight:700 }}>{fmtCur(lineTotal)}</td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                      <div style={{ display:"flex", justifyContent:"flex-end" }}>
+                        <table style={{ fontSize:12, borderCollapse:"collapse", minWidth:220 }}>
+                          <tbody>
+                            <tr><td style={{ padding:"3px 8px", color:T.textSub }}>Subtotal (ex-GST)</td><td style={{ padding:"3px 8px", textAlign:"right", fontWeight:600 }}>{fmtCur(b.subtotal)}</td></tr>
+                            {(b.totalGst||0) > 0 && <tr><td style={{ padding:"3px 8px", color:T.amber }}>GST</td><td style={{ padding:"3px 8px", textAlign:"right", color:T.amber }}>+{fmtCur(b.totalGst)}</td></tr>}
+                            {b.paymentMode && <tr><td style={{ padding:"3px 8px", color:T.textMuted, fontSize:11 }}>Payment</td><td style={{ padding:"3px 8px", textAlign:"right", fontSize:11 }}>{b.paymentMode}</td></tr>}
+                            <tr style={{ borderTop:`2px solid ${T.borderSubtle}` }}><td style={{ padding:"5px 8px", fontWeight:700, color:T.text }}>Total Paid</td><td style={{ padding:"5px 8px", textAlign:"right", fontWeight:800, fontSize:14, color:T.blue }}>{fmtCur(b.total)}</td></tr>
+                          </tbody>
+                        </table>
+                      </div>
+                      {b.notes && <div style={{ fontSize:11, color:T.textSub, marginTop:6, fontStyle:"italic" }}>Note: {b.notes}</div>}
                     </div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 3, maxWidth: 260, marginLeft: "auto", borderTop: `1px solid ${T.borderSubtle}`, paddingTop: 8 }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: T.textSub }}><span>Subtotal (ex-GST)</span><span>{fmtCur(b.subtotal)}</span></div>
-                      {(b.totalGst || 0) > 0 && <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: T.amber }}><span>GST</span><span>+{fmtCur(b.totalGst)}</span></div>}
-                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, fontWeight: 700, color: T.blue }}><span>Total Paid</span><span>{fmtCur(b.total)}</span></div>
-                    </div>
-                    {b.notes && <div style={{ fontSize: 11, color: T.textSub, marginTop: 8, fontStyle: "italic" }}>Note: {b.notes}</div>}
                   </td>
                 </tr>}
               </React.Fragment>;
