@@ -47,12 +47,14 @@ export default function App() {
   const [isDark, setIsDark] = useState(false);
   const [themeId, setThemeId] = useState("glass");
   const [accentKey, setAccentKey] = useState("copper");
+  const [customColor, setCustomColorState] = useState("");
+  const [bgImage, setBgImageState] = useState("");
   const [changeReqs, setChangeReqs] = useState([]);
   const [actLog, setActLog] = useState([]);
   const [toast, setToast] = useState(null);
   const [invoiceSettings, setInvoiceSettings] = useState({});
 
-  const theme = buildTheme(themeId, accentKey, isDark);
+  const theme = buildTheme(themeId, accentKey, isDark, customColor, bgImage);
 
   const showToast = (msg, type = "success") => {
     setToast({ msg, type });
@@ -67,12 +69,13 @@ export default function App() {
     document.head.appendChild(lnk);
 
     (async () => {
-      const [u, p, c, v, t, ch, b, sUrl, ok, dp, cr, al, tid, ak] = await Promise.all([
+      const [u, p, c, v, t, ch, b, sUrl, ok, dp, cr, al, tid, ak, cc, bgi] = await Promise.all([
         lsGet(SK.users, null), lsGet(SK.products, null), lsGet(SK.categories, null),
         lsGet(SK.vendors, null), lsGet(SK.transactions, null), lsGet(SK.channels, null),
         lsGet(SK.bills, []), lsGet(SK.sheetsUrl, DEFAULT_SHEETS_URL), lsGet(SK.seeded, false),
         lsGet(SK.theme, false), lsGet(SK.changeReqs, []), lsGet(SK.actLog, []),
-        lsGet("sw_theme_id", "glass"), lsGet("sw_accent_key", "copper")
+        lsGet("sw_theme_id", "glass"), lsGet("sw_accent_key", "copper"),
+        lsGet("sw_custom_color", ""), lsGet("sw_bg_image", "")
       ]);
 
       const SEED_USERS = [
@@ -93,6 +96,7 @@ export default function App() {
       setChannels(fch); setTransactions(ft); setBills(fb || []);
       setSheetsUrl(sUrl || DEFAULT_SHEETS_URL); setIsDark(dp || false);
       setThemeId(tid || "glass"); setAccentKey(ak || "copper");
+      setCustomColorState(cc || ""); setBgImageState(bgi || "");
       setChangeReqs(cr || []); setActLog(al || []);
       const invS = await lsGet(SK.invoiceSettings, {});
       setInvoiceSettings(invS || {});
@@ -147,11 +151,13 @@ export default function App() {
     if (!el) { el = document.createElement("style"); el.id = "sw-css"; document.head.appendChild(el); }
     el.textContent = makeCSS(theme);
     document.body.style.background = theme.bg;
-  }, [themeId, accentKey, isDark]);
+  }, [themeId, accentKey, isDark, customColor, bgImage]);
 
   const toggleTheme = () => { const n = !isDark; setIsDark(n); lsSet(SK.theme, n); };
   const setTheme = (tid) => { setThemeId(tid); lsSet("sw_theme_id", tid); };
   const setAccent = (ak) => { setAccentKey(ak); lsSet("sw_accent_key", ak); };
+  const setCustomColor = (c) => { setCustomColorState(c); lsSet("sw_custom_color", c); };
+  const setBgImage = (url) => { setBgImageState(url); lsSet("sw_bg_image", url); };
 
   // ── Sheets sync ───────────────────────────────────────────────────────────
   async function pull(url) {
@@ -308,7 +314,7 @@ export default function App() {
     saveChannels, saveUsers, saveBills, changeReqs, saveChangeReqs,
     actLog, saveActLog, addChangeReq, addLog,
     invoiceSettings, saveInvoiceSettings,
-    themeId, setTheme, accentKey, setAccent, THEMES, ACCENT_PRESETS,
+    themeId, setTheme, accentKey, setAccent, customColor, setCustomColor, bgImage, setBgImage, THEMES, ACCENT_PRESETS,
   };
 
   const T = theme;
