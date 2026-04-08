@@ -56,7 +56,7 @@ export default function Inventory({ ctx }) {
       });
       saveTransactions(newTxns);
       addLog("bulk import", "opening stock", `${updated} products`);
-      alert(`✅ Updated opening stock for ${updated} products`);
+      alert(` Updated opening stock for ${updated} products`);
       e.target.value = "";
     };
     reader.readAsText(file);
@@ -285,7 +285,7 @@ export default function Inventory({ ctx }) {
             <GIn type="date" value={editOsDate} onChange={e => setEditOsDate(e.target.value)} />
           </Field>
           <div style={{ fontSize: 11, color: T.textMuted, padding: "8px 12px", background: T.isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)", borderRadius: 8 }}>
-            ⚠️ This replaces all existing opening stock entries for this product. Other transactions (purchases, sales) are unaffected.
+             This replaces all existing opening stock entries for this product. Other transactions (purchases, sales) are unaffected.
           </div>
         </div>
       )}
