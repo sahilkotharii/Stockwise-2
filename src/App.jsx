@@ -147,7 +147,7 @@ export default function App() {
     if (!el) { el = document.createElement("style"); el.id = "sw-css"; document.head.appendChild(el); }
     el.textContent = makeCSS(theme);
     document.body.style.background = theme.bg;
-  }, [isDark, theme]);
+  }, [themeId, accentKey, isDark]);
 
   const toggleTheme = () => { const n = !isDark; setIsDark(n); lsSet(SK.theme, n); };
   const setTheme = (tid) => { setThemeId(tid); lsSet("sw_theme_id", tid); };
@@ -327,7 +327,6 @@ export default function App() {
   // ── Loading ───────────────────────────────────────────────────────────────
   if (!ready) return (
     <>
-      <style>{makeCSS(theme)}</style>
       <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <div style={{ textAlign: "center" }}>
           <div style={{ width: 54, height: 54, borderRadius: 17, background: `linear-gradient(135deg,${T.accent},${T.accentDark})`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px", animation: "pulse 1.5s ease infinite", boxShadow: `0 8px 28px ${T.accent}50` }}>
@@ -358,7 +357,6 @@ export default function App() {
 
   if (!user) return (
     <ThemeCtx.Provider value={T}>
-      <style>{makeCSS(T)}</style>
       <Login users={users} onLogin={handleLogin} />
     </ThemeCtx.Provider>
   );
@@ -366,7 +364,6 @@ export default function App() {
   // ── App ───────────────────────────────────────────────────────────────────
   return (
     <ThemeCtx.Provider value={T}>
-      <style>{makeCSS(T)}</style>
       {toast && <Toast msg={toast.msg} type={toast.type} />}
 
       <Sidebar
