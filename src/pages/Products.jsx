@@ -140,7 +140,7 @@ export default function Products({ ctx }) {
     saveProducts([...products, ...toAdd]);
     addLog("bulk imported", "products", `${toAdd.length} products`);
     setCsvModal(false); setCsvPreview([]); setCsvErrors([]);
-    alert(`✅ Imported ${toAdd.length} products.${dupes > 0 ? ` Skipped ${dupes} duplicate SKUs.` : ""}`);
+    alert(` Imported ${toAdd.length} products.${dupes > 0 ? ` Skipped ${dupes} duplicate SKUs.` : ""}`);
   };
 
   const doSave = () => {
@@ -197,7 +197,7 @@ export default function Products({ ctx }) {
         <React.Fragment>
           {isManager && (
             <div style={{ padding: "10px 14px", borderRadius: 12, background: T.amberBg, border: `1px solid ${T.amber}30`, fontSize: 12, color: T.amber, fontWeight: 600 }}>
-              ⚠️ Product changes require admin approval
+               Product changes require admin approval
             </div>
           )}
 
@@ -430,7 +430,7 @@ export default function Products({ ctx }) {
                     <td className="td" style={{ padding: "5px 8px" }}>
                       {p.imageUrl
                         ? <img src={p.imageUrl} alt="" style={{ width: 28, height: 28, borderRadius: 4, objectFit: "cover" }} onError={e => { e.target.style.display = "none"; }} />
-                        : <div style={{ width: 28, height: 28, borderRadius: 4, background: T.isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>📦</div>}
+                        : <div style={{ width: 28, height: 28, borderRadius: 4, background: T.isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}></div>}
                     </td>
                     <td className="td" style={{ padding: "5px 10px", fontWeight: 600 }}>{p.name}</td>
                     <td className="td" style={{ padding: "5px 10px", color: T.textMuted }}>{p.alias}</td>
@@ -438,7 +438,7 @@ export default function Products({ ctx }) {
                     <td className="td" style={{ padding: "5px 10px" }}>{p.hsn || "—"}</td>
                     <td className="td" style={{ padding: "5px 10px" }}>
                       {p.categoryName
-                        ? <span style={{ color: p.categoryId ? T.green : T.amber, fontWeight: 600 }}>{p.categoryName}{!p.categoryId ? " ⚠" : ""}</span>
+                        ? <span style={{ color: p.categoryId ? T.green : T.amber, fontWeight: 600 }}>{p.categoryName}{!p.categoryId ? " " : ""}</span>
                         : <span style={{ color: T.textMuted }}>—</span>}
                     </td>
                     <td className="td r" style={{ padding: "5px 10px" }}>{p.gstRate}%</td>
@@ -455,7 +455,7 @@ export default function Products({ ctx }) {
           </div>
           {csvPreview.some(p => p.categoryName && !p.categoryId) && (
             <div style={{ padding: "8px 12px", borderRadius: 8, background: T.amberBg, fontSize: 11, color: T.amber }}>
-              ⚠ Categories marked in orange don't exist yet — products will be imported without a category. Create the categories first and re-import to match them.
+               Categories marked in orange don't exist yet — products will be imported without a category. Create the categories first and re-import to match them.
             </div>
           )}
         </div>
