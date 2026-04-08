@@ -87,8 +87,17 @@ export default function Approvals({ ctx }) {
   };
 
   return <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-    <div style={{ display: "flex", gap: 6 }}>
-      {["pending", "history"].map(t => <button key={t} onClick={() => setTab(t)} style={{ padding: "7px 16px", borderRadius: 99, fontSize: 12, fontWeight: 600, border: `1px solid ${tab === t ? T.accent : T.borderSubtle}`, cursor: "pointer", background: tab === t ? T.accent : "transparent", color: tab === t ? "#fff" : T.textSub, transition: "all .15s" }}>{t === "pending" ? `Pending (${pending.length})` : "History"}</button>)}
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+      <div style={{ display: "flex", gap: 6 }}>
+        {["pending", "history"].map(t => <button key={t} onClick={() => setTab(t)} style={{ padding: "7px 16px", borderRadius: 99, fontSize: 12, fontWeight: 600, border: `1px solid ${tab === t ? T.accent : T.borderSubtle}`, cursor: "pointer", background: tab === t ? T.accent : "transparent", color: tab === t ? "#fff" : T.textSub, transition: "all .15s" }}>{t === "pending" ? `Pending (${pending.length})` : `History (${hist.length})`}</button>)}
+      </div>
+      {tab === "history" && hist.length > 0 && (
+        <button className="btn-danger" style={{ padding: "6px 14px", fontSize: 12 }} onClick={() => {
+          if (window.confirm("Clear all approved/declined history? Pending requests are not affected.")) {
+            saveChangeReqs(changeReqs.filter(r => r.status === "pending"));
+          }
+        }}>🗑 Clear History</button>
+      )}
     </div>
 
     {shown.length === 0 && <div className="glass" style={{ padding: "60px 20px", textAlign: "center", borderRadius: T.radius }}>
