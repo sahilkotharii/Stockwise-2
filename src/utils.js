@@ -7,9 +7,10 @@ export const fmtMon = d => new Date(d + "T00:00:00").toLocaleDateString("en-IN",
 export const calcMgn = (m, p) => m > 0 ? (((m - p) / m) * 100).toFixed(1) : "0";
 export const inRange = (d, f, t) => {
   if (!f && !t) return true;
-  const dt = new Date(d);
-  if (f && dt < new Date(f)) return false;
-  if (t && dt > new Date(t + "T23:59:59")) return false;
+  if (!d) return false;
+  const ds = typeof d === "string" ? d.slice(0,10) : (d instanceof Date ? d.toISOString().split("T")[0] : String(d).slice(0,10));
+  if (f && ds < f) return false;
+  if (t && ds > t) return false;
   return true;
 };
 export const toCSV = (rows, hs) => [hs.join(","), ...rows.map(r => hs.map(k => `"${String(r[k] || "").replace(/"/g, '""')}"`).join(","))].join("\n");
@@ -52,8 +53,8 @@ export const calcBillGst = (bill) => {
       const rate = Number(i.gstRate || 0);
       if (!rate) return s;
       // Use effectivePrice if available (after discount), else price
-      const price = Number(i.effectivePrice || i.price || i.mrp || 0);
-      const qty = Number(i.qty || 0);
+      const price = Number(i.effectivePrice ?? i.price ?? i.mrp ?? 0) || 0;
+      const qty = Number(i.qty ?? 0) || 0;
       if (!price || !qty) return s;
       return s + (isPurchase
         ? qty * price * rate / 100
