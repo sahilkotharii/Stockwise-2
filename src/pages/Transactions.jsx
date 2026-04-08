@@ -108,7 +108,7 @@ export default function Transactions({ ctx }) {
               const isSel = sel.has(t.id);
               const typeLabel = t.type === "purchase_return" ? "Pur. Return" : t.type === "return" ? "Sale Return" : t.type;
               return (
-                <tr key={t.id} className={`trow${isSel ? " sel" : ""}`}>
+                <tr key={t.id} className={`trow${isSel ? " row-sel" : ""}`}>
                   <td className="td"><input type="checkbox" className="cb" checked={isSel} onChange={() => tgSel(t.id)} /></td>
                   <td className="td m" style={{ whiteSpace: "nowrap", fontSize: 11 }}>{fmtDate(t.date)}</td>
                   <td className="td">
