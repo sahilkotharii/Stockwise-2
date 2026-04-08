@@ -35,7 +35,7 @@ function buildTokens(accentKey = "copper", isDark = false, customColor = null) {
       green: "#4ADE80", greenBg: "rgba(74,222,128,0.10)", blue: "#60A5FA", blueBg: "rgba(96,165,250,0.10)",
       red: "#F87171", redBg: "rgba(248,113,113,0.10)", amber: "#FBBF24", amberBg: "rgba(251,191,36,0.10)",
       purple: "#C084FC", purpleBg: "rgba(192,132,252,0.10)", cyan: "#22D3EE",
-      sidebarBg: "", sidebarW: 224, sidebarC: 68, radius: "14px", radiusXl: "20px", isDark: true, displayFont: "'Montserrat',sans-serif"
+      sidebarBg: "", sidebarW: 224, radius: "14px", radiusXl: "20px", isDark: true, displayFont: "'Montserrat',sans-serif"
     };
   }
   return {
@@ -182,7 +182,6 @@ export function buildTheme(themeId = "glass", accentKey = "copper", isDark = fal
 
 export const ThemeCtx = createContext(buildTheme());
 export const useT = () => useContext(ThemeCtx);
-export const PC = ["#C05C1E","#2563EB","#16A34A","#7C3AED","#DC2626","#0891B2","#D97706","#DB2777","#0D9488"];
 
 // Legacy exports for compatibility
 export const COPPER = buildTheme("glass", "copper", false);
