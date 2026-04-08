@@ -109,8 +109,8 @@ export default function Returns({ ctx }) {
         addLog("edited", "return", updated.type);
       }
     } else if (isManager) {
-      // Manager: send for approval
-      newTxns.forEach(t => addChangeReq({ entity: "return", action: "create", entityId: null, entityName: t.type, currentData: null, proposedData: t }));
+      // Manager: batch all items into ONE approval request
+      addChangeReq({ entity: "return", action: "create", entityId: null, entityName: returnType === "purchase_return" ? "Purchase Return" : "Sales Return", currentData: null, proposedData: newTxns });
     } else {
       saveTransactions([...newTxns, ...transactions]);
       addLog("recorded", returnType === "purchase_return" ? "purchase return" : "sales return", `${valid.length} product(s)`);
