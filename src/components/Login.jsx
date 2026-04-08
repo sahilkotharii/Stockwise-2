@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { checkPassword } from "../utils";
 import { Layers } from "lucide-react";
 import { useT } from "../theme";
 import { GIn, GBtn, Field } from "./UI";
