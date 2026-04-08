@@ -83,20 +83,26 @@ export function Modal({ open, onClose, title, children, footer, width = 520 }) {
 
 export function KCard({ label, value, sub, icon: Icon, color, delta }) {
   const T = useT();
-  // In solid theme: all KCards use accent color for unified look
-  const c = T.accentCard ? T.accent : color;
-  const cardStyle = T.accentCard
-    ? { background: c + "12", border: `1px solid ${c}28` }
+  // Solid theme: full accent color background with white text
+  const isSolid = T.accentCard;
+  const c = T.accent; // always use accent in solid; keep original color in others
+  const fg = isSolid ? "#fff" : T.text;
+  const fgSub = isSolid ? "rgba(255,255,255,0.80)" : T.textSub;
+  const fgMuted = isSolid ? "rgba(255,255,255,0.60)" : T.textMuted;
+  const cardStyle = isSolid
+    ? { background: c, border: `1px solid ${c}`, boxShadow: `0 4px 16px ${c}40` }
     : {};
   return <div className="kcard glass" style={cardStyle}>
-    <div style={{ position: "absolute", top: -20, right: -20, width: 80, height: 80, borderRadius: "50%", background: `${c}10` }} />
-    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 14 }}>
-      <div style={{ width: 40, height: 40, borderRadius: 12, background: `${c}18`, display: "flex", alignItems: "center", justifyContent: "center" }}><Icon size={19} color={c} /></div>
-      {delta !== undefined && <span className="badge" style={{ background: delta >= 0 ? T.greenBg : T.redBg, color: delta >= 0 ? T.green : T.red }}>{delta >= 0 ? "↑" : "↓"}{Math.abs(delta).toFixed(1)}%</span>}
+    <div style={{ position: "absolute", top: -24, right: -24, width: 90, height: 90, borderRadius: "50%", background: isSolid ? "rgba(255,255,255,0.12)" : `${color}10` }} />
+    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 12, flex: "0 0 auto" }}>
+      <div style={{ width: 40, height: 40, borderRadius: 10, background: isSolid ? "rgba(255,255,255,0.2)" : `${color}18`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <Icon size={19} color={isSolid ? "#fff" : color} />
+      </div>
+      {delta !== undefined && <span className="badge" style={{ background: isSolid ? "rgba(255,255,255,0.2)" : (delta >= 0 ? T.greenBg : T.redBg), color: isSolid ? "#fff" : (delta >= 0 ? T.green : T.red) }}>{delta >= 0 ? "↑" : "↓"}{Math.abs(delta).toFixed(1)}%</span>}
     </div>
-    <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 24, color: T.accentCard ? T.text : T.text, letterSpacing: "-0.03em" }}>{value}</div>
-    <div style={{ fontSize: 12, fontWeight: 600, color: T.textSub, marginTop: 2 }}>{label}</div>
-    {sub && <div style={{ fontSize: 12, color: T.textMuted, marginTop: 4 }}>{sub}</div>}
+    <div style={{ fontFamily: T.displayFont, fontWeight: 800, fontSize: 24, color: fg, letterSpacing: "-0.03em", marginTop: "auto" }}>{value}</div>
+    <div style={{ fontSize: 12, fontWeight: 600, color: fgSub, marginTop: 4 }}>{label}</div>
+    {sub && <div style={{ fontSize: 11, color: fgMuted, marginTop: 3, lineHeight: 1.3 }}>{sub}</div>}
   </div>;
 }
 
