@@ -134,7 +134,7 @@ export default function Purchase({ ctx }) {
       <GBtn sz="md" onClick={() => setModal(true)} icon={<Plus size={14} />}>New Purchase Bill</GBtn>
     </div>
 
-    {/* KPI Cards — 4 cards */}
+    {/* KPI Cards — 3 cards */}
     <div className="kgrid" style={{ gap: 12 }}>
       <div className="kcard glass">
         <div style={{ position: "absolute", top: -20, right: -20, width: 70, height: 70, borderRadius: "50%", background: `${T.blue}12` }} />
@@ -149,13 +149,6 @@ export default function Purchase({ ctx }) {
         <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 20, color: T.text }}>{fmtCur(totalPurchaseExclGst)}</div>
         <div style={{ fontSize: 12, fontWeight: 600, color: T.textSub, marginTop: 2 }}>Purchase Cost</div>
         <div style={{ fontSize: 10, color: T.textMuted, marginTop: 3 }}>excl. GST · inventory cost basis</div>
-      </div>
-      <div className="kcard glass">
-        <div style={{ position: "absolute", top: -20, right: -20, width: 70, height: 70, borderRadius: "50%", background: `${T.purple}12` }} />
-        <div style={{ width: 36, height: 36, borderRadius: 10, background: `${T.purple}1A`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 12 }}><FileText size={17} color={T.purple} /></div>
-        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 20, color: T.text }}>{totalOrders}</div>
-        <div style={{ fontSize: 12, fontWeight: 600, color: T.textSub, marginTop: 2 }}>Orders</div>
-        <div style={{ fontSize: 10, color: T.textMuted, marginTop: 3 }}>purchase bills in period</div>
       </div>
       <div className="kcard glass">
         <div style={{ position: "absolute", top: -20, right: -20, width: 70, height: 70, borderRadius: "50%", background: `${T.cyan}12` }} />
