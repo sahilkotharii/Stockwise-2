@@ -147,7 +147,7 @@ export default function PnL({ ctx }) {
       </div>
 
       {/* KPI Cards */}
-      <div className="kgrid" style={{gap:12}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:12}}>
         {[
           {label:"Total Sales",   value:grossSalesInclGst, sub:"incl. GST",        icon:TrendingUp,  color:T.green},
           {label:"Net Sales",     value:netSalesExclGst,   sub:"excl. GST",         icon:DollarSign,  color:T.accent},
@@ -166,7 +166,7 @@ export default function PnL({ ctx }) {
       </div>
 
       {/* Two-column table layout */}
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(300px,1fr))",gap:14}}>
 
         {/* P&L Table */}
         <div className="glass" style={{padding:20,borderRadius:T.radius}}>
