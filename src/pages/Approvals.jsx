@@ -68,7 +68,11 @@ export default function Approvals({ ctx }) {
         saveBills(bills.filter(b => b.id !== req.entityId));
         saveTransactions(transactions.filter(t => t.billId !== req.entityId));
       } else if (req.entity === "return" && req.action === "create") {
-        saveTransactions([{ ...req.proposedData, id: req.proposedData.id || uid() }, ...transactions]);
+        // proposedData may be a single txn or an array (batched multi-item)
+        const newTxns = Array.isArray(req.proposedData)
+          ? req.proposedData.map(t => ({ ...t, id: t.id || uid() }))
+          : [{ ...req.proposedData, id: req.proposedData.id || uid() }];
+        saveTransactions([...newTxns, ...transactions]);
       } else if (req.entity === "return" && req.action === "update") {
         saveTransactions(transactions.map(t => t.id === req.entityId ? req.proposedData : t));
       } else if (req.entity === "return" && req.action === "delete") {
