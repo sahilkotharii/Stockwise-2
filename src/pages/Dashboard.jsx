@@ -4,6 +4,7 @@ import { TrendingUp, DollarSign, ShoppingCart, Box, AlertTriangle } from "lucide
 import { useT } from "../theme";
 import { KCard, CTip } from "../components/UI";
 import { fmtCur, fmtDate, calcBillGst } from "../utils";
+const safeDate = v => { if (!v) return ""; if (typeof v === "string") return v.slice(0,10); if (v instanceof Date && !isNaN(v)) return v.toISOString().split("T")[0]; return ""; };
 
 export default function Dashboard({ ctx }) {
   const T = useT();
@@ -14,8 +15,8 @@ export default function Dashboard({ ctx }) {
   const fStr = new Date(now.getTime() - parseInt(range) * 86400000).toISOString().split("T")[0];
 
   // ── Revenue from BILLS (ground truth) ──────────────────────────────────
-  const periodSaleBills = useMemo(() => bills.filter(b => b.type === "sale" && b.date >= fStr), [bills, range]);
-  const periodPurBills = useMemo(() => bills.filter(b => b.type === "purchase" && b.date >= fStr), [bills, range]);
+  const periodSaleBills = useMemo(() => bills.filter(b => b.type === "sale" && safeDate(b.date) >= fStr), [bills, range]);
+  const periodPurBills = useMemo(() => bills.filter(b => b.type === "purchase" && safeDate(b.date) >= fStr), [bills, range]);
 
   // Revenue incl GST (bill.total = after discount, incl GST)
   const totalRevenue = periodSaleBills.reduce((s, b) => s + Number(b.total || 0), 0);
@@ -23,7 +24,7 @@ export default function Dashboard({ ctx }) {
   const netRevenue = totalRevenue - totalGstCollected; // excl GST
 
   // Returns reduce revenue
-  const retTxns = useMemo(() => transactions.filter(t => t.type === "return" && t.date >= fStr), [transactions, range]);
+  const retTxns = useMemo(() => transactions.filter(t => t.type === "return" && safeDate(t.date) >= fStr), [transactions, range]);
   const retRevenue = retTxns.reduce((s, t) => s + Number(t.qty) * Number(t.price || 0), 0);
   const retGst = retTxns.reduce((s, t) => {
     const rate = Number(t.gstRate || products.find(p => p.id === t.productId)?.gstRate || 0);
@@ -107,10 +108,10 @@ export default function Dashboard({ ctx }) {
     </div>
 
     <div className="kgrid" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14 }}>
-      <KCard label="Net Revenue" value={fmtCur(finalRevenue)} sub={`excl. GST: ${fmtCur(finalNetRevenue)}`} icon={TrendingUp} color={T.green} />
-      <KCard label="Gross Profit" value={fmtCur(grossProfit)} sub={finalNetRevenue > 0 ? `${((grossProfit / finalNetRevenue) * 100).toFixed(1)}% margin` : ""} icon={DollarSign} color={T.accent} />
-      <KCard label="Purchase Cost" value={fmtCur(purchCost)} sub="incl. GST" icon={ShoppingCart} color={T.blue} />
-      <KCard label="Inventory Value" value={fmtCur(invVal)} sub={`${products.length} SKUs · ex-GST`} icon={Box} color={T.purple} />
+      <KCard label="Total Sales" value={fmtCur(totalRevenue)} sub={`GST: ${fmtCur(totalGstCollected)}`} icon={TrendingUp} color={T.green} />
+      <KCard label="Total Purchase" value={fmtCur(purchCost)} sub="incl. GST · all time in period" icon={ShoppingCart} color={T.blue} />
+      <KCard label="Inventory Value" value={fmtCur(invVal)} sub={`${products.length} SKUs · ex-GST`} icon={Box} color={T.accent} />
+      <KCard label="Units Returned" value={String(retTxns.reduce((s,t) => s + Number(t.qty||0), 0))} sub={`${retTxns.length} return entries`} icon={DollarSign} color={T.red} />
     </div>
 
     <div className="chart-row" style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 14 }}>
