@@ -137,27 +137,9 @@ export default function Purchase({ ctx }) {
 
     {/* KPI Cards — 3 cards */}
     <div className="kgrid" style={{ gap: 12 }}>
-      <div className="kcard glass">
-        <div style={{ position: "absolute", top: -20, right: -20, width: 70, height: 70, borderRadius: "50%", background: `${T.blue}12` }} />
-        <div style={{ width: 36, height: 36, borderRadius: 10, background: `${T.blue}1A`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 12 }}><ShoppingCart size={17} color={T.blue} /></div>
-        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 20, color: T.text }}>{fmtCur(totalPurchaseInclGst)}</div>
-        <div style={{ fontSize: 12, fontWeight: 600, color: T.textSub, marginTop: 2 }}>Total Purchase</div>
-        <div style={{ fontSize:11, color: T.textMuted, marginTop: 3 }}>incl. GST · amount paid</div>
-      </div>
-      <div className="kcard glass">
-        <div style={{ position: "absolute", top: -20, right: -20, width: 70, height: 70, borderRadius: "50%", background: `${T.accent}12` }} />
-        <div style={{ width: 36, height: 36, borderRadius: 10, background: `${T.accent}1A`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 12 }}><Box size={17} color={T.accent} /></div>
-        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 20, color: T.text }}>{fmtCur(totalPurchaseExclGst)}</div>
-        <div style={{ fontSize: 12, fontWeight: 600, color: T.textSub, marginTop: 2 }}>Purchase Cost</div>
-        <div style={{ fontSize:11, color: T.textMuted, marginTop: 3 }}>excl. GST · inventory cost basis</div>
-      </div>
-      <div className="kcard glass">
-        <div style={{ position: "absolute", top: -20, right: -20, width: 70, height: 70, borderRadius: "50%", background: `${T.cyan}12` }} />
-        <div style={{ width: 36, height: 36, borderRadius: 10, background: `${T.cyan}1A`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 12 }}><Package size={17} color={T.cyan} /></div>
-        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 20, color: T.text }}>{totalUnits}</div>
-        <div style={{ fontSize: 12, fontWeight: 600, color: T.textSub, marginTop: 2 }}>Units Purchased</div>
-        <div style={{ fontSize:11, color: T.textMuted, marginTop: 3 }}>total qty in period</div>
-      </div>
+      <KCard label="Total Purchase" value={fmtCur(totalPurchaseInclGst)} sub="incl. GST · amount paid" icon={ShoppingCart} color={T.blue} />
+      <KCard label="Purchase Cost" value={fmtCur(totalPurchaseExclGst)} sub="excl. GST · inventory cost basis" icon={Box} color={T.accent} />
+      <KCard label="Units Purchased" value={String(totalUnits)} sub="total qty in period" icon={Package} color={T.cyan} />
     </div>
 
     {/* Bills table */}
