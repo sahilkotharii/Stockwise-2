@@ -358,7 +358,7 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
 
     {tab === "theme" && <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <div className="glass" style={{ padding: 20, borderRadius: T.radius }}>
-        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 4 }}>🎨 App Theme</div>
+        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 4 }}>App Theme</div>
         <div style={{ fontSize: 12, color: T.textMuted, marginBottom: 16 }}>Choose a visual style. Your preference is saved per device.</div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(160px,1fr))", gap: 12 }}>
           {Object.entries(THEMES || {}).map(([tid, t]) => (
@@ -373,7 +373,7 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
       </div>
 
       <div className="glass" style={{ padding: 20, borderRadius: T.radius }}>
-        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 4 }}>🌈 Accent Colour</div>
+        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 4 }}>Accent Colour</div>
         <div style={{ fontSize: 12, color: T.textMuted, marginBottom: 16 }}>Changes the primary action colour throughout the app.</div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
           {Object.entries(ACCENT_PRESETS || {}).map(([ak, preset]) => (
@@ -389,7 +389,7 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
 
       {/* Background Image for Glass theme */}
       {themeId === "glass" && <div className="glass" style={{ padding: 20, borderRadius: T.radius }}>
-        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 4 }}>🖼 Background Image <span style={{ fontSize:11, color:T.textMuted, fontWeight:400 }}>(Glass theme only)</span></div>
+        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 4 }}>Background Image <span style={{ fontSize:11, color:T.textMuted, fontWeight:400 }}>(Glass theme only)</span></div>
         <div style={{ fontSize: 12, color: T.textMuted, marginBottom: 12 }}>Paste an image URL — the glass effect overlays on top of it.</div>
         <div style={{ display: "flex", gap: 8 }}>
           <GIn value={bgImage || ""} onChange={e => setBgImage && setBgImage(e.target.value)} placeholder="https://images.unsplash.com/..." style={{ flex: 1 }} />
@@ -400,7 +400,7 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
 
       {/* Custom accent colour picker */}
       <div className="glass" style={{ padding: 20, borderRadius: T.radius }}>
-        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 4 }}>✏️ Custom Accent Colour</div>
+        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 4 }}>Custom Accent Colour</div>
         <div style={{ fontSize: 12, color: T.textMuted, marginBottom: 12 }}>Pick any colour — overrides the preset above.</div>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <input type="color" value={customColor || (ACCENT_PRESETS?.[accentKey]?.light || "#C05C1E")} onChange={e => { setAccent && setAccent("custom"); setCustomColor && setCustomColor(e.target.value); }} style={{ width: 48, height: 40, borderRadius: T.radius, border: `1px solid ${T.border}`, cursor: "pointer", padding: 2, background: "transparent" }} />
@@ -415,7 +415,7 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
 
     {tab === "invoice" && isAdmin && <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       <div className="glass" style={{ padding: 20, borderRadius: T.radius }}>
-        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 4 }}>🧾 Invoice / Tax Invoice Settings</div>
+        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 4 }}>Invoice / Tax Invoice Settings</div>
         <div style={{ fontSize: 12, color: T.textMuted, marginBottom: 16 }}>This information appears on every tax invoice PDF you generate.</div>
         <div className="fgrid">
           <Field label="Business Name" req cl="s2"><GIn value={invForm.businessName || ""} onChange={e => setInvForm(p => ({ ...p, businessName: e.target.value }))} placeholder="Your Company Name" /></Field>
@@ -486,7 +486,7 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
 
     {tab === "sheets" && isAdmin && <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       <div className="glass" style={{ padding: 20, borderRadius: T.radius, background: T.isDark ? "rgba(37,99,235,0.07)" : "rgba(37,99,235,0.05)", borderColor: "rgba(37,99,235,0.18)" }}>
-        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.blue, marginBottom: 12 }}>📊 Google Sheets Sync</div>
+        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.blue, marginBottom: 12 }}> Google Sheets Sync</div>
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {[
             { n: "1", t: "Create a Google Sheet", d: 'sheets.google.com → New → name "StockWise"' },
