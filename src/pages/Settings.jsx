@@ -19,7 +19,7 @@ const LOCKABLE = [
 
 export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onTest }) {
   const T = useT();
-  const { users, saveUsers, user, actLog, saveActLog, invoiceSettings, saveInvoiceSettings, themeId, setTheme, accentKey, setAccent, THEMES, ACCENT_PRESETS, changeReqs, saveChangeReqs } = ctx;
+  const { users, saveUsers, user, actLog, saveActLog, invoiceSettings, saveInvoiceSettings, themeId, setTheme, accentKey, setAccent, customColor, setCustomColor, bgImage, setBgImage, THEMES, ACCENT_PRESETS, changeReqs, saveChangeReqs } = ctx;
   const isAdmin = user.role === "admin";
   const tabs = isAdmin ? ["profile", "theme", "users", "series", "access", "export", "activity", "sessions", "invoice", "sheets"] : ["profile", "theme"];
   const [tab, setTab] = useState("profile");
@@ -386,11 +386,31 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
         </div>
       </div>
 
-      {isAdmin && <div className="glass" style={{ padding: 20, borderRadius: T.radius }}>
-        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 4 }}>🗂 Approvals History</div>
-        <div style={{ fontSize: 12, color: T.textMuted, marginBottom: 14 }}>Clear approved/declined requests from history. Pending requests are not affected.</div>
-        <GBtn v="danger" sz="sm" onClick={() => { if (window.confirm("Clear all approved/declined approval history? Pending requests will remain.")) { saveChangeReqs((changeReqs || []).filter(r => r.status === "pending")); } }}>Clear Approvals History</GBtn>
+
+      {/* Background Image for Glass theme */}
+      {themeId === "glass" && <div className="glass" style={{ padding: 20, borderRadius: T.radius }}>
+        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 4 }}>🖼 Background Image <span style={{ fontSize:11, color:T.textMuted, fontWeight:400 }}>(Glass theme only)</span></div>
+        <div style={{ fontSize: 12, color: T.textMuted, marginBottom: 12 }}>Paste an image URL — the glass effect overlays on top of it.</div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <GIn value={bgImage || ""} onChange={e => setBgImage && setBgImage(e.target.value)} placeholder="https://images.unsplash.com/..." style={{ flex: 1 }} />
+          {bgImage && <GBtn v="ghost" sz="sm" onClick={() => setBgImage && setBgImage("")}>Clear</GBtn>}
+        </div>
+        {bgImage && <div style={{ marginTop: 10, height: 60, borderRadius: T.radius, backgroundImage: `url("${bgImage}")`, backgroundSize: "cover", backgroundPosition: "center", border: `1px solid ${T.border}`, opacity: 0.8 }} />}
       </div>}
+
+      {/* Custom accent colour picker */}
+      <div className="glass" style={{ padding: 20, borderRadius: T.radius }}>
+        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 4 }}>✏️ Custom Accent Colour</div>
+        <div style={{ fontSize: 12, color: T.textMuted, marginBottom: 12 }}>Pick any colour — overrides the preset above.</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <input type="color" value={customColor || (ACCENT_PRESETS?.[accentKey]?.light || "#C05C1E")} onChange={e => { setAccent && setAccent("custom"); setCustomColor && setCustomColor(e.target.value); }} style={{ width: 48, height: 40, borderRadius: T.radius, border: `1px solid ${T.border}`, cursor: "pointer", padding: 2, background: "transparent" }} />
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{customColor || "No custom colour set"}</div>
+            <div style={{ fontSize: 11, color: T.textMuted }}>Using picker sets accent to Custom</div>
+          </div>
+          {customColor && <GBtn v="ghost" sz="sm" onClick={() => { setCustomColor && setCustomColor(""); setAccent && setAccent("copper"); }}>Reset to Default</GBtn>}
+        </div>
+      </div>
     </div>}
 
     {tab === "invoice" && isAdmin && <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
