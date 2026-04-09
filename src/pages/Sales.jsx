@@ -128,7 +128,8 @@ ${sharedStyle}
       userId: user.id, userName: user.name, billId: bill.id, isDamaged: item.isDamaged,
       paymentMode: bill.paymentMode || ""
     }));
-    saveBills([bill, ...bills]);
+    const billWithUser = { ...bill, userId: user.id, userName: user.name };
+    saveBills([billWithUser, ...bills]);
     saveTransactions([...newTxns, ...transactions]);
     addLog("created", "sale bill", bill.billNo, `${bill.items.length} items · ${fmtCur(bill.total)}`);
     setModal(false);
@@ -147,7 +148,8 @@ ${sharedStyle}
       userId: user.id, userName: user.name, billId: updatedBill.id, isDamaged: item.isDamaged,
       paymentMode: updatedBill.paymentMode || ""
     }));
-    saveBills(bills.map(b => b.id === updatedBill.id ? updatedBill : b));
+    const updatedWithUser = { ...updatedBill, userId: user.id, userName: user.name };
+    saveBills(bills.map(b => b.id === updatedBill.id ? updatedWithUser : b));
     saveTransactions([...newTxns, ...filteredTxns]);
     addLog("edited", "sale bill", updatedBill.billNo);
     setEditBill(null);
