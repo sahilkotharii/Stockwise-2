@@ -1,27 +1,9 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { Plus, X, Eye, Trash2, Edit2, ShoppingCart, FileText, Box, Package, Download } from "lucide-react";
+import { Plus, X, Eye, Trash2, Edit2, ShoppingCart, Box, Package } from "lucide-react";
 import { useT } from "../theme";
 import { KCard, GBtn, GS, Modal, Pager, PeriodBar, SearchInput } from "../components/UI";
 import BillForm from "../components/BillForm";
 import { uid, fmtCur, fmtDate, inRange, today } from "../utils";
-
-const PRESETS = [
-  { k: "1d", l: "Today" }, { k: "7d", l: "7d" }, { k: "30d", l: "30d" },
-  { k: "90d", l: "90d" }, { k: "6m", l: "6M" }, { k: "1y", l: "1Y" }
-];
-
-function getPresetDate(preset) {
-  const now = new Date();
-  switch (preset) {
-    case "1d": return today();
-    case "7d": return new Date(now - 7 * 864e5).toISOString().split("T")[0];
-    case "30d": return new Date(now - 30 * 864e5).toISOString().split("T")[0];
-    case "90d": return new Date(now - 90 * 864e5).toISOString().split("T")[0];
-    case "6m": { const d = new Date(now); d.setMonth(d.getMonth() - 6); return d.toISOString().split("T")[0]; }
-    case "1y": { const d = new Date(now); d.setFullYear(d.getFullYear() - 1); return d.toISOString().split("T")[0]; }
-    default: return null;
-  }
-}
 
 export default function Purchase({ ctx }) {
   const T = useT();
@@ -32,7 +14,7 @@ export default function Purchase({ ctx }) {
   const [modal, setModal] = useState(false);
   const [editBill, setEditBill] = useState(null);
   const [preset, setPreset] = useState("30d");
-  const [df, setDf] = useState(getPresetDate("30d"));
+  const [df, setDf] = useState(new Date(Date.now()-30*864e5).toISOString().split("T")[0]);
   const [dt, setDt] = useState(today());
   const [vF, setVF] = useState("");
   const [pg, setPg] = useState(1); const [ps, setPs] = useState(20);
@@ -41,8 +23,6 @@ export default function Purchase({ ctx }) {
   const [selBills, setSelBills] = useState(new Set());
   const tgBill = id => setSelBills(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
   useEffect(() => setPg(1), [df, dt, vF, search, ps]);
-
-  const handlePreset = (k) => { setPreset(k); setDf(getPresetDate(k)); setDt(today()); };
 
   // ── Period bills ────────────────────────────────────────────────────────
   const periodPurBills = useMemo(() => bills.filter(b =>
