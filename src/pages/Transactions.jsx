@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { Search, X, Download, Trash2 } from "lucide-react";
+import { X, Download, Trash2 } from "lucide-react";
 import { useT } from "../theme";
-import { GBtn, Pager } from "../components/UI";
+import { GBtn, Pager, PeriodBar, SearchInput } from "../components/UI";
 import { fmtCur, fmtDate, inRange, toCSV, dlCSV } from "../utils";
 
 export default function Transactions({ ctx }) {
@@ -72,18 +72,13 @@ export default function Transactions({ ctx }) {
 
     <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
       {TT.map(t => (
-        <button key={t.id} onClick={() => setTab(t.id)} style={{ padding: "6px 14px", borderRadius: 99, fontSize: 12, fontWeight: 600, cursor: "pointer", background: tab === t.id ? (t.color || T.accent) + "1C" : "transparent", color: tab === t.id ? (t.color || T.accent) : T.textMuted, border: `1px solid ${tab === t.id ? (t.color || T.accent) + "44" : T.borderSubtle}`, transition: "all .15s" }}>{t.label}</button>
+        <button key={t.id} onClick={() => setTab(t.id)} style={{ padding: "6px 14px", borderRadius: 99, fontSize: 12, fontWeight: 600, cursor: "pointer", background: tab === t.id ? (t.color || T.accent) : "transparent", color: tab === t.id ? "#fff" : T.textMuted, border: `1px solid ${tab === t.id ? (t.color || T.accent) : T.borderSubtle}`, transition: "all .15s" }}>{t.label}</button>
       ))}
     </div>
 
     <div className="filter-wrap">
-      <div style={{ position: "relative", flex: "1 1 160px" }}>
-        <Search size={13} style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: T.textMuted }} />
-        <input className="inp" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search product…" style={{ paddingLeft: 30 }} />
-      </div>
-      <input type="date" className="inp" value={df} onChange={e => setDf(e.target.value)} style={{ flex: "0 1 120px" }} />
-      <span style={{ fontSize: 12, color: T.textMuted }}>→</span>
-      <input type="date" className="inp" value={dt} onChange={e => setDt(e.target.value)} style={{ flex: "0 1 120px" }} />
+      <SearchInput value={search} onChange={e => setSearch(e.target.value)} placeholder="Search product…" style={{ flex: "1 1 160px" }} />
+      <PeriodBar df={df} setDf={setDf} dt={dt} setDt={setDt} preset={""} setPreset={() => {}} noFY={false} />
       {(df || dt || search) && <GBtn v="ghost" sz="sm" onClick={() => { setDf(""); setDt(""); setSearch(""); }} icon={<X size={12} />}>Clear</GBtn>}
       <GBtn v="ghost" sz="sm" onClick={exportCSV} icon={<Download size={12} />}>Export</GBtn>
     </div>
