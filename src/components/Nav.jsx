@@ -13,13 +13,25 @@ export const ALL_NAV = [
   { id: "products",     label: "Products",     icon: Tag },
   { id: "vendors",      label: "Vendors",      icon: Users },
   { id: "transactions", label: "Transactions", icon: ArrowLeftRight },
-  { id: "approvals",    label: "Approvals",    icon: CheckSquare },
+  { id: "approvals",    label: "Approvals",    icon: CheckSquare, adminOnly: true },
   { id: "settings",     label: "Settings",     icon: Settings, alwaysAllow: true },
 ];
+// Pages each role can access (admin = all)
+const ROLE_PAGES = {
+  admin:      null, // null = all
+  manager:    ["dashboard","sales","purchase","returns","inventory","reports","pnl","products","vendors","transactions","approvals","settings"],
+  sales:      ["dashboard","sales","inventory","returns","vendors","settings"],
+  purchase:   ["dashboard","purchase","vendors","inventory","settings"],
+  accountant: ["dashboard","sales","purchase","returns","inventory","pnl","transactions","settings"],
+  production: ["dashboard","products","inventory","reports","settings"],
+};
+export { ROLE_PAGES };
+
 export const visNav = (user) => {
   if (!user || user.role === "admin") return ALL_NAV;
+  const allowed = ROLE_PAGES[user.role] || ROLE_PAGES.manager;
   const locked = user.lockedPages || [];
-  return ALL_NAV.filter(n => n.alwaysAllow || (!n.adminOnly && !locked.includes(n.id)));
+  return ALL_NAV.filter(n => allowed.includes(n.id) && !locked.includes(n.id));
 };
 
 // ── Shared Avatar component ──────────────────────────────────────────────────
@@ -204,7 +216,9 @@ export function TopBar({ page, user, syncSt, lastSync, onSync, toggleTheme, isDa
   const oos = products.filter(p => getStock(p.id) <= 0);
   const low = products.filter(p => getStock(p.id) > 0 && getStock(p.id) <= Number(p.minStock));
   const alertsCnt = oos.length + low.length;
-  const badgeCnt = user.role === "admin" ? (pending.length + alertsCnt) : 0;
+  const badgeCnt = user.role === "admin"
+    ? (pending.length + alertsCnt)
+    : alertsCnt; // non-admin still sees stock alerts
 
   return (
     <div style={{ position: "sticky", top: 12, zIndex: 40, marginBottom: 20 }}>
