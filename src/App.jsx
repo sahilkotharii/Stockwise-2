@@ -339,7 +339,7 @@ export default function App() {
     actLog, saveActLog, addChangeReq, addLog,
     invoiceSettings, saveInvoiceSettings,
     themeId, setTheme, accentKey, setAccent, customColor, setCustomColor, bgImage, setBgImage, THEMES, ACCENT_PRESETS,
-    settingsTab, setSettingsTab,
+    settingsTab, setSettingsTab, isDark, toggleTheme,
   };
 
   const T = theme;
