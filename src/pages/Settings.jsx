@@ -20,8 +20,10 @@ const LOCKABLE = [
 export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onTest }) {
   const T = useT();
   const { users, saveUsers, user, actLog, saveActLog, invoiceSettings, saveInvoiceSettings, themeId, setTheme, accentKey, setAccent, customColor, setCustomColor, bgImage, setBgImage, THEMES, ACCENT_PRESETS, changeReqs, saveChangeReqs, settingsTab } = ctx;
+  const isDark = ctx.isDark;
+  const isManager = user.role === "manager";
   const isAdmin = user.role === "admin";
-  const tabs = isAdmin ? ["profile", "theme", "users", "series", "access", "export", "activity", "sessions", "invoice", "sheets"] : ["profile", "theme"];
+  const tabs = isAdmin ? ["profile", "theme", "users", "series", "access", "export", "activity", "sessions", "invoice", "sheets"] : ["profile", "theme", "export", "howto"];
   const [tab, setTab] = useState(ctx?.settingsTab || "profile");
   // Sync with ctx settingsTab when it changes
   React.useEffect(() => { if (ctx?.settingsTab) setTab(ctx.settingsTab); }, [ctx?.settingsTab]);
@@ -48,7 +50,14 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
   const saveProfile = () => {
     if (pForm.newPass && pForm.newPass !== pForm.confirmPass) { alert("Passwords don't match."); return; }
     if (pForm.newPass && pForm.newPass.length < 6) { alert("Password must be at least 6 characters."); return; }
+    if (pForm.username !== undefined && pForm.username.length < 3) { alert("Username must be at least 3 characters."); return; }
+    // Check username uniqueness if changed
+    if (pForm.username && pForm.username !== user.username) {
+      const taken = users.find(u => u.username === pForm.username && u.id !== user.id);
+      if (taken) { alert("Username already taken."); return; }
+    }
     const update = { name: pForm.name };
+    if (pForm.username) update.username = pForm.username;
     if (pForm.newPass) update.password = pForm.newPass;
     saveUsers(users.map(u => u.id === user.id ? { ...u, ...update } : u));
     setPForm(p => ({ ...p, newPass: "", confirmPass: "" }));
@@ -80,7 +89,7 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
     saveUsers(users.map(x => x.id === uid2 ? { ...x, lockedPages: lk.includes(pid) ? lk.filter(p => p !== pid) : [...lk, pid] } : x));
   };
 
-  const tlbls = { profile: "Profile", users: "Users", series: "Bill Series", access: "Access Control", export: "Export", activity: "Activity Log", sessions: "Login History", invoice: "Invoice", sheets: "Google Sheets", theme: "Theme" };
+  const tlbls = { profile: "Profile", theme: "Theme", users: "Users", series: "Bill Series", access: "Access Control", export: "Export", activity: "Activity Log", sessions: "Login History", invoice: "Invoice", sheets: "Google Sheets", howto: "How to Use" };
   const myLog = isAdmin ? actLog : actLog.filter(l => l.userId === user.id);
 
   return <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -394,6 +403,27 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
           {customColor && <GBtn v="ghost" sz="sm" onClick={() => { setCustomColor && setCustomColor(""); setAccent && setAccent("copper"); }}>Reset to Default</GBtn>}
         </div>
       </div>
+    </div>}
+
+    {tab === "howto" && <div className="glass" style={{ padding: 24, borderRadius: T.radius }}>
+      <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 17, color: T.text, marginBottom: 6 }}>How to Use StockWise</div>
+      <div style={{ fontSize: 12, color: T.textMuted, marginBottom: 20 }}>Quick guide to get the most out of StockWise</div>
+      {[
+        { icon: "1", title: "Add Products & Vendors first", desc: "Go to Products and add your SKUs with purchase price, MRP, HSN code and GST rate. Then add your Vendors (suppliers and customers)." },
+        { icon: "2", title: "Set Opening Stock", desc: "In Inventory → Import Opening Stock. Download the template, fill in quantities, and upload. This sets your starting inventory balance." },
+        { icon: "3", title: "Record Purchases", desc: "Go to Purchase → New Purchase Bill. Enter the vendor's invoice number, add products with quantities and cost price. Stock increases automatically." },
+        { icon: "4", title: "Create Sales Bills", desc: "Go to Sales → New Sale Bill. Select customer/vendor, add products. Bill number is auto-generated. GST is calculated automatically from MRP." },
+        { icon: "5", title: "Track Returns", desc: "Sales returns (customer sends back) and Purchase returns (you return to vendor) are in the Returns section. Stock is adjusted automatically." },
+        { icon: "6", title: "Download Invoices", desc: "On any sales bill, click the printer icon to view and print a GST-compliant tax invoice with your business details." },
+        { icon: "7", title: "Reports & P&L", desc: "Reports shows sales analytics, vendor performance, product performance. P&L shows full profit & loss with COGS calculation for the selected period." },
+        { icon: "8", title: "Export for Accountant", desc: "Go to Export tab. Download Sales Bills CSV, Purchase Bills CSV, or Transactions CSV. These are formatted for easy reconciliation." },
+        { icon: "9", title: "Manager Role", desc: "Managers can enter data but all creates/edits/deletes go to Approvals for admin review before they take effect." },
+      ].map((s, i) => (
+        <div key={i} style={{ display:"flex", gap:14, marginBottom:16, paddingBottom:16, borderBottom: i < 8 ? `1px solid ${T.borderSubtle}` : "none" }}>
+          <div style={{ width:28, height:28, borderRadius:"50%", background:T.accent, color:"#fff", display:"flex", alignItems:"center", justifyContent:"center", fontSize:12, fontWeight:700, flexShrink:0 }}>{s.icon}</div>
+          <div><div style={{ fontWeight:600, color:T.text, fontSize:13, marginBottom:3 }}>{s.title}</div><div style={{ fontSize:12, color:T.textSub, lineHeight:1.5 }}>{s.desc}</div></div>
+        </div>
+      ))}
     </div>}
 
     {tab === "invoice" && isAdmin && <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
