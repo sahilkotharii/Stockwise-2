@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Plus, Edit2, Trash2, Check, RefreshCw, Wifi, Download, Activity, Lock, Unlock, CheckCircle, XCircle, Loader, X } from "lucide-react";
 import { useT } from "../theme";
 import { GBtn, GIn, GTa, GS, Field, Modal } from "../components/UI";
-import { uid, today, fmtTs, fmtCur, toCSV, dlCSV, hashPassword } from "../utils";
+import { uid, today, fmtTs, fmtCur, toCSV, dlCSV } from "../utils";
 import { lsSet } from "../storage";
 
 const LOCKABLE = [
@@ -45,50 +45,31 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
   const [sessUser, setSessUser] = useState("");
   const pf = (k, v) => setPForm(p => ({ ...p, [k]: v }));
 
-  const saveProfile = async () => {
+  const saveProfile = () => {
     if (pForm.newPass && pForm.newPass !== pForm.confirmPass) { alert("Passwords don't match."); return; }
     if (pForm.newPass && pForm.newPass.length < 6) { alert("Password must be at least 6 characters."); return; }
-    let update = { name: pForm.name };
-    if (pForm.newPass) {
-      const hashed = await hashPassword(pForm.newPass);
-      update.password = "sha256:" + hashed;
-    }
+    const update = { name: pForm.name };
+    if (pForm.newPass) update.password = pForm.newPass;
     saveUsers(users.map(u => u.id === user.id ? { ...u, ...update } : u));
     setPForm(p => ({ ...p, newPass: "", confirmPass: "" }));
     alert("Profile saved!");
   };
 
-  const saveUser = async () => {
-    try {
-      if (!uForm.username || !uForm.name) { alert("Username and name are required."); return; }
-      if (!eu && !uForm.password) { alert("Password is required for new users."); return; }
-      if (uForm.password && uForm.password.length < 6) { alert("Password must be at least 6 characters."); return; }
-
-      // Check username uniqueness
-      const exists = users.find(u => u.username === uForm.username && u.id !== eu);
-      if (exists) { alert("Username already taken."); return; }
-
-      let finalForm = { ...uForm };
-
-      if (uForm.password) {
-        // New password entered - hash it
-        const hashed = await hashPassword(uForm.password);
-        finalForm.password = "sha256:" + hashed;
-      } else if (eu) {
-        // Editing existing user, no new password - keep the existing stored password
-        const existing = users.find(u => u.id === eu);
-        finalForm.password = existing?.password || "";
-      }
-
-      if (eu) {
-        saveUsers(users.map(u => u.id === eu ? { ...u, ...finalForm } : u));
-      } else {
-        saveUsers([...users, { id: uid(), ...finalForm, createdAt: today(), lockedPages: [] }]);
-      }
-      setUModal(false);
-    } catch(e) {
-      alert("Error saving user: " + e.message);
+  const saveUser = () => {
+    if (!uForm.username || !uForm.name) { alert("Username and name are required."); return; }
+    if (!eu && !uForm.password) { alert("Password is required for new users."); return; }
+    if (uForm.password && uForm.password.length < 6) { alert("Password must be at least 6 characters."); return; }
+    const exists = users.find(u => u.username === uForm.username && u.id !== eu);
+    if (exists) { alert("Username already taken."); return; }
+    let finalForm = { ...uForm };
+    if (!uForm.password && eu) {
+      // No new password entered — keep existing
+      const existing = users.find(u => u.id === eu);
+      finalForm.password = existing?.password || "";
     }
+    if (eu) saveUsers(users.map(u => u.id === eu ? { ...u, ...finalForm } : u));
+    else saveUsers([...users, { id: uid(), ...finalForm, createdAt: today(), lockedPages: [] }]);
+    setUModal(false);
   };
 
 
