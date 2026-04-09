@@ -132,12 +132,16 @@ export default function App() {
       ]);
 
       // Pull from Sheets first — use Sheets users if available, THEN show UI
-      // This prevents seed users from overwriting saved credentials
+      // Has a timeout so the loader never hangs if network is slow/unresponsive
       const url = sUrl || DEFAULT_SHEETS_URL;
       if (url) {
         try {
           const { sheetsGet } = await import("./sheets");
-          const data = await sheetsGet(url);
+          // Race: fetch vs 8-second timeout — whichever wins
+          const data = await Promise.race([
+            sheetsGet(url),
+            new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 8000))
+          ]);
           // Always prefer Sheets users over seed users
           if (data.users?.length) {
             setUsers(data.users); await lsSet(SK.users, data.users);
@@ -159,7 +163,7 @@ export default function App() {
             data.appConfig.forEach(row => { if (!row.key) return; try { cfg[row.key] = JSON.parse(row.value); } catch { cfg[row.key] = row.value; } });
             if (Object.keys(cfg).length > 0) { setInvoiceSettings(cfg); lsSet(SK.invoiceSettings, cfg); }
           }
-        } catch(e) { /* Offline — use localStorage data */ }
+        } catch(e) { /* Offline or timeout — use localStorage data */ }
       }
       setReady(true);
       // Background auto-sync every 4 minutes
