@@ -78,7 +78,7 @@ export default function App() {
       const [u, p, c, v, t, b, sUrl, ok, dp, cr, al, tid, ak, cc, bgi] = await Promise.all([
         lsGet(SK.users, null), lsGet(SK.products, null), lsGet(SK.categories, null),
         lsGet(SK.vendors, null), lsGet(SK.transactions, null),
-        lsGet(SK.bills, []), lsGet(SK.sheetsUrl, DEFAULT_SHEETS_URL), lsGet(SK.seeded, false),
+        lsGet(SK.bills, []), lsGet(SK.sheetsUrl, DEFAULT_SHEETS_URL), lsGet("sw_ok", false),
         lsGet(SK.theme, false), lsGet(SK.changeReqs, []), lsGet(SK.actLog, []),
         lsGet("sw_theme_id", "glass"), lsGet("sw_accent_key", "copper"),
         lsGet("sw_custom_color", ""), lsGet("sw_bg_image", "")
@@ -124,7 +124,7 @@ export default function App() {
         // Never seed users to localStorage — real users always come from Sheets
         lsSet(SK.products, fp), lsSet(SK.categories, fc),
         lsSet(SK.vendors, fv), lsSet(SK.transactions, ft),
-        lsSet(SK.seeded, true)
+        lsSet("sw_ok", true)
       ]);
 
       // Pull from Sheets first — use Sheets users if available, THEN show UI
