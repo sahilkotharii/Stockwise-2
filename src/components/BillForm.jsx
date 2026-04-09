@@ -6,7 +6,7 @@ import { GIn, GS, GTa, GBtn, Lbl, Field } from "./UI";
 import VendorSearch from "./VendorSearch";
 
 /* ─── Searchable product autocomplete ──────────────────────────────────── */
-function ProductSearch({ value, onChange, products, placeholder }) {
+export function ProductSearch({ value, onChange, products, placeholder }) {
   const T = useT();
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
@@ -41,7 +41,7 @@ function ProductSearch({ value, onChange, products, placeholder }) {
         />
       </div>
       {open && (
-        <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 300, marginTop: 3, background: T.surfaceStrong, border: `1px solid ${T.borderSubtle}`, borderRadius: 10, boxShadow: T.shadowLg, maxHeight: 220, overflowY: "auto" }}>
+        <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 300, marginTop: 3, background: T.surfaceStrong, border: `1px solid ${T.borderSubtle}`, borderRadius: T.radius, boxShadow: T.shadowLg, maxHeight: 220, overflowY: "auto" }}>
           {filtered.length === 0
             ? <div style={{ padding: "10px 12px", fontSize: 12, color: T.textMuted }}>No products found</div>
             : filtered.map(p => (
@@ -216,12 +216,12 @@ export default function BillForm({ type, bills, onSave, products, vendors, getSt
     <form id={type + "-form"} onSubmit={e => { e.preventDefault(); handleSave(); }} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 
       {/* Header bar */}
-      <div style={{ padding: "8px 14px", borderRadius: 10, background: T.accentBg, display: "flex", alignItems: "center", gap: 8 }}>
+      <div style={{ padding: "8px 14px", borderRadius: T.radius, background: T.accentBg, display: "flex", alignItems: "center", gap: 8 }}>
         <FileText size={14} color={T.accent} />
         {type === "sale"
           ? <span style={{ fontSize: 13, fontWeight: 700, color: T.accent }}>{billNo || "Series not set"}</span>
           : <span style={{ fontSize: 13, fontWeight: 700, color: T.accent }}>{purchaseInvoiceNo || "Enter vendor invoice no."}</span>}
-        {isEdit && <span style={{ fontSize:11, background: T.amber + "20", color: T.amber, padding: "2px 8px", borderRadius: 99, fontWeight: 600 }}>EDITING</span>}
+        {isEdit && <span style={{ fontSize:11, background: T.amber + "20", color: T.amber, padding: "2px 8px", borderRadius: T.radiusFull, fontWeight: 600 }}>EDITING</span>}
         <span style={{ fontSize: 11, color: T.textMuted, marginLeft: "auto" }}>
           {type === "sale" ? "Sales Bill — MRP incl. GST" : "Purchase Order — cost ex-GST"}
         </span>
@@ -244,7 +244,7 @@ export default function BillForm({ type, bills, onSave, products, vendors, getSt
 
       {/* Vendor details preview */}
       {selectedVendor && (
-        <div style={{ padding: "10px 14px", borderRadius: 10, background: T.isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.03)", border: `1px solid ${T.borderSubtle}`, fontSize: 11, color: T.textSub }}>
+        <div style={{ padding: "10px 14px", borderRadius: T.radius, background: T.isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.03)", border: `1px solid ${T.borderSubtle}`, fontSize: 11, color: T.textSub }}>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 16 }}>
             {[selectedVendor.address1, selectedVendor.city, selectedVendor.state].filter(Boolean).length > 0 && (
               <div><span style={{ color: T.textMuted }}>Address: </span>{[selectedVendor.address1, selectedVendor.address2, selectedVendor.city, selectedVendor.state, selectedVendor.pincode].filter(Boolean).join(", ")}</div>
@@ -258,9 +258,9 @@ export default function BillForm({ type, bills, onSave, products, vendors, getSt
       {/* GST Type toggle */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
         <span style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, letterSpacing: "0.05em" }}>GST TYPE</span>
-        <div style={{ display: "flex", gap: 2, background: T.isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.05)", borderRadius: 10, padding: 3 }}>
+        <div style={{ display: "flex", gap: 2, background: T.isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.05)", borderRadius: T.radius, padding: 3 }}>
           {[{ k: "cgst_sgst", l: "CGST + SGST", sub: "Intra-state" }, { k: "igst", l: "IGST", sub: "Inter-state" }].map(g => (
-            <button type="button" key={g.k} onClick={() => setGstType(g.k)} style={{ padding: "5px 14px", borderRadius: 8, border: "none", cursor: "pointer", background: gstType === g.k ? T.accent : "transparent", color: gstType === g.k ? "#fff" : T.textMuted, fontSize: 12, fontWeight: 600, transition: "all .15s" }}>
+            <button type="button" key={g.k} onClick={() => setGstType(g.k)} style={{ padding: "5px 14px", borderRadius: T.radius, border: "none", cursor: "pointer", background: gstType === g.k ? T.accent : "transparent", color: gstType === g.k ? "#fff" : T.textMuted, fontSize: 12, fontWeight: 600, transition: "all .15s" }}>
               {g.l} <span style={{ fontSize:11, opacity: .8 }}>({g.sub})</span>
             </button>
           ))}
@@ -272,7 +272,7 @@ export default function BillForm({ type, bills, onSave, products, vendors, getSt
 
       {/* Ship-to address (sales only) */}
       {type === "sale" && (
-        <div style={{ padding: "12px 14px", borderRadius: 10, border: `1px solid ${T.borderSubtle}`, background: T.isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)" }}>
+        <div style={{ padding: "12px 14px", borderRadius: T.radius, border: `1px solid ${T.borderSubtle}`, background: T.isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: shipToSameAsBill ? 0 : 10 }}>
             <Truck size={13} color={T.textMuted} />
             <span style={{ fontSize: 12, fontWeight: 600, color: T.textSub }}>Ship To</span>
@@ -290,7 +290,7 @@ export default function BillForm({ type, bills, onSave, products, vendors, getSt
       {/* Products */}
       <div>
         <Lbl c="Products" req />
-        <div style={{ border: `1px solid ${T.borderSubtle}`, borderRadius: 12, overflow: "visible" }}>
+        <div style={{ border: `1px solid ${T.borderSubtle}`, borderRadius: T.radius, overflow: "visible" }}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 60px 100px 90px 28px", gap: 8, padding: "8px 12px", background: T.isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)" }}>
             {["Product", "Qty", type === "sale" ? "MRP (incl GST)" : "Cost (ex-GST)", "Line Total", ""].map((h, i) => (
               <div key={i} style={{ fontSize:11, fontWeight: 700, color: T.textMuted, letterSpacing: "0.04em" }}>{h.toUpperCase()}</div>
@@ -348,9 +348,9 @@ export default function BillForm({ type, bills, onSave, products, vendors, getSt
         {type === "sale"
           ? <Field label="Discount">
             <div style={{ display: "flex", gap: 6 }}>
-              <div style={{ display: "flex", gap: 2, background: T.isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)", borderRadius: 8, padding: 3, flexShrink: 0 }}>
+              <div style={{ display: "flex", gap: 2, background: T.isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)", borderRadius: T.radius, padding: 3, flexShrink: 0 }}>
                 {[{ k: "percent", l: "%" }, { k: "amount", l: "₹" }].map(d => (
-                  <button type="button" key={d.k} onClick={() => setDiscType(d.k)} style={{ padding: "4px 10px", borderRadius: 6, border: "none", cursor: "pointer", background: discType === d.k ? T.accent : "transparent", color: discType === d.k ? "#fff" : T.textMuted, fontSize: 12, fontWeight: 600 }}>{d.l}</button>
+                  <button type="button" key={d.k} onClick={() => setDiscType(d.k)} style={{ padding: "4px 10px", borderRadius: T.radius, border: "none", cursor: "pointer", background: discType === d.k ? T.accent : "transparent", color: discType === d.k ? "#fff" : T.textMuted, fontSize: 12, fontWeight: 600 }}>{d.l}</button>
                 ))}
               </div>
               <GIn type="number" min="0" value={discount} onChange={e => setDiscount(e.target.value)} placeholder="0" />
@@ -393,7 +393,7 @@ export default function BillForm({ type, bills, onSave, products, vendors, getSt
 
       {/* Eway Bill (sales only) */}
       {type === "sale" && (
-        <div style={{ border: `1px solid ${T.borderSubtle}`, borderRadius: 12, overflow: "hidden" }}>
+        <div style={{ border: `1px solid ${T.borderSubtle}`, borderRadius: T.radius, overflow: "hidden" }}>
           <button type="button" onClick={() => setEwayBill(p => !p)} style={{ width: "100%", padding: "10px 14px", display: "flex", alignItems: "center", gap: 8, background: "transparent", border: "none", cursor: "pointer", color: T.text }}>
             <input type="checkbox" checked={ewayBill} readOnly style={{ accentColor: T.accent, pointerEvents: "none" }} />
             <span style={{ fontSize: 13, fontWeight: 600 }}>E-Way Bill Required</span>
@@ -414,7 +414,7 @@ export default function BillForm({ type, bills, onSave, products, vendors, getSt
         <span style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, letterSpacing: "0.05em" }}>PAYMENT MODE</span>
         <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
           {["Cash", "NEFT / RTGS", "UPI", "Cheque", "Credit", "On Account"].map(pm => (
-            <button type="button" key={pm} onClick={() => setPaymentMode(paymentMode === pm ? "" : pm)} style={{ padding: "4px 12px", borderRadius: 99, fontSize: 11, fontWeight: 600, border: `1px solid ${paymentMode === pm ? T.accent : T.borderSubtle}`, cursor: "pointer", background: paymentMode === pm ? T.accent : "transparent", color: paymentMode === pm ? "#fff" : T.textSub, transition: "all .15s" }}>{pm}</button>
+            <button type="button" key={pm} onClick={() => setPaymentMode(paymentMode === pm ? "" : pm)} style={{ padding: "4px 12px", borderRadius: T.radiusFull, fontSize: 11, fontWeight: 600, border: `1px solid ${paymentMode === pm ? T.accent : T.borderSubtle}`, cursor: "pointer", background: paymentMode === pm ? T.accent : "transparent", color: paymentMode === pm ? "#fff" : T.textSub, transition: "all .15s" }}>{pm}</button>
           ))}
         </div>
       </div>
