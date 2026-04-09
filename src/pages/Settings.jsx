@@ -19,7 +19,7 @@ const LOCKABLE = [
 
 export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onTest }) {
   const T = useT();
-  const { users, saveUsers, user, actLog, saveActLog, invoiceSettings, saveInvoiceSettings, themeId, setTheme, accentKey, setAccent, customColor, setCustomColor, bgImage, setBgImage, THEMES, ACCENT_PRESETS, changeReqs, saveChangeReqs, settingsTab } = ctx;
+  const { users, saveUsers, user, actLog, saveActLog, invoiceSettings, saveInvoiceSettings, themeId, setTheme, accentKey, setAccent, customColor, setCustomColor, bgImage, setBgImage, radiusMode, setRadiusMode, logoUrl, setLogoUrl, THEMES, ACCENT_PRESETS, RADIUS_MODES, changeReqs, saveChangeReqs, settingsTab } = ctx;
   const isDark = ctx.isDark;
   const isManager = user.role === "manager";
   const isAdmin = user.role === "admin";
@@ -94,7 +94,7 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
 
   return <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
     <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-      {tabs.map(t => <button key={t} onClick={() => setTab(t)} style={{ padding: "7px 14px", borderRadius: 10, border: `1px solid ${tab === t ? T.accent : T.borderSubtle}`, cursor: "pointer", fontWeight: 600, fontSize: 12, background: tab === t ? T.accent : "transparent", color: tab === t ? "#fff" : T.textSub, transition: "all .15s" }}>{tlbls[t]}</button>)}
+      {tabs.map(t => <button key={t} onClick={() => setTab(t)} style={{ padding: "7px 14px", borderRadius: T.radius, border: `1px solid ${tab === t ? T.accent : T.borderSubtle}`, cursor: "pointer", fontWeight: 600, fontSize: 12, background: tab === t ? T.accent : "transparent", color: tab === t ? "#fff" : T.textSub, transition: "all .15s" }}>{tlbls[t]}</button>)}
     </div>
 
     {tab === "profile" && <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
@@ -127,9 +127,9 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
         <GBtn sz="sm" onClick={() => { setUForm({ role: "manager" }); setEu(null); setUModal(true); }} icon={<Plus size={13} />}>Add User</GBtn>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        {users.map(u => <div key={u.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px", borderRadius: 12, background: T.isDark ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.5)", border: `1px solid ${T.borderSubtle}` }}>
+        {users.map(u => <div key={u.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px", borderRadius: T.radius, background: T.isDark ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.5)", border: `1px solid ${T.borderSubtle}` }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ width: 38, height: 38, borderRadius: 10, background: u.role === "admin" ? `${T.accent}1C` : `${T.blue}1C`, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 14, color: u.role === "admin" ? T.accent : T.blue }}>{u.name[0]}</div>
+            <div style={{ width: 38, height: 38, borderRadius: T.radius, background: u.role === "admin" ? `${T.accent}1C` : `${T.blue}1C`, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 14, color: u.role === "admin" ? T.accent : T.blue }}>{u.name[0]}</div>
             <div>
               <div style={{ fontWeight: 600, fontSize: 13, color: T.text }}>{u.name}</div>
               <div style={{ fontSize: 11, color: T.textMuted }}>@{u.username} · <span style={{ color: u.role === "admin" ? T.accent : T.blue, fontWeight: 600 }}>{u.role}</span></div>
@@ -161,7 +161,7 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
             <div style={{ fontSize:11, color: T.textMuted, marginTop: 4 }}>Next new bill will start from this number + existing count.</div>
           </Field>
         </div>
-        <div style={{ padding: "10px 14px", borderRadius: 10, background: T.accentBg, border: `1px solid ${T.accent}20`, fontSize: 12, color: T.accent, marginTop: 8 }}>
+        <div style={{ padding: "10px 14px", borderRadius: T.radius, background: T.accentBg, border: `1px solid ${T.accent}20`, fontSize: 12, color: T.accent, marginTop: 8 }}>
           Preview: <strong>{invForm.saleSeries || "SALE-"}{String(Number(invForm.saleSeriesStart || 1)).padStart(4, "0")}</strong>
         </div>
         <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 14 }}>
@@ -179,15 +179,15 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
       <div style={{ fontSize: 12, color: T.textMuted, marginBottom: 16 }}>Lock/unlock pages per manager. Dashboard always accessible.</div>
       {users.filter(u => u.role === "manager").map(u => {
         const lk = u.lockedPages || [];
-        return <div key={u.id} style={{ padding: 16, borderRadius: 14, background: T.isDark ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.5)", border: `1px solid ${T.borderSubtle}`, marginBottom: 12 }}>
+        return <div key={u.id} style={{ padding: 16, borderRadius: T.radius, background: T.isDark ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.5)", border: `1px solid ${T.borderSubtle}`, marginBottom: 12 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-            <div style={{ width: 32, height: 32, borderRadius: 8, background: `${T.blue}1C`, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 13, color: T.blue }}>{u.name[0]}</div>
+            <div style={{ width: 32, height: 32, borderRadius: T.radius, background: `${T.blue}1C`, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 13, color: T.blue }}>{u.name[0]}</div>
             <div><div style={{ fontWeight: 600, color: T.text }}>{u.name}</div><div style={{ fontSize: 11, color: T.textMuted }}>@{u.username}</div></div>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(130px,1fr))", gap: 8 }}>
             {LOCKABLE.map(pg => {
               const isLocked = lk.includes(pg.id);
-              return <button key={pg.id} onClick={() => toggleLock(u.id, pg.id)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", borderRadius: 10, border: `1.5px solid ${isLocked ? T.red + "40" : T.green + "40"}`, background: isLocked ? T.redBg : T.greenBg, cursor: "pointer", transition: "all .15s" }}>
+              return <button key={pg.id} onClick={() => toggleLock(u.id, pg.id)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", borderRadius: T.radius, border: `1.5px solid ${isLocked ? T.red + "40" : T.green + "40"}`, background: isLocked ? T.redBg : T.greenBg, cursor: "pointer", transition: "all .15s" }}>
                 {isLocked ? <Lock size={12} color={T.red} /> : <Unlock size={12} color={T.green} />}
                 <span style={{ fontSize: 12, fontWeight: 600, color: isLocked ? T.red : T.green }}>{pg.label}</span>
               </button>;
@@ -273,7 +273,7 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
             })), ["name","contact","phone","email","gstin","address1","address2","city","state","pincode","notes"]), "vendors") },
           { l: "Activity Log", fn: () => dlCSV(toCSV((ctx.actLog||[]).map(l => ({ ts:l.ts, user:l.userName, role:l.role, action:l.action, entity:l.entity, name:l.entityName, details:l.details||"" })), ["ts","user","role","action","entity","name","details"]), "activity") },
           { l: "Change Requests", fn: () => dlCSV(toCSV((ctx.changeReqs||[]).map(r => ({ ts:r.ts, requestedBy:r.requestedByName, entity:r.entity, action:r.action, itemName:r.entityName, status:r.status, reviewedBy:r.reviewedByName||"" })), ["ts","requestedBy","entity","action","itemName","status","reviewedBy"]), "change_requests") },
-        ].map((item, i) => <button key={i} onClick={item.fn} className="btn-ghost" style={{ padding: 16, borderRadius: 12, flexDirection: "column", gap: 10, alignItems: "flex-start", border: `1px solid ${T.borderSubtle}`, cursor: "pointer" }}>
+        ].map((item, i) => <button key={i} onClick={item.fn} className="btn-ghost" style={{ padding: 16, borderRadius: T.radius, flexDirection: "column", gap: 10, alignItems: "flex-start", border: `1px solid ${T.borderSubtle}`, cursor: "pointer" }}>
           <Download size={18} color={T.accent} />
           <div><div style={{ fontSize: 13, fontWeight: 600, color: T.text, textAlign: "left" }}>{item.l}</div><div style={{ fontSize: 11, color: T.textMuted, marginTop: 2 }}>Download CSV</div></div>
         </button>)}
@@ -303,8 +303,8 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
         {filtered.length === 0
           ? <div style={{ padding: "32px 0", textAlign: "center", color: T.textMuted }}>No activity matching filters</div>
           : <div style={{ display: "flex", flexDirection: "column", gap: 5, maxHeight: 400, overflowY: "auto" }}>
-            {filtered.slice(0, 200).map((l, i) => <div key={l.id || i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "9px 12px", borderRadius: 10, background: T.isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.025)" }}>
-              <div style={{ width: 30, height: 30, borderRadius: 7, background: `${T.accent}14`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Activity size={13} color={T.accent} /></div>
+            {filtered.slice(0, 200).map((l, i) => <div key={l.id || i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "9px 12px", borderRadius: T.radius, background: T.isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.025)" }}>
+              <div style={{ width: 30, height: 30, borderRadius: T.radius, background: `${T.accent}14`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Activity size={13} color={T.accent} /></div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 12, fontWeight: 600, color: T.text }}>
                   <span style={{ color: l.role === "admin" ? T.accent : T.blue }}>{l.userName}</span>{" "}
@@ -345,8 +345,8 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
           ? <div style={{ padding: "32px 0", textAlign: "center", color: T.textMuted }}>No login history matching filters</div>
           : <div style={{ display: "flex", flexDirection: "column", gap: 6, maxHeight: 400, overflowY: "auto" }}>
             {filteredLogins.slice(0, 200).map((l, i) => (
-              <div key={l.id || i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderRadius: 10, background: T.isDark ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.6)", border: `1px solid ${T.borderSubtle}` }}>
-                <div style={{ width: 34, height: 34, borderRadius: 9, background: l.role === "admin" ? `${T.accent}18` : `${T.blue}18`, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 13, color: l.role === "admin" ? T.accent : T.blue, flexShrink: 0 }}>
+              <div key={l.id || i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", borderRadius: T.radius, background: T.isDark ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.6)", border: `1px solid ${T.borderSubtle}` }}>
+                <div style={{ width: 34, height: 34, borderRadius: T.radius, background: l.role === "admin" ? `${T.accent}18` : `${T.blue}18`, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 13, color: l.role === "admin" ? T.accent : T.blue, flexShrink: 0 }}>
                   {(l.userName || "?")[0]}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -380,6 +380,22 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
       </div>
 
       <div className="glass" style={{ padding: 20, borderRadius: T.radius }}>
+        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 4 }}>Corner Style</div>
+        <div style={{ fontSize: 12, color: T.textMuted, marginBottom: 16 }}>Controls corner radius everywhere — buttons, cards, inputs, badges.</div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10 }}>
+          {Object.entries(RADIUS_MODES || {}).map(([key, rm]) => (
+            <button key={key} onClick={() => setRadiusMode && setRadiusMode(key)}
+              style={{ padding: "14px 10px", borderRadius: rm.radius === "0px" ? "0px" : rm.radius === "14px" ? "12px" : "20px", border: `2px solid ${radiusMode === key ? T.accent : T.border}`, background: radiusMode === key ? T.accentBg : "transparent", cursor: "pointer", textAlign: "center", transition: "all .15s" }}>
+              <div style={{ fontSize: 20, marginBottom: 6 }}>{rm.icon}</div>
+              <div style={{ fontWeight: 700, color: T.text, fontSize: 13 }}>{rm.name}</div>
+              <div style={{ fontSize: 11, color: T.textMuted, marginTop: 2 }}>{rm.desc}</div>
+              {radiusMode === key && <div style={{ marginTop: 6, fontSize: 11, fontWeight: 700, color: T.accent }}>Active</div>}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="glass" style={{ padding: 20, borderRadius: T.radius }}>
         <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 4 }}>Accent Colour</div>
         <div style={{ fontSize: 12, color: T.textMuted, marginBottom: 16 }}>Changes the primary action colour throughout the app.</div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
@@ -394,6 +410,33 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
       </div>
 
 
+      {/* Corner Style */}
+      <div className="glass" style={{ padding: 20, borderRadius: T.radius }}>
+        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 4 }}>Corner Style</div>
+        <div style={{ fontSize: 12, color: T.textMuted, marginBottom: 14 }}>Controls how rounded every button, card, and input appears across the whole app.</div>
+        <div style={{ display: "flex", gap: 10 }}>
+          {Object.entries(CORNER_STYLES || {}).map(([k, cs]) => (
+            <button key={k} onClick={() => setCornerStyle && setCornerStyle(k)}
+              style={{ flex: 1, padding: "14px 10px", borderRadius: cs.radius === "0px" ? "0px" : cs.radius === "18px" ? "18px" : "8px", border: `2px solid ${cornerStyle === k ? T.accent : T.border}`, background: cornerStyle === k ? T.accentBg : "transparent", cursor: "pointer", textAlign: "center" }}>
+              <div style={{ fontSize: 22, marginBottom: 4, color: cornerStyle === k ? T.accent : T.textSub }}>{cs.icon}</div>
+              <div style={{ fontWeight: 700, color: T.text, fontSize: 13 }}>{cs.name}</div>
+              {cornerStyle === k && <div style={{ fontSize: 11, color: T.accent, marginTop: 4, fontWeight: 700 }}>Active</div>}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Logo / Branding */}
+      <div className="glass" style={{ padding: 20, borderRadius: T.radius }}>
+        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 4 }}>Custom Logo</div>
+        <div style={{ fontSize: 12, color: T.textMuted, marginBottom: 12 }}>Paste an image URL to replace the StockWise logo with your own brand.</div>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          {logoUrl && <img src={logoUrl} alt="logo" style={{ height: 40, maxWidth: 80, objectFit: "contain", borderRadius: T.radius, border: `1px solid ${T.border}` }} />}
+          <GIn value={logoUrl || ""} onChange={e => setLogoUrl && setLogoUrl(e.target.value)} placeholder="https://your-domain.com/logo.png" style={{ flex: 1 }} />
+          {logoUrl && <GBtn v="ghost" sz="sm" onClick={() => setLogoUrl && setLogoUrl("")}>Clear</GBtn>}
+        </div>
+      </div>
+
       {/* Background Image for Glass theme */}
       {themeId === "glass" && <div className="glass" style={{ padding: 20, borderRadius: T.radius }}>
         <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 4 }}>Background Image <span style={{ fontSize:11, color:T.textMuted, fontWeight:400 }}>(Glass theme only)</span></div>
@@ -404,6 +447,30 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
         </div>
         {bgImage && <div style={{ marginTop: 10, height: 60, borderRadius: T.radius, backgroundImage: `url("${bgImage}")`, backgroundSize: "cover", backgroundPosition: "center", border: `1px solid ${T.border}`, opacity: 0.8 }} />}
       </div>}
+
+      {/* Logo upload */}
+      <div className="glass" style={{ padding: 20, borderRadius: T.radius }}>
+        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 4 }}>Brand Logo</div>
+        <div style={{ fontSize: 12, color: T.textMuted, marginBottom: 12 }}>Replace the StockWise logo with your company logo. Paste an image URL or upload a file.</div>
+        <div style={{ display: "flex", gap: 12, alignItems: "flex-start", flexWrap: "wrap" }}>
+          {logoUrl && <img src={logoUrl} alt="Logo" style={{ width: 56, height: 56, borderRadius: T.radius, objectFit: "contain", border: `1px solid ${T.border}`, background: T.isDark?"rgba(255,255,255,0.05)":"rgba(0,0,0,0.03)", padding: 4 }} onError={e => e.target.style.display="none"} />}
+          <div style={{ flex: 1, minWidth: 200, display: "flex", flexDirection: "column", gap: 8 }}>
+            <GIn value={logoUrl || ""} onChange={e => setLogoUrl && setLogoUrl(e.target.value)} placeholder="https://yoursite.com/logo.png" />
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <label style={{ cursor: "pointer", fontSize: 12, color: T.accent, fontWeight: 600, padding: "6px 12px", border: `1px solid ${T.accent}`, borderRadius: T.radius }}>
+                Upload File
+                <input type="file" accept="image/*" style={{ display: "none" }} onChange={e => {
+                  const file = e.target.files?.[0]; if (!file) return;
+                  const reader = new FileReader();
+                  reader.onload = ev => setLogoUrl && setLogoUrl(ev.target.result);
+                  reader.readAsDataURL(file);
+                }} />
+              </label>
+              {logoUrl && <GBtn v="ghost" sz="sm" onClick={() => setLogoUrl && setLogoUrl("")}>Remove</GBtn>}
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Custom accent colour picker */}
       <div className="glass" style={{ padding: 20, borderRadius: T.radius }}>
@@ -461,7 +528,7 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
         <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 14, color: T.text, marginBottom: 12 }}>Logo</div>
         <Field label="Logo Image URL">
           <GIn value={invForm.logoUrl || ""} onChange={e => setInvForm(p => ({ ...p, logoUrl: e.target.value }))} placeholder="https://your-cdn.com/logo.png" />
-          {invForm.logoUrl && <img src={invForm.logoUrl} alt="" style={{ marginTop: 8, height: 50, borderRadius: 6, objectFit: "contain" }} onError={e => { e.target.style.display = "none"; }} />}
+          {invForm.logoUrl && <img src={invForm.logoUrl} alt="" style={{ marginTop: 8, height: 50, borderRadius: T.radius, objectFit: "contain" }} onError={e => { e.target.style.display = "none"; }} />}
         </Field>
       </div>
       <div className="glass" style={{ padding: 20, borderRadius: T.radius }}>
@@ -478,7 +545,7 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
         <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 14, color: T.text, marginBottom: 12 }}>Signature</div>
         <Field label="Signature Image URL">
           <GIn value={invForm.signatureUrl || ""} onChange={e => setInvForm(p => ({ ...p, signatureUrl: e.target.value }))} placeholder="https://your-cdn.com/signature.png (transparent PNG recommended)" />
-          {invForm.signatureUrl && <img src={invForm.signatureUrl} alt="signature preview" style={{ marginTop: 8, height: 50, borderRadius: 6, objectFit: "contain", border: `1px solid ${T.borderSubtle}`, padding: 4 }} onError={e => { e.target.style.display = "none"; }} />}
+          {invForm.signatureUrl && <img src={invForm.signatureUrl} alt="signature preview" style={{ marginTop: 8, height: 50, borderRadius: T.radius, objectFit: "contain", border: `1px solid ${T.borderSubtle}`, padding: 4 }} onError={e => { e.target.style.display = "none"; }} />}
           <div style={{ fontSize:11, color: T.textMuted, marginTop: 4 }}>Upload to any image host (Imgur, Cloudinary, etc.) and paste the direct URL here.</div>
         </Field>
         <div style={{ marginTop: 12 }}>
@@ -500,7 +567,7 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
                   }}>✕</button>
               </div>
             ))}
-            <button type="button" className="btn-ghost" style={{ padding: "6px 14px", borderRadius: 8, fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 6, width: "fit-content" }}
+            <button type="button" className="btn-ghost" style={{ padding: "6px 14px", borderRadius: T.radius, fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 6, width: "fit-content" }}
               onClick={() => setInvForm(p => ({ ...p, footerPoints: [...(p.footerPoints || []), ""] }))}>
               + Add footer point
             </button>
@@ -523,7 +590,7 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
             { n: "4", t: "Deploy as Web App", d: "Deploy → New Deployment → Web App → Anyone → copy URL" },
             { n: "5", t: "Paste URL below", d: "Test then Save" }
           ].map(s => <div key={s.n} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-            <div style={{ width: 20, height: 20, borderRadius: 99, background: `linear-gradient(135deg,${T.blue},${T.cyan})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize:11, fontWeight: 800, color: "#fff", flexShrink: 0 }}>{s.n}</div>
+            <div style={{ width: 20, height: 20, borderRadius: T.radiusFull, background: `linear-gradient(135deg,${T.blue},${T.cyan})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize:11, fontWeight: 800, color: "#fff", flexShrink: 0 }}>{s.n}</div>
             <div><div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>{s.t}</div><div style={{ fontSize: 12, color: T.textSub, marginTop: 1 }}>{s.d}</div></div>
           </div>)}
         </div>
@@ -535,9 +602,9 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
           <GBtn v="ghost" onClick={() => onTest(localUrl)} icon={<Wifi size={14} />}>Test Connection</GBtn>
           <GBtn onClick={() => { setSheetsUrl(localUrl); lsSet("sw_url", localUrl); }} icon={<Check size={14} />}>Save & Enable Sync</GBtn>
         </div>
-        {testStatus === "ok" && <div style={{ marginTop: 12, padding: "10px 14px", borderRadius: 10, background: T.greenBg, color: T.green, fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 8 }}><CheckCircle size={15} />Connected!</div>}
-        {testStatus === "err" && <div style={{ marginTop: 12, padding: "10px 14px", borderRadius: 10, background: T.redBg, color: T.red, fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 8 }}><XCircle size={15} />Failed. Check URL and "Anyone" access.</div>}
-        {testStatus === "testing" && <div style={{ marginTop: 12, padding: "10px 14px", borderRadius: 10, background: T.blueBg, color: T.blue, fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 8 }}><Loader size={15} style={{ animation: "spin 1s linear infinite" }} />Testing…</div>}
+        {testStatus === "ok" && <div style={{ marginTop: 12, padding: "10px 14px", borderRadius: T.radius, background: T.greenBg, color: T.green, fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 8 }}><CheckCircle size={15} />Connected!</div>}
+        {testStatus === "err" && <div style={{ marginTop: 12, padding: "10px 14px", borderRadius: T.radius, background: T.redBg, color: T.red, fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 8 }}><XCircle size={15} />Failed. Check URL and "Anyone" access.</div>}
+        {testStatus === "testing" && <div style={{ marginTop: 12, padding: "10px 14px", borderRadius: T.radius, background: T.blueBg, color: T.blue, fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 8 }}><Loader size={15} style={{ animation: "spin 1s linear infinite" }} />Testing…</div>}
       </div>
     </div>}
 
