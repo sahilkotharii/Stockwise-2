@@ -23,7 +23,10 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
   const isDark = ctx.isDark;
   const isManager = user.role === "manager";
   const isAdmin = user.role === "admin";
-  const tabs = isAdmin ? ["profile", "theme", "users", "series", "access", "export", "activity", "sessions", "invoice", "sheets", "howto"] : ["profile", "theme", "export", "howto"];
+  const ROLE_LABELS = { admin:"Admin", manager:"Manager", sales:"Sales Person", purchase:"Purchase Person", accountant:"Accountant", production:"Production" };
+  const tabs = isAdmin
+    ? ["profile", "theme", "users", "series", "access", "export", "activity", "sessions", "invoice", "sheets", "howto"]
+    : ["profile", "theme", "export", "howto"];
   const [tab, setTab] = useState(ctx?.settingsTab || "profile");
   // Sync with ctx settingsTab when it changes
   React.useEffect(() => { if (ctx?.settingsTab) setTab(ctx.settingsTab); }, [ctx?.settingsTab]);
@@ -124,7 +127,7 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
     {tab === "users" && isAdmin && <div className="glass" style={{ padding: 20, borderRadius: T.radius }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
         <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text }}>User Accounts</div>
-        <GBtn sz="sm" onClick={() => { setUForm({ role: "manager" }); setEu(null); setUModal(true); }} icon={<Plus size={13} />}>Add User</GBtn>
+        <GBtn sz="sm" onClick={() => { setUForm({ role: "sales" }); setEu(null); setUModal(true); }} icon={<Plus size={13} />}>Add User</GBtn>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {users.map(u => <div key={u.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px", borderRadius: T.radius, background: T.isDark ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.5)", border: `1px solid ${T.borderSubtle}` }}>
@@ -177,7 +180,7 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
     {tab === "access" && isAdmin && <div className="glass" style={{ padding: 20, borderRadius: T.radius }}>
       <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 4 }}>Page Access Control</div>
       <div style={{ fontSize: 12, color: T.textMuted, marginBottom: 16 }}>Lock/unlock pages per manager. Dashboard always accessible.</div>
-      {users.filter(u => u.role === "manager").map(u => {
+      {users.filter(u => u.role !== "admin").map(u => {
         const lk = u.lockedPages || [];
         return <div key={u.id} style={{ padding: 16, borderRadius: T.radius, background: T.isDark ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.5)", border: `1px solid ${T.borderSubtle}`, marginBottom: 12 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
@@ -195,10 +198,10 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
           </div>
         </div>;
       })}
-      {users.filter(u => u.role === "manager").length === 0 && <div style={{ padding: "24px 0", textAlign: "center", color: T.textMuted }}>No managers yet</div>}
+      {users.filter(u => u.role !== "admin").length === 0 && <div style={{ padding: "24px 0", textAlign: "center", color: T.textMuted }}>No users added yet</div>}
     </div>}
 
-    {tab === "export" && isAdmin && <div className="glass" style={{ padding: 20, borderRadius: T.radius }}>
+    {tab === "export" && <div className="glass" style={{ padding: 20, borderRadius: T.radius }}>
       <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 16 }}>Export Data</div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(180px,1fr))", gap: 12 }}>
         {[
@@ -590,7 +593,11 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
         <Field label="Role" cl="s2">
           <GS value={uForm.role || "manager"} onChange={e => uf("role", e.target.value)}>
             <option value="admin">Admin (Full Access)</option>
-            <option value="manager">Manager (Restricted)</option>
+            <option value="manager">Manager (All pages + Approvals)</option>
+            <option value="sales">Sales Person (Sales, Inventory, Returns, Vendors)</option>
+            <option value="purchase">Purchase Person (Purchase, Vendors, Inventory)</option>
+            <option value="accountant">Accountant (Sales, Purchase, Returns, P&L, Transactions)</option>
+            <option value="production">Production (Products, Inventory, Reports)</option>
           </GS>
         </Field>
       </div>
