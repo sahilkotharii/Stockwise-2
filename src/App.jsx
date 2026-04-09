@@ -168,24 +168,7 @@ export default function App() {
       // Background auto-sync every 4 minutes
       if (url) pull(url);
 
-      // ── Migrate plain-text passwords to hashed ────────────────────────────
-      // Only runs on real localStorage users — NEVER pushes seed users to Sheets
-      (async () => {
-        const { hashPassword } = await import("./utils");
-        const currentUsers = await lsGet(SK.users, null);
-        if (!currentUsers) return; // No real users in storage yet — skip migration
-        const needsMigration = currentUsers.some(u => u.password && !u.password.startsWith("sha256:"));
-        if (needsMigration) {
-          const migrated = await Promise.all(currentUsers.map(async u => {
-            if (!u.password || u.password.startsWith("sha256:")) return u;
-            const h = await hashPassword(u.password);
-            return { ...u, password: "sha256:" + h };
-          }));
-          setUsers(migrated);
-          await lsSet(SK.users, migrated);
-          push("users", migrated); // Safe: only real users reach here
-        }
-      })();
+
 
       // ── Auto-sync every 4 minutes ──────────────────────────────────────────
       const interval = setInterval(() => pull(url), 4 * 60 * 1000);
