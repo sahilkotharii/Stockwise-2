@@ -189,15 +189,7 @@ export default function Returns({ ctx }) {
   return <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
     {/* Time filter + actions */}
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-        <span style={{ fontSize:11, fontWeight: 700, color: T.textMuted, letterSpacing: "0.05em" }}>PERIOD</span>
-        {PRESETS.map(p => (
-          <button key={p.k} onClick={() => handlePreset(p.k)} style={{ padding: "5px 12px", borderRadius: 99, fontSize: 12, fontWeight: 600, border: "none", cursor: "pointer", background: preset === p.k ? T.accent : "transparent", color: preset === p.k ? "#fff" : T.textSub, transition: "all .15s" }}>{p.l}</button>
-        ))}
-        <input type="date" className="inp" value={df} onChange={e => { setDf(e.target.value); setPreset(""); }} style={{ width: 120, fontSize: 12 }} />
-        <span style={{ fontSize: 12, color: T.textMuted }}>→</span>
-        <input type="date" className="inp" value={dt} onChange={e => { setDt(e.target.value); setPreset(""); }} style={{ width: 120, fontSize: 12 }} />
-      </div>
+      <PeriodBar df={df} setDf={setDf} dt={dt} setDt={setDt} preset={preset} setPreset={setPreset} />
       <GBtn sz="md" onClick={() => { resetForm(); setModal(true); }} icon={<Plus size={14} />}>Record Return</GBtn>
     </div>
 
