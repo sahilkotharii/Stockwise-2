@@ -23,6 +23,7 @@ export const visNav = (user) => {
 };
 
 export default function Sidebar({ page, setPage, user, onLogout, isDark, toggleTheme, ctx }) {
+  const { logoUrl } = ctx || {};
   const T = useT();
   const col = false;
   const { changeReqs } = ctx;
@@ -38,7 +39,7 @@ export default function Sidebar({ page, setPage, user, onLogout, isDark, toggleT
     {/* Logo */}
     <div style={{ padding: "20px 14px 14px", borderBottom: `1px solid ${T.borderSubtle}` }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <div style={{ width: 38, height: 38, borderRadius: T.radiusXl, background: `linear-gradient(135deg,${T.accent},${T.accentDark})`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Layers size={18} color="#fff" /></div>
+        {logoUrl ? (<img src={logoUrl} alt="Logo" style={{ width: 38, height: 38, borderRadius: T.radius, objectFit: "contain", flexShrink: 0 }} onError={e => e.target.style.display="none"} />) : (<div style={{ width: 38, height: 38, borderRadius: T.radiusXl, background: `linear-gradient(135deg,${T.accent},${T.accentDark})`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Layers size={18} color="#fff" /></div>)}
         <div><div style={{ fontFamily: T.displayFont, fontWeight: 800, fontSize: 16, color: T.sidebarBg ? '#fff' : T.text, letterSpacing: "-0.03em" }}>StockWise</div><div style={{ fontSize: 10, color: T.sidebarBg ? 'rgba(255,255,255,0.7)' : T.textMuted, marginTop: 1 }}>{user?.name?.split(" ")[0] || "Pipal Home"}</div></div>
       </div>
     </div>
@@ -49,7 +50,7 @@ export default function Sidebar({ page, setPage, user, onLogout, isDark, toggleT
         <button key={n.id} className={`nav-item${page === n.id ? " active" : ""}`} onClick={() => setPage(n.id)} style={T.sidebarBg ? { color: page === n.id ? "#fff" : "rgba(255,255,255,0.75)", background: page === n.id ? "rgba(255,255,255,0.2)" : "transparent" } : {}}>
           <n.icon size={16} />
           <span>{n.label}</span>
-          {n.id === "approvals" && pendingCnt > 0 && <span style={{ marginLeft: "auto", minWidth: 18, height: 18, borderRadius: 99, background: T.red, color: "#fff", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 3px" }}>{pendingCnt}</span>}
+          {n.id === "approvals" && pendingCnt > 0 && <span style={{ marginLeft: "auto", minWidth: 18, height: 18, borderRadius: T.radiusFull, background: T.red, color: "#fff", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 3px" }}>{pendingCnt}</span>}
         </button>
       ))}
     </div>
@@ -99,7 +100,7 @@ export function MobNav({ page, setPage, user, onLogout, isDark, toggleTheme, pen
               style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", borderRadius: T.radius, border: `1px solid ${page === n.id ? T.accent : T.border}`, background: page === n.id ? T.accent + "15" : "transparent", cursor: "pointer", color: page === n.id ? T.accent : T.text, fontWeight: page === n.id ? 700 : 500, fontSize: 13 }}>
               <n.icon size={15} />
               <span>{n.label}</span>
-              {n.id === "approvals" && pendingCnt > 0 && <span style={{ marginLeft: "auto", minWidth: 16, height: 16, borderRadius: 99, background: T.red, color: "#fff", fontSize: 10, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>{pendingCnt}</span>}
+              {n.id === "approvals" && pendingCnt > 0 && <span style={{ marginLeft: "auto", minWidth: 16, height: 16, borderRadius: T.radiusFull, background: T.red, color: "#fff", fontSize: 10, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>{pendingCnt}</span>}
             </button>
           ))}
         </div>
@@ -124,7 +125,7 @@ export function MobNav({ page, setPage, user, onLogout, isDark, toggleTheme, pen
         <button key={n.id} onClick={() => setPage(n.id)} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3, padding: "8px 4px", border: "none", background: "transparent", cursor: "pointer", color: page === n.id ? T.accent : T.textMuted, fontSize: 10, fontWeight: 600, position: "relative" }}>
           <n.icon size={20} />
           <span style={{ whiteSpace: "nowrap", lineHeight: 1 }}>{n.label.split(" ")[0]}</span>
-          {n.id === "approvals" && pendingCnt > 0 && <span style={{ position: "absolute", top: 4, right: "25%", minWidth: 14, height: 14, borderRadius: 99, background: T.red, color: "#fff", fontSize: 10, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>{pendingCnt}</span>}
+          {n.id === "approvals" && pendingCnt > 0 && <span style={{ position: "absolute", top: 4, right: "25%", minWidth: 14, height: 14, borderRadius: T.radiusFull, background: T.red, color: "#fff", fontSize: 10, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>{pendingCnt}</span>}
         </button>
       ))}
       <button onClick={() => setShowMenu(true)} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3, padding: "8px 4px", border: "none", background: "transparent", cursor: "pointer", color: T.textMuted, fontSize: 10, fontWeight: 600 }}>
@@ -160,7 +161,7 @@ export function TopBar({ page, user, syncSt, lastSync, onSync, toggleTheme, isDa
         </span>
         {badgeCnt > 0 && <div style={{ position: "relative", cursor: "pointer" }} onClick={() => setShowNotifs(!showNotifs)}>
           <div style={{ width: 36, height: 36, borderRadius: T.radius, background: T.amberBg, display: "flex", alignItems: "center", justifyContent: "center" }}><Bell size={16} color={T.amber} /></div>
-          <div style={{ position: "absolute", top: -4, right: -4, minWidth: 17, height: 17, borderRadius: 99, background: T.red, color: "#fff", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 3px" }}>{badgeCnt}</div>
+          <div style={{ position: "absolute", top: -4, right: -4, minWidth: 17, height: 17, borderRadius: T.radiusFull, background: T.red, color: "#fff", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 3px" }}>{badgeCnt}</div>
           {showNotifs && <div className="glass-strong fade-up" style={{ position: "absolute", top: 45, right: 0, width: 260, borderRadius: T.radius, padding: 14, boxShadow: T.shadowLg, zIndex: 100 }}>
             <div style={{ fontSize: 12, fontWeight: 700, color: T.text, marginBottom: 8 }}>Alerts</div>
             {pending.length > 0 && <button onClick={() => { setPage("approvals"); setShowNotifs(false); }} className="btn-ghost" style={{ width: "100%", justifyContent: "flex-start", marginBottom: 6 }}><CheckCircle size={13} color={T.amber} /> {pending.length} Pending Approvals</button>}
