@@ -41,7 +41,7 @@ function ProfileDropdown({ user, onClose, setPage, setSettingsTab, onLogout, ali
     { icon: Settings, label: "Settings", action: () => { setPage("settings"); onClose(); } },
   ];
   return (
-    <div className="glass-strong fade-up" onClick={e => e.stopPropagation()}
+    <div className="glass-strong spring-down" onClick={e => e.stopPropagation()}
       style={{ position: "absolute", [align === "right" ? "right" : "left"]: 0, bottom: align === "left" ? "calc(100% + 8px)" : undefined, top: align === "right" ? "calc(100% + 8px)" : undefined, width: 220, borderRadius: T.radiusXl, padding: 12, boxShadow: T.shadowLg, zIndex: 200 }}>
       {/* User info header */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 4px 12px", borderBottom: `1px solid ${T.borderSubtle}`, marginBottom: 8 }}>
@@ -145,7 +145,7 @@ export function MobNav({ page, setPage, user, onLogout, isDark, toggleTheme, pen
   return <>
     {showMenu && (
       <div style={{ position: "fixed", inset: 0, zIndex: 150 }} onClick={() => setShowMenu(false)}>
-        <div className="glass-strong" onClick={e => e.stopPropagation()} style={{ position: "fixed", bottom: 68, left: 0, right: 0, borderTop: `1px solid ${T.border}`, padding: "12px 16px", maxHeight: "60vh", overflowY: "auto" }}>
+        <div className="glass-strong spring-up" onClick={e => e.stopPropagation()} style={{ position: "fixed", bottom: 68, left: 0, right: 0, borderTop: `1px solid ${T.border}`, padding: "12px 16px", maxHeight: "60vh", overflowY: "auto" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
             <span style={{ fontSize: 13, fontWeight: 700, color: T.text }}>Menu</span>
             <button className="btn-ghost" onClick={() => setShowMenu(false)} style={{ padding: "4px 8px" }}><X size={14} /></button>
@@ -224,7 +224,7 @@ export function TopBar({ page, user, syncSt, lastSync, onSync, toggleTheme, isDa
               <div style={{ width: 36, height: 36, borderRadius: T.radius, background: T.amberBg, display: "flex", alignItems: "center", justifyContent: "center" }}><Bell size={16} color={T.amber} /></div>
               <div style={{ position: "absolute", top: -4, right: -4, minWidth: 17, height: 17, borderRadius: T.radiusFull, background: T.red, color: "#fff", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 3px" }}>{badgeCnt}</div>
               {showNotifs && (
-                <div className="glass-strong fade-up" style={{ position: "absolute", top: 45, right: 0, width: 260, borderRadius: T.radius, padding: 14, boxShadow: T.shadowLg, zIndex: 100 }}>
+                <div className="glass-strong spring-down" style={{ position: "absolute", top: 45, right: 0, width: 260, borderRadius: T.radius, padding: 14, boxShadow: T.shadowLg, zIndex: 100 }}>
                   <div style={{ fontSize: 12, fontWeight: 700, color: T.text, marginBottom: 8 }}>Alerts</div>
                   {pending.length > 0 && <button onClick={() => { setPage("approvals"); setShowNotifs(false); }} className="btn-ghost" style={{ width: "100%", justifyContent: "flex-start", marginBottom: 6 }}><CheckCircle size={13} color={T.amber} /> {pending.length} Pending Approvals</button>}
                   {alertsCnt > 0 && <button onClick={() => { setPage("inventory"); setShowNotifs(false); }} className="btn-ghost" style={{ width: "100%", justifyContent: "flex-start" }}><AlertTriangle size={13} color={T.red} /> {alertsCnt} Stock Alerts</button>}
