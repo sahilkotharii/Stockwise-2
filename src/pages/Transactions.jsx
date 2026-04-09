@@ -11,6 +11,7 @@ export default function Transactions({ ctx }) {
   const [search, setSearch] = useState("");
   const [df, setDf] = useState("");
   const [dt, setDt] = useState("");
+  const [preset, setPreset] = useState("");
   const [pg, setPg] = useState(1);
   const [ps, setPs] = useState(20);
   const [sel, setSel] = useState(new Set());
@@ -76,11 +77,13 @@ export default function Transactions({ ctx }) {
       ))}
     </div>
 
-    <div className="filter-wrap">
-      <SearchInput value={search} onChange={e => setSearch(e.target.value)} placeholder="Search product…" style={{ flex: "1 1 160px" }} />
-      <PeriodBar df={df} setDf={setDf} dt={dt} setDt={setDt} preset={""} setPreset={() => {}} noFY={false} />
-      {(df || dt || search) && <GBtn v="ghost" sz="sm" onClick={() => { setDf(""); setDt(""); setSearch(""); }} icon={<X size={12} />}>Clear</GBtn>}
-      <GBtn v="ghost" sz="sm" onClick={exportCSV} icon={<Download size={12} />}>Export</GBtn>
+    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      <PeriodBar df={df} setDf={setDf} dt={dt} setDt={setDt} preset={preset} setPreset={setPreset} />
+      <div className="filter-wrap">
+        <SearchInput value={search} onChange={e => setSearch(e.target.value)} placeholder="Search product…" style={{ flex: "1 1 160px" }} />
+        {(df || dt || search || preset) && <GBtn v="ghost" sz="sm" onClick={() => { setDf(""); setDt(""); setSearch(""); setPreset(""); }} icon={<X size={12} />}>Clear</GBtn>}
+        <GBtn v="ghost" sz="sm" onClick={exportCSV} icon={<Download size={12} />}>Export</GBtn>
+      </div>
     </div>
 
     <div className="glass" style={{ overflow: "hidden", borderRadius: T.radius }}>
