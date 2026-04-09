@@ -106,6 +106,73 @@ export function KCard({ label, value, sub, icon: Icon, color, delta }) {
   </div>;
 }
 
+// ── Shared Period Bar ─────────────────────────────────────────────────────────
+const now = () => new Date();
+const daysAgo = n => new Date(now() - n * 864e5).toISOString().split("T")[0];
+const todayStr = () => now().toISOString().split("T")[0];
+const fyBounds = () => {
+  const n = now();
+  const fy = n.getMonth() >= 3 ? n.getFullYear() : n.getFullYear() - 1;
+  return { s: `${fy}-04-01`, e: `${fy + 1}-03-31` };
+};
+
+export function PeriodBar({ df, setDf, dt, setDt, preset, setPreset, noFY = false }) {
+  const T = useT();
+  const PRESETS = [
+    { k: "1d",  l: "Today" },
+    { k: "7d",  l: "7d" },
+    { k: "30d", l: "30d" },
+    { k: "90d", l: "90d" },
+    { k: "1y",  l: "1Y" },
+  ];
+  const applyPreset = k => {
+    setPreset(k);
+    switch (k) {
+      case "1d":  setDf(todayStr()); setDt(todayStr()); break;
+      case "7d":  setDf(daysAgo(7)); setDt(todayStr()); break;
+      case "30d": setDf(daysAgo(30)); setDt(todayStr()); break;
+      case "90d": setDf(daysAgo(90)); setDt(todayStr()); break;
+      case "1y":  setDf(daysAgo(365)); setDt(todayStr()); break;
+      case "cfy": { const b = fyBounds(); setDf(b.s); setDt(b.e); } break;
+      case "caly": { const y = now().getFullYear(); setDf(`${y}-01-01`); setDt(`${y}-12-31`); } break;
+    }
+  };
+  const btnStyle = (k) => ({
+    padding: "5px 12px", borderRadius: T.radius === "0px" ? "2px" : 99,
+    fontSize: 12, fontWeight: 600, border: "none", cursor: "pointer",
+    background: preset === k ? T.accent : "transparent",
+    color: preset === k ? "#fff" : T.textSub, transition: "all .15s", whiteSpace: "nowrap"
+  });
+  return (
+    <div className="filter-wrap" style={{ alignItems: "center" }}>
+      <span style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, letterSpacing: "0.05em" }}>PERIOD</span>
+      {PRESETS.map(p => <button key={p.k} style={btnStyle(p.k)} onClick={() => applyPreset(p.k)}>{p.l}</button>)}
+      <span style={{ fontSize: 12, color: T.textMuted }}>|</span>
+      <input type="date" className="inp" value={df} onChange={e => { setDf(e.target.value); setPreset(""); }} style={{ width: 128, fontSize: 12 }} />
+      <span style={{ fontSize: 12, color: T.textMuted }}>→</span>
+      <input type="date" className="inp" value={dt} onChange={e => { setDt(e.target.value); setPreset(""); }} style={{ width: 128, fontSize: 12 }} />
+      {!noFY && <>
+        <button style={btnStyle("cfy")} onClick={() => applyPreset("cfy")}>Current FY</button>
+        <button style={btnStyle("caly")} onClick={() => applyPreset("caly")}>Calendar Year</button>
+      </>}
+    </div>
+  );
+}
+
+// ── Search Input with icon ────────────────────────────────────────────────────
+export function SearchInput({ value, onChange, placeholder = "Search…", style = {} }) {
+  const T = useT();
+  return (
+    <div style={{ position: "relative", ...style }}>
+      <svg style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", width: 13, height: 13, fill: "none", stroke: T.textMuted, strokeWidth: 2 }} viewBox="0 0 24 24">
+        <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+      </svg>
+      <input className="inp" value={value} onChange={onChange} placeholder={placeholder} style={{ paddingLeft: 30 }} />
+    </div>
+  );
+}
+
+
 export function CTip({ active, payload, label, fmt }) {
   const T = useT();
   if (!active || !payload?.length) return null;
