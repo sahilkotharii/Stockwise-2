@@ -253,9 +253,12 @@ select option{background:${T.isDark?"#1a1a1a":"#fff"};color:${T.text}}
   .bill-item-row{grid-template-columns:1fr 55px 85px 75px 28px!important;gap:4px!important;padding:6px 8px!important}
   .bill-item-hdr{display:none!important}
   .hide-mob{display:none!important}
-  table{font-size:12px!important}
-  .td{padding:8px 10px!important}
-  .th{padding:8px 10px!important}
+  table{font-size:11px!important}
+  .td{padding:6px 8px!important}
+  .th{padding:6px 8px!important}
+  .hide-mob{display:none!important}
+  .td-name{max-width:120px!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+  .td-name div{white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
 }
 @media(max-width:400px){
   .kgrid{grid-auto-flow:row!important;grid-template-columns:1fr!important}
