@@ -19,7 +19,7 @@ const LOCKABLE = [
 
 export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onTest }) {
   const T = useT();
-  const { users, saveUsers, user, actLog, saveActLog, invoiceSettings, saveInvoiceSettings, themeId, setTheme, accentKey, setAccent, customColor, setCustomColor, bgImage, setBgImage, radiusMode, setRadiusMode, logoUrl, setLogoUrl, THEMES, ACCENT_PRESETS, RADIUS_MODES, changeReqs, saveChangeReqs, settingsTab } = ctx;
+  const { users, saveUsers, user, actLog, saveActLog, invoiceSettings, saveInvoiceSettings, themeId, setTheme, accentKey, setAccent, customColor, setCustomColor, bgImage, setBgImage, cornerStyle, setCornerStyle, logoUrl, setLogoUrl, THEMES, ACCENT_PRESETS, CORNER_STYLES, changeReqs, saveChangeReqs, settingsTab } = ctx;
   const isDark = ctx.isDark;
   const isManager = user.role === "manager";
   const isAdmin = user.role === "admin";
