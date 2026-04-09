@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { TrendingUp, TrendingDown, DollarSign, Package, Download, ShoppingCart } from "lucide-react";
 import { useT } from "../theme";
-import { GBtn, GIn } from "../components/UI";
+import { GBtn, GIn, KCard } from "../components/UI";
 import { fmtCur, toCSV, dlCSV, calcBillGst, safeDate } from "../utils";
 
 export default function PnL({ ctx }) {
