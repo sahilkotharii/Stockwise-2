@@ -75,12 +75,14 @@ export default function Returns({ ctx }) {
     if (valid.length === 0) { alert("Add at least one product"); return; }
     if (!form.vendorId) { alert("Select a vendor"); return; }
 
+    const batchId = uid(); // groups all items from this return submission
     const newTxns = valid.map(item => {
       const pr = products.find(p => p.id === item.productId);
       const rate = Number(pr?.gstRate || 0);
       const price = Number(item.price || 0);
       return {
         id: uid(),
+        returnId: batchId,
         productId: item.productId,
         type: returnType === "purchase_return" ? "purchase_return" : "return",
         qty: Number(item.qty),
@@ -176,15 +178,19 @@ export default function Returns({ ctx }) {
   }, 0);
   const totalDamagedUnits = Object.values(damagedStockByProduct).reduce((s, q) => s + Math.max(0, q), 0);
 
-  // ── Group returns by date for display ───────────────────────────────────
-  const grouped = useMemo(() => {
+  // ── Group returns by returnId (or fallback: date+vendor+type) ────────────
+  const groupedReturns = useMemo(() => {
     const m = {};
     allReturns.forEach(t => {
-      const key = t.date;
+      // Use returnId if available, else group by date+vendorId+type as a key
+      const key = t.returnId || `${t.date}__${t.vendorId||""}__${t.type}`;
       if (!m[key]) m[key] = [];
       m[key].push(t);
     });
-    return Object.entries(m).sort(([a], [b]) => b.localeCompare(a));
+    // Sort groups by date desc (using first item in group)
+    return Object.values(m).sort((a, b) =>
+      new Date(b[0].date) - new Date(a[0].date)
+    );
   }, [allReturns]);
 
   return <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -215,7 +221,7 @@ export default function Returns({ ctx }) {
           {Object.entries(damagedStockByProduct).filter(([, q]) => q > 0).map(([pid, qty]) => {
             const pr = products.find(p => p.id === pid);
             return pr ? (
-              <div key={pid} style={{ padding: "6px 12px", borderRadius: 99, background: `${T.amber}15`, border: `1px solid ${T.amber}30`, fontSize: 12 }}>
+              <div key={pid} style={{ padding: "6px 12px", borderRadius: T.radiusFull, background: `${T.amber}15`, border: `1px solid ${T.amber}30`, fontSize: 12 }}>
                 <span style={{ fontWeight: 600, color: T.text }}>{pr.alias || pr.name}</span>
                 <span style={{ color: T.amber, marginLeft: 6 }}>{qty} units</span>
               </div>
@@ -236,7 +242,7 @@ export default function Returns({ ctx }) {
         </div>
         <div style={{ display: "flex", gap: 5 }}>
           {["all", "sales_return", "purchase_return", "damaged"].map(f => (
-            <button key={f} onClick={() => setTypeFilter(f)} style={{ padding: "5px 12px", borderRadius: 99, fontSize: 11, fontWeight: 600, border: "none", cursor: "pointer", background: typeFilter === f ? T.accent : T.isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.05)", color: typeFilter === f ? "#fff" : T.textSub }}>
+            <button key={f} onClick={() => setTypeFilter(f)} style={{ padding: "5px 12px", borderRadius: T.radiusFull, fontSize: 11, fontWeight: 600, border: "none", cursor: "pointer", background: typeFilter === f ? T.accent : T.isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.05)", color: typeFilter === f ? "#fff" : T.textSub }}>
               {f === "all" ? "All" : f === "sales_return" ? "Sales Returns" : f === "purchase_return" ? "Purchase Returns" : "Damaged"}
             </button>
           ))}
@@ -244,7 +250,7 @@ export default function Returns({ ctx }) {
         {(search || typeFilter !== "all") && <GBtn v="ghost" sz="sm" onClick={() => { setSearch(""); setTypeFilter("all"); }} icon={<X size={12} />}>Clear</GBtn>}
       </div>
       {selRets.size > 0 && (
-        <div style={{ marginBottom: 10, padding: "8px 14px", borderRadius: 10, background: T.amberBg, display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ marginBottom: 10, padding: "8px 14px", borderRadius: T.radius, background: T.amberBg, display: "flex", alignItems: "center", gap: 10 }}>
           <span style={{ fontSize: 12, fontWeight: 600, color: T.amber }}>{selRets.size} selected</span>
           <GBtn v="danger" sz="sm" onClick={() => {
             if (isManager) {
@@ -268,76 +274,97 @@ export default function Returns({ ctx }) {
           <thead><tr>
             <th className="th" style={{ width: 36 }}>
               <input type="checkbox" className="cb"
-                checked={allReturns.length > 0 && allReturns.every(t => selRets.has(t.id))}
+                checked={groupedReturns.length > 0 && groupedReturns.every(g => g.every(t => selRets.has(t.id)))}
                 onChange={e => {
-                  if (e.target.checked) {
-                    setSelRets(new Set(allReturns.map(t => t.id)));
-                  } else {
-                    setSelRets(new Set());
-                  }
+                  if (e.target.checked) setSelRets(new Set(allReturns.map(t => t.id)));
+                  else setSelRets(new Set());
                 }}
-                title="Select all filtered returns"
               />
             </th>
-            {["Date", "Type", "Product", "Qty", "Price/Unit", "Value", "Channel/Vendor", "Damaged", ""].map((h, i) => (
-            <th key={i} className="th" style={{ textAlign: ["Qty", "Price/Unit", "Value"].includes(h) ? "right" : "left", width: h === "" ? 36 : "auto" }}>{h.toUpperCase()}</th>
-          ))}</tr></thead>
+            {["Date", "Type", "Items", "Total Qty", "Total Value", "Vendor", "Damaged", ""].map((h, i) => (
+              <th key={i} className="th" style={{ textAlign: ["Total Qty","Total Value"].includes(h) ? "right" : "left", width: h === "" ? 100 : "auto" }}>{h.toUpperCase()}</th>
+            ))}
+          </tr></thead>
           <tbody>
-            {allReturns.slice((pg - 1) * ps, pg * ps).map(t => {
-              const pr = products.find(p => p.id === t.productId);
-
-              const v = vendors.find(x => x.id === t.vendorId);
-              const typeColor = t.type === "return" ? T.red : t.type === "purchase_return" ? T.blue : T.amber;
-              const typeLabel = t.type === "return" ? "Sales Return" : t.type === "purchase_return" ? "Purchase Return" : "Damaged";
-              return (<React.Fragment key={t.id}>
-                <tr className={`trow${selRets.has(t.id)?` row-sel`:``}`}>
-                  <td className="td" onClick={e=>e.stopPropagation()}><input type="checkbox" className="cb" checked={selRets.has(t.id)} onChange={()=>tgRet(t.id)}/></td>
-                  <td className="td m">{fmtDate(t.date)}</td>
+            {groupedReturns.slice((pg-1)*ps, pg*ps).map(group => {
+              const gKey = group[0].returnId || `${group[0].date}__${group[0].vendorId||""}__${group[0].type}`;
+              const first = group[0];
+              const v = vendors.find(x => x.id === first.vendorId);
+              const typeColor = first.type === "return" ? T.red : first.type === "purchase_return" ? T.blue : T.amber;
+              const typeLabel = first.type === "return" ? "Sales Return" : first.type === "purchase_return" ? "Purchase Return" : "Damaged";
+              const totalQty = group.reduce((s,t) => s + Number(t.qty), 0);
+              const totalVal = group.reduce((s,t) => s + Number(t.qty)*Number(t.price||0), 0);
+              const hasDamaged = group.some(t => t.isDamaged);
+              const allSelected = group.every(t => selRets.has(t.id));
+              const groupExp = exp[gKey];
+              return (<React.Fragment key={gKey}>
+                <tr className={`trow${allSelected?" row-sel":""}`}>
+                  <td className="td" onClick={e=>e.stopPropagation()}>
+                    <input type="checkbox" className="cb" checked={allSelected}
+                      onChange={() => {
+                        const ns = new Set(selRets);
+                        if (allSelected) group.forEach(t => ns.delete(t.id));
+                        else group.forEach(t => ns.add(t.id));
+                        setSelRets(ns);
+                      }}/>
+                  </td>
+                  <td className="td m">{fmtDate(first.date)}</td>
+                  <td className="td"><span className="badge" style={{ background:typeColor+"18", color:typeColor }}>{typeLabel}</span></td>
                   <td className="td">
-                    <span className="badge" style={{ background: typeColor + "18", color: typeColor }}>{typeLabel}</span>
+                    {group.length === 1
+                      ? <><div style={{ fontWeight:600, color:T.text }}>{products.find(p=>p.id===first.productId)?.name||"—"}</div><div style={{ fontSize:11, color:T.textMuted }}>{products.find(p=>p.id===first.productId)?.sku}</div></>
+                      : <><div style={{ fontWeight:600, color:T.text }}>{group.length} products</div><div style={{ fontSize:11, color:T.textMuted }}>{group.map(t=>products.find(p=>p.id===t.productId)?.alias||products.find(p=>p.id===t.productId)?.name||"?").join(", ")}</div></>
+                    }
                   </td>
-                  <td className="td td-name">
-                    <div style={{ fontWeight: 600, color: T.text }}>{pr?.name || "—"}</div>
-                    <div style={{ fontSize:11, color: T.textMuted }}>{pr?.sku}</div>
-                  </td>
-                  <td className="td r" style={{ fontWeight: 600 }}>{t.qty}</td>
-                  <td className="td r m">{fmtCur(t.price || 0)}</td>
-                  <td className="td r" style={{ fontWeight: 600, color: t.type === "return" ? T.red : T.blue }}>{fmtCur(Number(t.qty) * Number(t.price || 0))}</td>
-                  <td className="td m">
-                    {v?.name || "—"}
-                  </td>
+                  <td className="td r" style={{ fontWeight:600, color:T.text }}>{totalQty}</td>
+                  <td className="td r" style={{ fontWeight:700, color:typeColor }}>{fmtCur(totalVal)}</td>
+                  <td className="td m">{v?.name||"—"}</td>
+                  <td className="td">{hasDamaged ? <span style={{ fontSize:11, fontWeight:700, color:T.amber }}>YES</span> : <span style={{ color:T.textMuted, fontSize:11 }}>—</span>}</td>
                   <td className="td">
-                    {t.isDamaged ? <span style={{ fontSize:11, fontWeight: 700, color: T.amber }}> YES</span> : <span style={{ color: T.textMuted, fontSize:11 }}>—</span>}
-                  </td>
-                  <td className="td">
-                    <div style={{ display: "flex", gap: 3 }}>
-                      <button className="btn-ghost" onClick={() => setExp(p => ({...p,[t.id]:!p[t.id]}))} style={{ padding: "3px 6px" }} title="View"><Eye size={13} /></button>
-                      {isAdmin && <button className="btn-ghost" onClick={() => { setEditTxn(t); setReturnType(t.type === "purchase_return" ? "purchase_return" : "sales_return"); setForm({ date: t.date, vendorId: t.vendorId || "", gstType: t.gstType || "cgst_sgst", notes: t.notes || "", items: [{ id: uid(), productId: t.productId, qty: t.qty, price: t.price || "", isDamaged: t.isDamaged || false }] }); setModal(true); }} style={{ padding: "3px 6px" }} title="Edit"><Edit2 size={13} /></button>}
-                      <button className="btn-danger" onClick={e => { e.stopPropagation(); deleteTxn(t); }} style={{ padding: "3px 6px" }}><Trash2 size={11} /></button>
+                    <div style={{ display:"flex", gap:3 }}>
+                      <button className="btn-ghost" onClick={() => setExp(p=>({...p,[gKey]:!p[gKey]}))} style={{ padding:"3px 6px" }} title="View"><Eye size={13}/></button>
+                      {isAdmin && group.length === 1 && <button className="btn-ghost" onClick={() => { setEditTxn(first); setReturnType(first.type==="purchase_return"?"purchase_return":"sales_return"); setForm({ date:first.date, vendorId:first.vendorId||"", gstType:first.gstType||"cgst_sgst", notes:first.notes||"", items:[{ id:uid(), productId:first.productId, qty:first.qty, price:first.price||"", isDamaged:first.isDamaged||false }] }); setModal(true); }} style={{ padding:"3px 6px" }} title="Edit"><Edit2 size={13}/></button>}
+                      <button className="btn-danger" onClick={e=>{e.stopPropagation(); if(!window.confirm(`Delete this return entry?`))return; saveTransactions(transactions.filter(t=>!group.some(g=>g.id===t.id)));}} style={{ padding:"3px 6px" }}><Trash2 size={11}/></button>
                     </div>
                   </td>
                 </tr>
-                {exp[t.id] && (
+                {groupExp && (
                   <tr style={{ background: T.isDark?"rgba(255,255,255,0.02)":"rgba(0,0,0,0.012)" }}>
-                    <td colSpan={9} style={{ padding:0, borderBottom:`1px solid ${T.borderSubtle}` }}>
-                      <div style={{ padding:"12px 20px 14px", display:"flex", flexWrap:"wrap", gap:"16px 32px", fontSize:12 }}>
-                        {(() => {
-                          const pr2 = products.find(p => p.id === t.productId);
-                          const v2 = vendors.find(x => x.id === t.vendorId);
-                          const gst = t.gstRate ? Number(t.qty)*(Number(t.effectivePrice||t.price||0))*Number(t.gstRate)/(100+Number(t.gstRate)) : 0;
-                          return <>
-                            <div><div style={{ fontSize:11, fontWeight:700, color:T.textSub, marginBottom:3 }}>PRODUCT</div><div style={{ color:T.text, fontWeight:600 }}>{pr2?.name||"—"}</div><div style={{ color:T.textMuted, fontSize:11 }}>{pr2?.sku}</div></div>
-                            <div><div style={{ fontSize:11, fontWeight:700, color:T.textSub, marginBottom:3 }}>QTY × PRICE</div><div style={{ color:T.text }}>{t.qty} × {fmtCur(t.price||0)}</div></div>
-                            <div><div style={{ fontSize:11, fontWeight:700, color:T.textSub, marginBottom:3 }}>GST</div><div style={{ color:T.amber }}>{t.gstRate?t.gstRate+"%":"—"} · {fmtCur(gst)}</div><div style={{ fontSize:11, color:T.textMuted }}>{t.gstType==="igst"?"IGST":"CGST+SGST"}</div></div>
-                            <div><div style={{ fontSize:11, fontWeight:700, color:T.textSub, marginBottom:3 }}>VENDOR</div><div style={{ color:T.text }}>{v2?.name||"—"}</div></div>
-                            {t.notes && <div><div style={{ fontSize:11, fontWeight:700, color:T.textSub, marginBottom:3 }}>NOTES</div><div style={{ color:T.textSub, fontStyle:"italic" }}>{t.notes}</div></div>}
-                            <div><div style={{ fontSize:11, fontWeight:700, color:T.textSub, marginBottom:3 }}>BY</div><div style={{ color:T.text }}>{t.userName||"—"}</div></div>
-                            <div style={{ marginLeft:"auto", textAlign:"right" }}>
-                              <div style={{ fontSize:11, fontWeight:700, color:T.textSub, marginBottom:3 }}>TOTAL VALUE</div>
-                              <div style={{ fontSize:16, fontWeight:800, color:T.accent }}>{fmtCur(Number(t.qty)*Number(t.price||0))}</div>
-                            </div>
-                          </>;
-                        })()}
+                    <td colSpan={9} style={{ padding:0, borderBottom:`1px solid ${T.borderSubtle}`, overflow:"hidden" }}>
+                      <div className="expand-down" style={{ padding:"12px 20px 14px" }}>
+                        {first.notes && <div style={{ fontSize:12, color:T.textSub, fontStyle:"italic", marginBottom:10 }}>{first.notes}</div>}
+                        <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12 }}>
+                          <thead><tr style={{ background:T.isDark?"rgba(255,255,255,0.04)":"rgba(0,0,0,0.03)" }}>
+                            {["#","Product","Qty","Price/Unit","GST","Value","Damaged"].map((h,i)=>(
+                              <th key={i} style={{ padding:"5px 10px", textAlign:["Qty","Price/Unit","GST","Value"].includes(h)?"right":"left", fontSize:11, fontWeight:700, color:T.textSub, borderBottom:`1px solid ${T.borderSubtle}` }}>{h.toUpperCase()}</th>
+                            ))}
+                          </tr></thead>
+                          <tbody>
+                            {group.map((t,idx)=>{
+                              const pr2 = products.find(p=>p.id===t.productId);
+                              const val = Number(t.qty)*Number(t.price||0);
+                              return (
+                                <tr key={t.id} style={{ borderBottom:`1px solid ${T.borderSubtle}40` }}>
+                                  <td style={{ padding:"6px 10px", color:T.textMuted }}>{idx+1}</td>
+                                  <td style={{ padding:"6px 10px" }}><div style={{ fontWeight:600, color:T.text }}>{pr2?.name||"—"}</div><div style={{ fontSize:11, color:T.textMuted }}>{pr2?.sku}</div></td>
+                                  <td style={{ padding:"6px 10px", textAlign:"right", color:T.text, fontWeight:600 }}>{t.qty}</td>
+                                  <td style={{ padding:"6px 10px", textAlign:"right", color:T.textSub }}>{fmtCur(t.price||0)}</td>
+                                  <td style={{ padding:"6px 10px", textAlign:"right", color:T.amber }}>{t.gstRate?t.gstRate+"%":"—"}</td>
+                                  <td style={{ padding:"6px 10px", textAlign:"right", fontWeight:700, color:typeColor }}>{fmtCur(val)}</td>
+                                  <td style={{ padding:"6px 10px" }}>{t.isDamaged?<span style={{ color:T.amber, fontWeight:700, fontSize:11 }}>YES</span>:<span style={{ color:T.textMuted, fontSize:11 }}>—</span>}</td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                          <tfoot><tr style={{ borderTop:`2px solid ${T.borderSubtle}` }}>
+                            <td colSpan={2} style={{ padding:"6px 10px", fontWeight:700, color:T.text, fontSize:12 }}>Total</td>
+                            <td style={{ padding:"6px 10px", textAlign:"right", fontWeight:700, color:T.text }}>{totalQty}</td>
+                            <td colSpan={2}/>
+                            <td style={{ padding:"6px 10px", textAlign:"right", fontWeight:800, fontSize:14, color:typeColor }}>{fmtCur(totalVal)}</td>
+                            <td/>
+                          </tr></tfoot>
+                        </table>
+                        <div style={{ fontSize:11, color:T.textMuted, marginTop:8 }}>By {first.userName||"—"} · {fmtDate(first.date)}</div>
                       </div>
                     </td>
                   </tr>
@@ -346,9 +373,9 @@ export default function Returns({ ctx }) {
             })}
           </tbody>
         </table>
-        {allReturns.length === 0 && <div style={{ padding: "40px 0", textAlign: "center", color: T.textMuted }}>No returns in selected period</div>}
+        {groupedReturns.length === 0 && <div style={{ padding: "40px 0", textAlign: "center", color: T.textMuted }}>No returns in selected period</div>}
       </div>
-      <Pager total={allReturns.length} page={pg} ps={ps} setPage={setPg} setPs={setPs} />
+      <Pager total={groupedReturns.length} page={pg} ps={ps} setPage={setPg} setPs={setPs} />
     </div>
 
     {/* New Return Modal */}
@@ -363,7 +390,7 @@ export default function Returns({ ctx }) {
             {[{ k: "sales_return", l: " Sales Return", sub: "Customer returns product to you" },
               { k: "purchase_return", l: "🚚 Purchase Return", sub: "You return product to vendor" }].map(rt => (
               <button key={rt.k} onClick={() => setReturnType(rt.k)} style={{
-                flex: 1, padding: "12px 16px", borderRadius: 12, border: `2px solid ${returnType === rt.k ? T.accent : T.borderSubtle}`,
+                flex: 1, padding: "12px 16px", borderRadius: T.radius, border: `2px solid ${returnType === rt.k ? T.accent : T.borderSubtle}`,
                 cursor: "pointer", background: returnType === rt.k ? T.accentBg : "transparent",
                 textAlign: "left", transition: "all .15s"
               }}>
@@ -375,7 +402,7 @@ export default function Returns({ ctx }) {
         </div>
 
         {/* Info banner */}
-        <div style={{ padding: "10px 14px", borderRadius: 10, background: returnType === "sales_return" ? T.redBg : T.blueBg, border: `1px solid ${returnType === "sales_return" ? T.red + "30" : T.blue + "30"}`, fontSize: 12, color: returnType === "sales_return" ? T.red : T.blue }}>
+        <div style={{ padding: "10px 14px", borderRadius: T.radius, background: returnType === "sales_return" ? T.redBg : T.blueBg, border: `1px solid ${returnType === "sales_return" ? T.red + "30" : T.blue + "30"}`, fontSize: 12, color: returnType === "sales_return" ? T.red : T.blue }}>
           {returnType === "sales_return"
             ? " Sales Return: Product added back to your inventory. If damaged, it stays in stock but is flagged as damaged."
             : "🚚 Purchase Return: Product removed from your inventory. Applicable for defective/wrong items sent back to vendor."}
@@ -396,7 +423,7 @@ export default function Returns({ ctx }) {
               { k: "igst",      l: "IGST",         sub: "Inter-state / Import / Export" }
             ].map(g => (
               <button key={g.k} onClick={() => setForm(f => ({ ...f, gstType: g.k }))} style={{
-                flex: 1, padding: "10px 14px", borderRadius: 10,
+                flex: 1, padding: "10px 14px", borderRadius: T.radius,
                 border: `2px solid ${form.gstType === g.k ? T.accent : T.borderSubtle}`,
                 cursor: "pointer", background: form.gstType === g.k ? T.accentBg : "transparent",
                 textAlign: "left", transition: "all .15s"
@@ -411,7 +438,7 @@ export default function Returns({ ctx }) {
         {/* Products */}
         <div>
           <div style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, marginBottom: 8, letterSpacing: "0.05em" }}>PRODUCTS</div>
-          <div style={{ border: `1px solid ${T.borderSubtle}`, borderRadius: 12, overflow: "hidden" }}>
+          <div style={{ border: `1px solid ${T.borderSubtle}`, borderRadius: T.radius, overflow: "hidden" }}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 70px 100px 70px 32px", gap: 8, padding: "8px 12px", background: T.isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)" }}>
               {["Product", "Qty", `${returnType === "sales_return" ? "Sale" : "Purchase"} Price`, "Damaged?", ""].map(h => (
                 <div key={h} style={{ fontSize:11, fontWeight: 700, color: T.textMuted, letterSpacing: "0.04em" }}>{h.toUpperCase()}</div>
