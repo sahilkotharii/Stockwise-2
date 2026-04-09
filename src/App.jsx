@@ -85,10 +85,11 @@ export default function App() {
       ]);
 
       const SEED_USERS = [
-        { id: "u1", name: "Sahil Desai", username: "admin", password: "admin123", role: "admin", createdAt: today(), lockedPages: [] },
+        { id: "u1", name: "Sahil Kothari", username: "sahil", password: "admin123", role: "admin", createdAt: today(), lockedPages: [] },
         { id: "u2", name: "Store Manager", username: "manager", password: "store123", role: "manager", createdAt: today(), lockedPages: [] }
       ];
-
+      // uFromStorage tracks whether users came from real localStorage or seeds
+      const uFromStorage = !!u;
       const fu = u || SEED_USERS, fp = p || [], fc = c || [], fv = v || [];
       // Sanitize dates from localStorage (may have old "Wed Apr 08 2026..." strings)
       const fixDatesLocal = rows => (rows || []).map(r => {
@@ -120,7 +121,8 @@ export default function App() {
       }
 
       if (!ok) await Promise.all([
-        lsSet(SK.users, fu), lsSet(SK.products, fp), lsSet(SK.categories, fc),
+        // Never seed users to localStorage — real users always come from Sheets
+        lsSet(SK.products, fp), lsSet(SK.categories, fc),
         lsSet(SK.vendors, fv), lsSet(SK.transactions, ft),
         lsSet(SK.seeded, true)
       ]);
@@ -166,19 +168,22 @@ export default function App() {
       // Background auto-sync every 4 minutes
       if (url) pull(url);
 
-      // ── Migrate plain-text passwords to hashed on first boot ───────────────
+      // ── Migrate plain-text passwords to hashed ────────────────────────────
+      // Only runs on real localStorage users — NEVER pushes seed users to Sheets
       (async () => {
         const { hashPassword } = await import("./utils");
-        const needsMigration = fu.some(u => u.password && !u.password.startsWith("sha256:"));
+        const currentUsers = await lsGet(SK.users, null);
+        if (!currentUsers) return; // No real users in storage yet — skip migration
+        const needsMigration = currentUsers.some(u => u.password && !u.password.startsWith("sha256:"));
         if (needsMigration) {
-          const migrated = await Promise.all(fu.map(async u => {
+          const migrated = await Promise.all(currentUsers.map(async u => {
             if (!u.password || u.password.startsWith("sha256:")) return u;
             const h = await hashPassword(u.password);
             return { ...u, password: "sha256:" + h };
           }));
           setUsers(migrated);
           await lsSet(SK.users, migrated);
-          push("users", migrated);
+          push("users", migrated); // Safe: only real users reach here
         }
       })();
 
