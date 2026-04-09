@@ -76,106 +76,72 @@ export default function App() {
     document.head.appendChild(lnk);
 
     (async () => {
-      const [u, p, c, v, t, b, sUrl, ok, dp, cr, al, tid, ak, cc, bgi, rm, lu] = await Promise.all([
-        lsGet(SK.users, null), lsGet(SK.products, null), lsGet(SK.categories, null),
-        lsGet(SK.vendors, null), lsGet(SK.transactions, null),
-        lsGet(SK.bills, []), lsGet(SK.sheetsUrl, DEFAULT_SHEETS_URL), lsGet("sw_ok", false),
-        lsGet(SK.theme, false), lsGet(SK.changeReqs, []), lsGet(SK.actLog, []),
-        lsGet("sw_theme_id", "glass"), lsGet("sw_accent_key", "copper"),
-        lsGet("sw_custom_color", ""), lsGet("sw_bg_image", ""),
-        lsGet("sw_corner_style", "rounded"), lsGet("sw_logo_url", ""),
-        lsGet("sw_radius_mode", "rounded"), lsGet("sw_logo_url", "")
-      ]);
+      try {
+        // Load everything from localStorage in parallel
+        const [u, p, c, v, t, b, sUrl, ok, dp, cr, al, tid, ak, cc, bgi, cs, lu, invS, sess] = await Promise.all([
+          lsGet(SK.users, null), lsGet(SK.products, null), lsGet(SK.categories, null),
+          lsGet(SK.vendors, null), lsGet(SK.transactions, null), lsGet(SK.bills, []),
+          lsGet(SK.sheetsUrl, DEFAULT_SHEETS_URL), lsGet("sw_ok", false),
+          lsGet(SK.theme, false), lsGet(SK.changeReqs, []), lsGet(SK.actLog, []),
+          lsGet("sw_theme_id", "glass"), lsGet("sw_accent_key", "copper"),
+          lsGet("sw_custom_color", ""), lsGet("sw_bg_image", ""),
+          lsGet("sw_corner_style", "rounded"), lsGet("sw_logo_url", ""),
+          lsGet(SK.invoiceSettings, {}), lsGet(SK.session, null)
+        ]);
 
-      const SEED_USERS = [
-        { id: "u1", name: "Sahil Kothari", username: "sahil", password: "admin123", role: "admin", createdAt: today(), lockedPages: [] },
-        { id: "u2", name: "Store Manager", username: "manager", password: "store123", role: "manager", createdAt: today(), lockedPages: [] }
-      ];
-      // uFromStorage tracks whether users came from real localStorage or seeds
-      const uFromStorage = !!u;
-      const fu = u || SEED_USERS, fp = p || [], fc = c || [], fv = v || [];
-      // Sanitize dates from localStorage (may have old "Wed Apr 08 2026..." strings)
-      const fixDatesLocal = rows => (rows || []).map(r => {
-        if (!r || !r.date) return r;
-        const ds = toYMD(r.date);
-        return ds !== r.date ? { ...r, date: ds } : r;
-      });
-      const ft = fixDatesLocal(t);
-      const fb = fixDatesLocal(b);
-      setUsers(fu); setProducts(fp); setCategories(fc); setVendors(fv);
-      setTransactions(ft); setBills(fb || []);
-      setSheetsUrl(sUrl || DEFAULT_SHEETS_URL); setIsDark(dp || false);
-      setThemeId(tid || "glass"); setAccentKey(ak || "copper");
-      setCustomColorState(cc || ""); setBgImageState(bgi || "");
-      setCornerStyleState(cs || "rounded"); setLogoUrlState(lu || "");
-      setChangeReqs(cr || []); setActLog(al || []);
-      const invS = await lsGet(SK.invoiceSettings, {});
-      setInvoiceSettings(invS || {});
+        const SEED_USERS = [
+          { id: "u1", name: "Sahil Kothari", username: "sahil", password: "admin123", role: "admin", createdAt: today(), lockedPages: [] },
+          { id: "u2", name: "Store Manager", username: "manager", password: "store123", role: "manager", createdAt: today(), lockedPages: [] }
+        ];
 
-      // ── Restore saved session (stays logged in for 24h) ────────────────────
-      const savedSession = await lsGet(SK.session, null);
-      if (savedSession && savedSession.userId && savedSession.ts) {
-        const age = Date.now() - savedSession.ts;
-        if (age < 24 * 60 * 60 * 1000) {
-          const sessionUser = (fu).find(x => x.id === savedSession.userId);
+        const fu = u || SEED_USERS;
+        const fixDates = rows => (rows || []).map(r => {
+          if (!r?.date) return r;
+          const ds = toYMD(r.date);
+          return ds !== r.date ? { ...r, date: ds } : r;
+        });
+
+        // Apply localStorage data to state
+        setUsers(fu); setProducts(p || []); setCategories(c || []); setVendors(v || []);
+        setTransactions(fixDates(t)); setBills(fixDates(b) || []);
+        setSheetsUrl(sUrl || DEFAULT_SHEETS_URL);
+        setIsDark(dp || false);
+        setThemeId(tid || "glass"); setAccentKey(ak || "copper");
+        setCustomColorState(cc || ""); setBgImageState(bgi || "");
+        setCornerStyleState(cs || "rounded"); setLogoUrlState(lu || "");
+        setChangeReqs(cr || []); setActLog(al || []);
+        setInvoiceSettings(invS || {});
+
+        // Restore session
+        if (sess?.userId && sess?.ts && (Date.now() - sess.ts) < 86400000) {
+          const sessionUser = fu.find(x => x.id === sess.userId);
           if (sessionUser) setUser(sessionUser);
-        } else {
-          await lsSet(SK.session, null); // expired — clear it
+        } else if (sess) {
+          lsSet(SK.session, null);
         }
+
+        // ── SHOW APP IMMEDIATELY from localStorage ─────────────────────────
+        setReady(true);
+
+        // ── Sync from Sheets in background (non-blocking) ──────────────────
+        const url = sUrl || DEFAULT_SHEETS_URL;
+        if (url) pull(url);
+
+        // First-run: save initial state
+        if (!ok) lsSet("sw_ok", true);
+
+        // Auto-sync every 4 minutes
+        const interval = setInterval(() => pull(url), 4 * 60 * 1000);
+        return () => clearInterval(interval);
+
+      } catch (err) {
+        // Even if something goes wrong, always show the app
+        console.error("Boot error:", err);
+        setReady(true);
       }
-
-      if (!ok) await Promise.all([
-        // Never seed users to localStorage — real users always come from Sheets
-        lsSet(SK.products, fp), lsSet(SK.categories, fc),
-        lsSet(SK.vendors, fv), lsSet(SK.transactions, ft),
-        lsSet("sw_ok", true)
-      ]);
-
-      // Pull from Sheets first — use Sheets users if available, THEN show UI
-      // Has a timeout so the loader never hangs if network is slow/unresponsive
-      const url = sUrl || DEFAULT_SHEETS_URL;
-      if (url) {
-        try {
-          const { sheetsGet } = await import("./sheets");
-          // Race: fetch vs 8-second timeout — whichever wins
-          const data = await Promise.race([
-            sheetsGet(url),
-            new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 8000))
-          ]);
-          // Always prefer Sheets users over seed users
-          if (data.users?.length) {
-            setUsers(data.users); await lsSet(SK.users, data.users);
-            // Re-resolve session user from fresh Sheets data
-            const savedSession2 = await lsGet(SK.session, null);
-            if (savedSession2?.userId) {
-              const freshUser = data.users.find(x => x.id === savedSession2.userId);
-              if (freshUser) setUser(freshUser);
-            }
-          }
-          if (data.products?.length) { setProducts(data.products); lsSet(SK.products, data.products); }
-          if (data.categories?.length) { setCategories(data.categories); lsSet(SK.categories, data.categories); }
-          if (data.vendors?.length) { setVendors(data.vendors); lsSet(SK.vendors, data.vendors); }
-          if (data.transactions?.length) { const rows = fixDatesLocal(data.transactions); setTransactions(rows); lsSet(SK.transactions, rows); }
-          if (data.bills?.length) { const rows = fixDatesLocal(data.bills); setBills(rows); lsSet(SK.bills, rows); }
-          if (data.changeReqs?.length) { setChangeReqs(data.changeReqs); lsSet(SK.changeReqs, data.changeReqs); }
-          if (data.appConfig?.length) {
-            const cfg = {};
-            data.appConfig.forEach(row => { if (!row.key) return; try { cfg[row.key] = JSON.parse(row.value); } catch { cfg[row.key] = row.value; } });
-            if (Object.keys(cfg).length > 0) { setInvoiceSettings(cfg); lsSet(SK.invoiceSettings, cfg); }
-          }
-        } catch(e) { /* Offline or timeout — use localStorage data */ }
-      }
-      setReady(true);
-      // Background auto-sync every 4 minutes
-      if (url) pull(url);
-
-
-
-      // ── Auto-sync every 4 minutes ──────────────────────────────────────────
-      const interval = setInterval(() => pull(url), 4 * 60 * 1000);
-      return () => clearInterval(interval);
     })();
   }, []);
+
 
 
   // ── CSS injection ─────────────────────────────────────────────────────────
