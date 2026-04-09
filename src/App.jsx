@@ -9,7 +9,7 @@ import { uid, today } from "./utils";
 // ── Default Google Sheets Web App URL ────────────────────────────────────────
 const DEFAULT_SHEETS_URL = "https://script.google.com/macros/s/AKfycbxiLGcaBsuNtUrT7tBFSzAe0LOmMqTKWIfjZAR6YCE7kTfLjAF-7FeeMY1VRyuTSHVh/exec";
 
-import Sidebar, { MobNav, TopBar, ALL_NAV } from "./components/Nav";
+import Sidebar, { MobNav, TopBar, ALL_NAV, ROLE_PAGES } from "./components/Nav";
 import Login from "./components/Login";
 import { Toast } from "./components/UI";
 
@@ -337,9 +337,9 @@ export default function App() {
   // ── Page guard (respect locked pages for managers) ────────────────────────
   const actualPage = (() => {
     if (!user || user.role === "admin") return page;
-    const nav = ALL_NAV.find(n => n.id === page);
-    if (!nav || nav.adminOnly || nav.alwaysAllow) return page;
-    if (locked.includes(page)) return "dashboard";
+    const allowed = ROLE_PAGES[user.role] || ROLE_PAGES.manager;
+    const locked = user?.lockedPages || [];
+    if (!allowed.includes(page) || locked.includes(page)) return "dashboard";
     return page;
   })();
 
