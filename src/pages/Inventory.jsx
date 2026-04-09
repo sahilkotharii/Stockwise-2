@@ -228,11 +228,11 @@ export default function Inventory({ ctx }) {
               const cat = categories.find(c => c.id === p.categoryId);
               return (
                 <tr key={p.id} className="trow">
-                  <td className="td">
+                  <td className="td" style={{ maxWidth: 200 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      {p.imageUrl && <img src={p.imageUrl} alt="" style={{ width: 28, height: 28, borderRadius: 6, objectFit: "cover" }} onError={e => e.target.style.display = "none"} />}
-                      <div>
-                        <div style={{ fontWeight: 600, color: T.text, fontSize: 12 }}>{p.name}</div>
+                      {p.imageUrl && <img src={p.imageUrl} alt="" style={{ width: 28, height: 28, borderRadius: 6, objectFit: "cover", flexShrink: 0 }} onError={e => e.target.style.display = "none"} />}
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontWeight: 600, color: T.text, fontSize: 12, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</div>
                         <div style={{ color: T.textMuted, fontSize:11 }}>{p.alias}</div>
                       </div>
                     </div>
