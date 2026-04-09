@@ -264,11 +264,11 @@ ${sharedStyle}
                                   <td style={{ padding:"5px 8px", color:T.textMuted }}>{idx+1}</td>
                                   <td style={{ padding:"5px 8px", fontWeight:600, color:T.text }}>{it.productName||"—"}{it.isDamaged&&<span style={{color:T.red,fontSize:11,marginLeft:6}}> DMG</span>}</td>
                                   <td style={{ padding:"5px 8px", color:T.textSub, fontFamily:"monospace" }}>{it.hsn||"—"}</td>
-                                  <td style={{ padding:"5px 8px", textAlign:"right", fontWeight:600 }}>{qty}</td>
+                                  <td style={{ padding:"5px 8px", textAlign:"right", fontWeight:600, color:T.text }}>{qty}</td>
                                   <td style={{ padding:"5px 8px", color:T.textMuted }}>{it.unit||"pcs"}</td>
-                                  <td style={{ padding:"5px 8px", textAlign:"right" }}>{fmtCur(taxable)}</td>
+                                  <td style={{ padding:"5px 8px", textAlign:"right", color:T.textSub }}>{fmtCur(taxable)}</td>
                                   <td style={{ padding:"5px 8px", textAlign:"right", color:T.amber }}>{rate > 0 ? rate+"%" : "—"}</td>
-                                  <td style={{ padding:"5px 8px", textAlign:"right", fontWeight:700 }}>{fmtCur(qty*effPrice)}</td>
+                                  <td style={{ padding:"5px 8px", textAlign:"right", fontWeight:700, color:T.text }}>{fmtCur(qty*effPrice)}</td>
                                 </tr>
                               );
                             })}
@@ -278,10 +278,10 @@ ${sharedStyle}
                       <div style={{ display:"flex", justifyContent:"flex-end" }}>
                         <table style={{ fontSize:12, borderCollapse:"collapse", minWidth:220 }}>
                           <tbody>
-                            <tr><td style={{ padding:"3px 8px", color:T.textSub }}>Subtotal (MRP)</td><td style={{ padding:"3px 8px", textAlign:"right", fontWeight:600 }}>{fmtCur(b.subtotal)}</td></tr>
+                            <tr><td style={{ padding:"3px 8px", color:T.textSub }}>Subtotal (MRP)</td><td style={{ padding:"3px 8px", textAlign:"right", fontWeight:600, color:T.text }}>{fmtCur(b.subtotal)}</td></tr>
                             {(b.discAmount||0)>0 && <tr><td style={{ padding:"3px 8px", color:T.red }}>Discount</td><td style={{ padding:"3px 8px", textAlign:"right", color:T.red }}>–{fmtCur(b.discAmount)}</td></tr>}
                             {calcBillGst(b)>0 && <tr><td style={{ padding:"3px 8px", color:T.amber }}>GST (incl.)</td><td style={{ padding:"3px 8px", textAlign:"right", color:T.amber }}>{fmtCur(calcBillGst(b))}</td></tr>}
-                            {b.paymentMode && <tr><td style={{ padding:"3px 8px", color:T.textMuted, fontSize:11 }}>Payment</td><td style={{ padding:"3px 8px", textAlign:"right", fontSize:11 }}>{b.paymentMode}</td></tr>}
+                            {b.paymentMode && <tr><td style={{ padding:"3px 8px", color:T.textMuted, fontSize:11 }}>Payment</td><td style={{ padding:"3px 8px", textAlign:"right", fontSize:11, color:T.textSub }}>{b.paymentMode}</td></tr>}
                             <tr style={{ borderTop:`2px solid ${T.borderSubtle}` }}><td style={{ padding:"5px 8px", fontWeight:700, color:T.text }}>Total</td><td style={{ padding:"5px 8px", textAlign:"right", fontWeight:800, fontSize:14, color:T.accent }}>{fmtCur(b.total)}</td></tr>
                           </tbody>
                         </table>
