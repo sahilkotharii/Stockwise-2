@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { LayoutDashboard, TrendingUp, ShoppingCart, RotateCcw, Package, BarChart2, PieChart, Tag, Users, ArrowLeftRight, CheckSquare, Settings, LogOut, Bell, AlertTriangle, CheckCircle, RefreshCw, Sun, Moon, Layers, X, Palette } from "lucide-react";
+import { LayoutDashboard, TrendingUp, ShoppingCart, RotateCcw, Package, BarChart2, PieChart, Tag, Users, ArrowLeftRight, CheckSquare, Settings, LogOut, Bell, AlertTriangle, CheckCircle, RefreshCw, Sun, Moon, Layers, X, User, Download } from "lucide-react";
 import { useT } from "../theme";
 
 export const ALL_NAV = [
@@ -19,113 +19,170 @@ export const ALL_NAV = [
 export const visNav = (user) => {
   if (!user || user.role === "admin") return ALL_NAV;
   const locked = user.lockedPages || [];
-  return ALL_NAV.filter(n => n.alwaysAllow || !n.adminOnly && !locked.includes(n.id));
+  return ALL_NAV.filter(n => n.alwaysAllow || (!n.adminOnly && !locked.includes(n.id)));
 };
 
-export default function Sidebar({ page, setPage, user, onLogout, isDark, toggleTheme, ctx }) {
-  const { logoUrl } = ctx || {};
+// ── Shared Avatar component ──────────────────────────────────────────────────
+function Avatar({ user, size = 28 }) {
   const T = useT();
-  const col = false;
-  const { changeReqs } = ctx;
-  const pendingCnt = (changeReqs || []).filter(r => r.status === "pending").length;
-
-  const sidebarStyle = T.isGlass
-    ? { background: T.surface, backdropFilter: T.blur, WebkitBackdropFilter: T.blur, borderRight: `1px solid ${T.border}`, boxShadow: T.shadowLg + (T.shimmer ? ", " + T.shimmer : "") }
-    : T.sidebarBg
-    ? { background: T.sidebarBg, borderRight: "none" }
-    : { background: T.surfaceStrong, borderRight: `1px solid ${T.border}` };
-
-  return <div className="desktop-sidebar" style={{ position: "fixed", left: 0, top: 0, bottom: 0, width: T.sidebarW, display: "flex", flexDirection: "column", zIndex: 50, overflow: "hidden", ...sidebarStyle }}>
-    {/* Logo */}
-    <div style={{ padding: "20px 14px 14px", borderBottom: `1px solid ${T.borderSubtle}` }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        {logoUrl ? (<img src={logoUrl} alt="Logo" style={{ width: 38, height: 38, borderRadius: T.radius, objectFit: "contain", flexShrink: 0 }} onError={e => e.target.style.display="none"} />) : (<div style={{ width: 38, height: 38, borderRadius: T.radiusXl, background: `linear-gradient(135deg,${T.accent},${T.accentDark})`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Layers size={18} color="#fff" /></div>)}
-        <div><div style={{ fontFamily: T.displayFont, fontWeight: 800, fontSize: 16, color: T.sidebarBg ? '#fff' : T.text, letterSpacing: "-0.03em" }}>StockWise</div><div style={{ fontSize: 10, color: T.sidebarBg ? 'rgba(255,255,255,0.7)' : T.textMuted, marginTop: 1 }}>{user?.name?.split(" ")[0] || "Pipal Home"}</div></div>
-      </div>
+  return (
+    <div style={{ width: size, height: size, borderRadius: T.radiusFull, background: `${T.accent}22`, border: `2px solid ${T.accent}44`, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: size * 0.42, color: T.accent, flexShrink: 0, userSelect: "none" }}>
+      {(user?.name || "?")[0].toUpperCase()}
     </div>
-
-    {/* Nav items */}
-    <div style={{ flex: 1, overflowY: "auto", padding: "8px 8px", display: "flex", flexDirection: "column", gap: 1 }}>
-      {visNav(user).map(n => (
-        <button key={n.id} className={`nav-item${page === n.id ? " active" : ""}`} onClick={() => setPage(n.id)} style={T.sidebarBg ? { color: page === n.id ? "#fff" : "rgba(255,255,255,0.75)", background: page === n.id ? "rgba(255,255,255,0.2)" : "transparent" } : {}}>
-          <n.icon size={16} />
-          <span>{n.label}</span>
-          {n.id === "approvals" && pendingCnt > 0 && <span style={{ marginLeft: "auto", minWidth: 18, height: 18, borderRadius: T.radiusFull, background: T.red, color: "#fff", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 3px" }}>{pendingCnt}</span>}
-        </button>
-      ))}
-    </div>
-
-    {/* Bottom controls */}
-    <div style={{ padding: "8px", borderTop: `1px solid ${T.borderSubtle}` }}>
-      <div style={{ display: "flex", gap: 4, marginBottom: 6 }}>
-        <button onClick={toggleTheme} className="btn-ghost" style={{ flex: 1, padding: "7px", borderRadius: T.radius, justifyContent: "center", background: T.sidebarBg ? "rgba(255,255,255,0.15)" : undefined, borderColor: T.sidebarBg ? "rgba(255,255,255,0.25)" : undefined, color: T.sidebarBg ? "#fff" : undefined }} title={isDark ? "Light Mode" : "Dark Mode"}>
-          {isDark ? <Sun size={14} color={T.amber} /> : <Moon size={14} color={T.accent} />}
-          <span style={{ fontSize: 11 }}>{isDark ? "Light" : "Dark"}</span>
-        </button>
-        <button onClick={() => { setPage("settings"); if(ctx?.setSettingsTab) ctx.setSettingsTab("theme"); }} className="btn-ghost" style={{ flex: 1, padding: "7px", borderRadius: T.radius, justifyContent: "center", background: T.sidebarBg ? "rgba(255,255,255,0.15)" : undefined, borderColor: T.sidebarBg ? "rgba(255,255,255,0.25)" : undefined, color: T.sidebarBg ? "#fff" : undefined }} title="Theme Settings">
-          <Palette size={14} color={T.accentCard ? "#fff" : T.accent} />
-          <span style={{ fontSize: 11 }}>Theme</span>
-        </button>
-      </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 8px", borderRadius: T.radius }}>
-        <div style={{ width: 28, height: 28, borderRadius: T.radius, background: `${T.accent}18`, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 12, color: T.accent, flexShrink: 0 }}>{(user?.name || "?")[0]}</div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: T.sidebarBg ? '#fff' : T.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user?.name}</div>
-          <div style={{ fontSize: 10, color: T.sidebarBg ? 'rgba(255,255,255,0.65)' : T.textMuted, textTransform: "capitalize" }}>{user?.role}</div>
-        </div>
-      </div>
-      <button className="btn-ghost" onClick={onLogout} style={{ width: "100%", marginTop: 4, color: T.red, justifyContent: "center", padding: "8px" }}>
-        <LogOut size={14} /><span style={{ fontSize: 12 }}>Sign Out</span>
-      </button>
-    </div>
-  </div>;
+  );
 }
 
-export function MobNav({ page, setPage, user, onLogout, isDark, toggleTheme, pendingCnt }) {
+// ── Shared Profile Dropdown ─────────────────────────────────────────────────
+function ProfileDropdown({ user, onClose, setPage, setSettingsTab, onLogout, align = "left" }) {
   const T = useT();
-  const [showMenu, setShowMenu] = useState(false);
-  const mainItems = visNav(user).slice(0, 7); // first 7 in bottom bar
-
-  return <>
-    {/* More menu overlay */}
-    {showMenu && <div style={{ position: "fixed", inset: 0, zIndex: 150 }} onClick={() => setShowMenu(false)}>
-      <div className="glass-strong" onClick={e => e.stopPropagation()} style={{ position: "fixed", bottom: 68, left: 0, right: 0, borderTop: `1px solid ${T.border}`, padding: "12px 16px", maxHeight: "60vh", overflowY: "auto" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-          <span style={{ fontSize: 13, fontWeight: 700, color: T.text }}>More</span>
-          <button className="btn-ghost" onClick={() => setShowMenu(false)} style={{ padding: "4px 8px" }}><X size={14} /></button>
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 12 }}>
-          {visNav(user).map(n => (
-            <button key={n.id} onClick={() => { setPage(n.id); setShowMenu(false); }}
-              style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", borderRadius: T.radius, border: `1px solid ${page === n.id ? T.accent : T.border}`, background: page === n.id ? T.accent + "15" : "transparent", cursor: "pointer", color: page === n.id ? T.accent : T.text, fontWeight: page === n.id ? 700 : 500, fontSize: 13 }}>
-              <n.icon size={15} />
-              <span>{n.label}</span>
-              {n.id === "approvals" && pendingCnt > 0 && <span style={{ marginLeft: "auto", minWidth: 16, height: 16, borderRadius: T.radiusFull, background: T.red, color: "#fff", fontSize: 10, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>{pendingCnt}</span>}
-            </button>
-          ))}
-        </div>
-        {/* Theme + Sign out in menu */}
-        <div style={{ display: "flex", gap: 8, paddingTop: 10, borderTop: `1px solid ${T.borderSubtle}` }}>
-          <button onClick={() => { toggleTheme(); setShowMenu(false); }} className="btn-ghost" style={{ flex: 1, padding: "10px", justifyContent: "center" }}>
-            {isDark ? <><Sun size={14} color={T.amber} /><span>Light Mode</span></> : <><Moon size={14} color={T.accent} /><span>Dark Mode</span></>}
-          </button>
-          <button onClick={() => { setPage("settings"); setShowMenu(false); }} className="btn-ghost" style={{ flex: 1, padding: "10px", justifyContent: "center" }}>
-            <Palette size={14} color={T.accent} /><span>Theme</span>
-          </button>
-          <button onClick={() => { onLogout(); setShowMenu(false); }} className="btn-ghost" style={{ flex: 1, padding: "10px", color: T.red, justifyContent: "center" }}>
-            <LogOut size={14} /><span>Sign Out</span>
-          </button>
+  const menuItems = [
+    { icon: User, label: "Edit Profile", action: () => { setPage("settings"); setSettingsTab?.("profile"); onClose(); } },
+    { icon: Download, label: "Export Data", action: () => { setPage("settings"); setSettingsTab?.("export"); onClose(); } },
+    { icon: Settings, label: "Settings", action: () => { setPage("settings"); onClose(); } },
+  ];
+  return (
+    <div className="glass-strong fade-up" onClick={e => e.stopPropagation()}
+      style={{ position: "absolute", [align === "right" ? "right" : "left"]: 0, bottom: align === "left" ? "calc(100% + 8px)" : undefined, top: align === "right" ? "calc(100% + 8px)" : undefined, width: 220, borderRadius: T.radiusXl, padding: 12, boxShadow: T.shadowLg, zIndex: 200 }}>
+      {/* User info header */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 4px 12px", borderBottom: `1px solid ${T.borderSubtle}`, marginBottom: 8 }}>
+        <Avatar user={user} size={36} />
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontWeight: 700, fontSize: 13, color: T.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user?.name}</div>
+          <div style={{ fontSize: 11, color: T.textMuted, textTransform: "capitalize" }}>{user?.role}</div>
         </div>
       </div>
-    </div>}
+      {/* Menu items */}
+      {menuItems.map(item => (
+        <button key={item.label} onClick={item.action} className="btn-ghost"
+          style={{ width: "100%", justifyContent: "flex-start", padding: "9px 10px", marginBottom: 4, gap: 10 }}>
+          <item.icon size={14} color={T.textSub} /><span style={{ fontSize: 13 }}>{item.label}</span>
+        </button>
+      ))}
+      {/* Sign out */}
+      <div style={{ borderTop: `1px solid ${T.borderSubtle}`, marginTop: 4, paddingTop: 8 }}>
+        <button onClick={() => { onLogout(); onClose(); }} className="btn-ghost"
+          style={{ width: "100%", justifyContent: "flex-start", padding: "9px 10px", gap: 10, color: T.red }}>
+          <LogOut size={14} color={T.red} /><span style={{ fontSize: 13 }}>Sign Out</span>
+        </button>
+      </div>
+    </div>
+  );
+}
 
-    {/* Bottom nav bar */}
+// ── Desktop Sidebar ─────────────────────────────────────────────────────────
+export default function Sidebar({ page, setPage, user, onLogout, isDark, toggleTheme, ctx }) {
+  const T = useT();
+  const { logoUrl, changeReqs, setSettingsTab } = ctx || {};
+  const pendingCnt = (changeReqs || []).filter(r => r.status === "pending").length;
+  const [showProfile, setShowProfile] = useState(false);
+
+  return (
+    <div className="desktop-sidebar" style={{ position: "fixed", left: 0, top: 0, bottom: 0, width: T.sidebarW, display: "flex", flexDirection: "column", zIndex: 50, overflow: "hidden", ...(T.isGlass ? { background: T.surface, backdropFilter: T.blur, WebkitBackdropFilter: T.blur, borderRight: `1px solid ${T.border}`, boxShadow: T.shadowLg + (T.shimmer ? ", " + T.shimmer : "") } : T.sidebarBg ? { background: T.sidebarBg, borderRight: "none" } : { background: T.surfaceStrong, borderRight: `1px solid ${T.border}` }) }}>
+
+      {/* Logo */}
+      <div style={{ padding: "20px 14px 14px", borderBottom: `1px solid ${T.borderSubtle}` }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ width: 38, height: 38, borderRadius: T.radiusXl, background: logoUrl ? "transparent" : `linear-gradient(135deg,${T.accent},${T.accentDark})`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
+            {logoUrl ? <img src={logoUrl} alt="logo" style={{ width: "100%", height: "100%", objectFit: "contain" }} /> : <Layers size={18} color="#fff" />}
+          </div>
+          <div>
+            <div style={{ fontFamily: T.displayFont, fontWeight: 800, fontSize: 16, color: T.sidebarBg ? "#fff" : T.text, letterSpacing: "-0.03em" }}>StockWise</div>
+            <div style={{ fontSize: 10, color: T.sidebarBg ? "rgba(255,255,255,0.7)" : T.textMuted, marginTop: 1 }}>Pipal Home</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Nav items */}
+      <div style={{ flex: 1, overflowY: "auto", padding: "8px", display: "flex", flexDirection: "column", gap: 1 }}>
+        {visNav(user).map(n => (
+          <button key={n.id} className={`nav-item${page === n.id ? " active" : ""}`} onClick={() => setPage(n.id)}
+            style={T.sidebarBg ? { color: page === n.id ? "#fff" : "rgba(255,255,255,0.75)", background: page === n.id ? "rgba(255,255,255,0.2)" : "transparent" } : {}}>
+            <n.icon size={16} />
+            <span>{n.label}</span>
+            {n.id === "approvals" && pendingCnt > 0 && <span style={{ marginLeft: "auto", minWidth: 18, height: 18, borderRadius: T.radiusFull, background: T.red, color: "#fff", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 3px" }}>{pendingCnt}</span>}
+          </button>
+        ))}
+      </div>
+
+      {/* Bottom — avatar with dropdown, dark toggle */}
+      <div style={{ padding: "8px", borderTop: `1px solid ${T.borderSubtle}` }}>
+        {/* Dark mode toggle only */}
+        <button onClick={toggleTheme} className="btn-ghost" style={{ width: "100%", marginBottom: 6, padding: "7px", justifyContent: "center", background: T.sidebarBg ? "rgba(255,255,255,0.15)" : undefined, borderColor: T.sidebarBg ? "rgba(255,255,255,0.25)" : undefined, color: T.sidebarBg ? "#fff" : undefined }}>
+          {isDark ? <Sun size={14} color={T.amber} /> : <Moon size={14} color={T.accent} />}
+          <span style={{ fontSize: 11, marginLeft: 6 }}>{isDark ? "Light Mode" : "Dark Mode"}</span>
+        </button>
+
+        {/* Avatar row with dropdown */}
+        <div style={{ position: "relative" }}>
+          <button onClick={() => setShowProfile(p => !p)}
+            style={{ width: "100%", display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", borderRadius: T.radius, border: "none", background: showProfile ? (T.sidebarBg ? "rgba(255,255,255,0.15)" : `${T.accent}10`) : "transparent", cursor: "pointer", transition: "all .15s" }}>
+            <Avatar user={user} size={28} />
+            <div style={{ flex: 1, minWidth: 0, textAlign: "left" }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: T.sidebarBg ? "#fff" : T.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user?.name}</div>
+              <div style={{ fontSize: 10, color: T.sidebarBg ? "rgba(255,255,255,0.65)" : T.textMuted, textTransform: "capitalize" }}>{user?.role}</div>
+            </div>
+            <span style={{ fontSize: 10, color: T.sidebarBg ? "rgba(255,255,255,0.5)" : T.textMuted }}>{showProfile ? "▲" : "▼"}</span>
+          </button>
+          {showProfile && (
+            <>
+              <div style={{ position: "fixed", inset: 0, zIndex: 199 }} onClick={() => setShowProfile(false)} />
+              <ProfileDropdown user={user} onClose={() => setShowProfile(false)} setPage={setPage} setSettingsTab={setSettingsTab} onLogout={onLogout} align="left" />
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Mobile Nav ──────────────────────────────────────────────────────────────
+export function MobNav({ page, setPage, user, onLogout, isDark, toggleTheme, pendingCnt, ctx }) {
+  const T = useT();
+  const { setSettingsTab } = ctx || {};
+  const [showMenu, setShowMenu] = useState(false);
+  const mainItems = visNav(user).slice(0, 5);
+
+  return <>
+    {showMenu && (
+      <div style={{ position: "fixed", inset: 0, zIndex: 150 }} onClick={() => setShowMenu(false)}>
+        <div className="glass-strong" onClick={e => e.stopPropagation()} style={{ position: "fixed", bottom: 68, left: 0, right: 0, borderTop: `1px solid ${T.border}`, padding: "12px 16px", maxHeight: "60vh", overflowY: "auto" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: T.text }}>Menu</span>
+            <button className="btn-ghost" onClick={() => setShowMenu(false)} style={{ padding: "4px 8px" }}><X size={14} /></button>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 12 }}>
+            {visNav(user).map(n => (
+              <button key={n.id} onClick={() => { setPage(n.id); setShowMenu(false); }}
+                style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", borderRadius: T.radius, border: `1px solid ${page === n.id ? T.accent : T.border}`, background: page === n.id ? T.accent + "15" : "transparent", cursor: "pointer", color: page === n.id ? T.accent : T.text, fontWeight: page === n.id ? 700 : 500, fontSize: 13 }}>
+                <n.icon size={15} />
+                <span>{n.label}</span>
+                {n.id === "approvals" && pendingCnt > 0 && <span style={{ marginLeft: "auto", minWidth: 16, height: 16, borderRadius: T.radiusFull, background: T.red, color: "#fff", fontSize: 10, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>{pendingCnt}</span>}
+              </button>
+            ))}
+          </div>
+          <div style={{ display: "flex", gap: 8, paddingTop: 10, borderTop: `1px solid ${T.borderSubtle}` }}>
+            <button onClick={() => { toggleTheme(); setShowMenu(false); }} className="btn-ghost" style={{ flex: 1, padding: "10px", justifyContent: "center" }}>
+              {isDark ? <><Sun size={14} color={T.amber} /><span>Light</span></> : <><Moon size={14} /><span>Dark</span></>}
+            </button>
+            <button onClick={() => { setPage("settings"); setSettingsTab?.("profile"); setShowMenu(false); }} className="btn-ghost" style={{ flex: 1, padding: "10px", justifyContent: "center" }}>
+              <User size={14} /><span>Profile</span>
+            </button>
+            <button onClick={() => { setPage("settings"); setSettingsTab?.("export"); setShowMenu(false); }} className="btn-ghost" style={{ flex: 1, padding: "10px", justifyContent: "center" }}>
+              <Download size={14} /><span>Export</span>
+            </button>
+            <button onClick={() => { onLogout(); setShowMenu(false); }} className="btn-ghost" style={{ flex: 1, padding: "10px", color: T.red, justifyContent: "center" }}>
+              <LogOut size={14} /><span>Sign Out</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
     <div className="mobile-nav">
-      {mainItems.slice(0, 5).map(n => (
+      {mainItems.map(n => (
         <button key={n.id} onClick={() => setPage(n.id)} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3, padding: "8px 4px", border: "none", background: "transparent", cursor: "pointer", color: page === n.id ? T.accent : T.textMuted, fontSize: 10, fontWeight: 600, position: "relative" }}>
           <n.icon size={20} />
           <span style={{ whiteSpace: "nowrap", lineHeight: 1 }}>{n.label.split(" ")[0]}</span>
-          {n.id === "approvals" && pendingCnt > 0 && <span style={{ position: "absolute", top: 4, right: "25%", minWidth: 14, height: 14, borderRadius: T.radiusFull, background: T.red, color: "#fff", fontSize: 10, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>{pendingCnt}</span>}
+          {n.id === "approvals" && pendingCnt > 0 && <span style={{ position: "absolute", top: 4, right: "22%", minWidth: 14, height: 14, borderRadius: T.radiusFull, background: T.red, color: "#fff", fontSize: 10, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>{pendingCnt}</span>}
         </button>
       ))}
       <button onClick={() => setShowMenu(true)} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3, padding: "8px 4px", border: "none", background: "transparent", cursor: "pointer", color: T.textMuted, fontSize: 10, fontWeight: 600 }}>
@@ -136,49 +193,60 @@ export function MobNav({ page, setPage, user, onLogout, isDark, toggleTheme, pen
   </>;
 }
 
+// ── Top Bar ──────────────────────────────────────────────────────────────────
 export function TopBar({ page, user, syncSt, lastSync, onSync, toggleTheme, isDark, setPage, ctx, onLogout }) {
   const T = useT();
-  const { changeReqs, products, getStock } = ctx;
-  const titles = { dashboard: "Dashboard", sales: "Sales", purchase: "Purchase", returns: "Returns", inventory: "Inventory", reports: "Reports", pnl: "P&L", products: "Products", vendors: "Vendors", transactions: "Transactions", approvals: "Approvals", settings: "Settings" };
+  const { changeReqs, products, getStock, setSettingsTab } = ctx;
+  const titles = { dashboard:"Dashboard", sales:"Sales", purchase:"Purchase", returns:"Returns", inventory:"Inventory", reports:"Reports", pnl:"P&L", products:"Products", vendors:"Vendors", transactions:"Transactions", approvals:"Approvals", settings:"Settings" };
   const [showNotifs, setShowNotifs] = useState(false);
-  const [showUser, setShowUser] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
   const pending = (changeReqs || []).filter(r => r.status === "pending");
   const oos = products.filter(p => getStock(p.id) <= 0);
   const low = products.filter(p => getStock(p.id) > 0 && getStock(p.id) <= Number(p.minStock));
   const alertsCnt = oos.length + low.length;
   const badgeCnt = user.role === "admin" ? (pending.length + alertsCnt) : 0;
 
-  return <div style={{ position: "sticky", top: 12, zIndex: 40, marginBottom: 20 }}>
-    <div className="glass" style={{ borderRadius: T.radius, padding: "12px 20px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-      <div>
-        <h2 style={{ fontFamily: T.displayFont, fontWeight: 800, fontSize: 21, color: T.text, letterSpacing: "-0.03em" }}>{titles[page] || "StockWise"}</h2>
-        <div style={{ fontSize: 11, color: T.textMuted, marginTop: 1 }}>{new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</div>
-      </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <span className="badge hide-mob" style={{ background: syncSt === "success" ? T.greenBg : syncSt === "syncing" ? T.blueBg : `${T.accent}12`, color: syncSt === "success" ? T.green : syncSt === "syncing" ? T.blue : T.textMuted, cursor: "pointer", fontSize: 11 }} onClick={onSync}>
-          <RefreshCw size={10} style={{ animation: syncSt === "syncing" ? "spin 1s linear infinite" : "none" }} />
-          {syncSt === "syncing" ? "Syncing" : syncSt === "success" ? `Synced ${lastSync || ""}` : "Offline"}
-        </span>
-        {badgeCnt > 0 && <div style={{ position: "relative", cursor: "pointer" }} onClick={() => setShowNotifs(!showNotifs)}>
-          <div style={{ width: 36, height: 36, borderRadius: T.radius, background: T.amberBg, display: "flex", alignItems: "center", justifyContent: "center" }}><Bell size={16} color={T.amber} /></div>
-          <div style={{ position: "absolute", top: -4, right: -4, minWidth: 17, height: 17, borderRadius: T.radiusFull, background: T.red, color: "#fff", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 3px" }}>{badgeCnt}</div>
-          {showNotifs && <div className="glass-strong fade-up" style={{ position: "absolute", top: 45, right: 0, width: 260, borderRadius: T.radius, padding: 14, boxShadow: T.shadowLg, zIndex: 100 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: T.text, marginBottom: 8 }}>Alerts</div>
-            {pending.length > 0 && <button onClick={() => { setPage("approvals"); setShowNotifs(false); }} className="btn-ghost" style={{ width: "100%", justifyContent: "flex-start", marginBottom: 6 }}><CheckCircle size={13} color={T.amber} /> {pending.length} Pending Approvals</button>}
-            {alertsCnt > 0 && <button onClick={() => { setPage("inventory"); setShowNotifs(false); }} className="btn-ghost" style={{ width: "100%", justifyContent: "flex-start" }}><AlertTriangle size={13} color={T.red} /> {alertsCnt} Stock Alerts</button>}
-          </div>}
-        </div>}
-        {/* User avatar with dropdown */}
-        <div style={{ position: "relative" }}>
-          <div onClick={() => setShowUser(!showUser)} style={{ width: 36, height: 36, borderRadius: T.radius, background: `${T.accent}18`, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 14, color: T.accent, cursor: "pointer", border: `1px solid ${T.accent}30` }}>{(user.name || "?")[0]}</div>
-          {showUser && <div className="glass-strong fade-up" style={{ position: "absolute", top: 44, right: 0, width: 200, borderRadius: T.radius, padding: 12, boxShadow: T.shadowLg, zIndex: 100 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: T.text, marginBottom: 4 }}>{user.name}</div>
-            <div style={{ fontSize: 11, color: T.textMuted, textTransform: "capitalize", marginBottom: 10 }}>{user.role}</div>
-            <button className="btn-ghost" onClick={() => { setPage("settings"); setShowUser(false); }} style={{ width: "100%", justifyContent: "flex-start", marginBottom: 6 }}><Settings size={13} /> Settings & Theme</button>
-            <button className="btn-ghost" onClick={() => { onLogout(); setShowUser(false); }} style={{ width: "100%", justifyContent: "flex-start", color: T.red }}><LogOut size={13} /> Sign Out</button>
-          </div>}
+  return (
+    <div style={{ position: "sticky", top: 12, zIndex: 40, marginBottom: 20 }}>
+      <div className="glass" style={{ borderRadius: T.radius, padding: "12px 20px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div>
+          <h2 style={{ fontFamily: T.displayFont, fontWeight: 800, fontSize: 21, color: T.text, letterSpacing: "-0.03em" }}>{titles[page] || "StockWise"}</h2>
+          <div style={{ fontSize: 11, color: T.textMuted, marginTop: 1 }}>{new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</div>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span className="badge hide-mob" style={{ background: syncSt === "success" ? T.greenBg : syncSt === "syncing" ? T.blueBg : `${T.accent}12`, color: syncSt === "success" ? T.green : syncSt === "syncing" ? T.blue : T.textMuted, cursor: "pointer", fontSize: 11 }} onClick={onSync}>
+            <RefreshCw size={10} style={{ animation: syncSt === "syncing" ? "spin 1s linear infinite" : "none" }} />
+            {syncSt === "syncing" ? "Syncing" : syncSt === "success" ? `Synced ${lastSync || ""}` : "Offline"}
+          </span>
+
+          {badgeCnt > 0 && (
+            <div style={{ position: "relative", cursor: "pointer" }} onClick={() => { setShowNotifs(!showNotifs); setShowProfile(false); }}>
+              <div style={{ width: 36, height: 36, borderRadius: T.radius, background: T.amberBg, display: "flex", alignItems: "center", justifyContent: "center" }}><Bell size={16} color={T.amber} /></div>
+              <div style={{ position: "absolute", top: -4, right: -4, minWidth: 17, height: 17, borderRadius: T.radiusFull, background: T.red, color: "#fff", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 3px" }}>{badgeCnt}</div>
+              {showNotifs && (
+                <div className="glass-strong fade-up" style={{ position: "absolute", top: 45, right: 0, width: 260, borderRadius: T.radius, padding: 14, boxShadow: T.shadowLg, zIndex: 100 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: T.text, marginBottom: 8 }}>Alerts</div>
+                  {pending.length > 0 && <button onClick={() => { setPage("approvals"); setShowNotifs(false); }} className="btn-ghost" style={{ width: "100%", justifyContent: "flex-start", marginBottom: 6 }}><CheckCircle size={13} color={T.amber} /> {pending.length} Pending Approvals</button>}
+                  {alertsCnt > 0 && <button onClick={() => { setPage("inventory"); setShowNotifs(false); }} className="btn-ghost" style={{ width: "100%", justifyContent: "flex-start" }}><AlertTriangle size={13} color={T.red} /> {alertsCnt} Stock Alerts</button>}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Avatar with dropdown */}
+          <div style={{ position: "relative" }}>
+            <div onClick={() => { setShowProfile(p => !p); setShowNotifs(false); }} style={{ cursor: "pointer" }}>
+              <Avatar user={user} size={36} />
+            </div>
+            {showProfile && (
+              <>
+                <div style={{ position: "fixed", inset: 0, zIndex: 199 }} onClick={() => setShowProfile(false)} />
+                <ProfileDropdown user={user} onClose={() => setShowProfile(false)} setPage={setPage} setSettingsTab={setSettingsTab} onLogout={onLogout} align="right" />
+              </>
+            )}
+          </div>
         </div>
       </div>
     </div>
-  </div>;
+  );
 }
