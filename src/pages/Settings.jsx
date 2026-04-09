@@ -23,7 +23,7 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
   const isDark = ctx.isDark;
   const isManager = user.role === "manager";
   const isAdmin = user.role === "admin";
-  const tabs = isAdmin ? ["profile", "theme", "users", "series", "access", "export", "activity", "sessions", "invoice", "sheets"] : ["profile", "theme", "export", "howto"];
+  const tabs = isAdmin ? ["profile", "theme", "users", "series", "access", "export", "activity", "sessions", "invoice", "sheets", "howto"] : ["profile", "theme", "export", "howto"];
   const [tab, setTab] = useState(ctx?.settingsTab || "profile");
   // Sync with ctx settingsTab when it changes
   React.useEffect(() => { if (ctx?.settingsTab) setTab(ctx.settingsTab); }, [ctx?.settingsTab]);
@@ -97,13 +97,28 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
       {tabs.map(t => <button key={t} onClick={() => setTab(t)} style={{ padding: "7px 14px", borderRadius: 10, border: `1px solid ${tab === t ? T.accent : T.borderSubtle}`, cursor: "pointer", fontWeight: 600, fontSize: 12, background: tab === t ? T.accent : "transparent", color: tab === t ? "#fff" : T.textSub, transition: "all .15s" }}>{tlbls[t]}</button>)}
     </div>
 
-    {tab === "profile" && <div className="glass" style={{ padding: 22, borderRadius: T.radius }}>
-      <div className="fgrid">
-        <Field label="Display Name" req cl="s2"><GIn value={pForm.name} onChange={e => pf("name", e.target.value)} /></Field>
-        <Field label="New Password"><GIn type="password" value={pForm.newPass} onChange={e => pf("newPass", e.target.value)} placeholder="Leave blank to keep" /></Field>
-        <Field label="Confirm Password"><GIn type="password" value={pForm.confirmPass} onChange={e => pf("confirmPass", e.target.value)} /></Field>
+    {tab === "profile" && <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
+      <div className="glass" style={{ padding: 22, borderRadius: T.radius }}>
+        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 14 }}>Account</div>
+        <div className="fgrid">
+          <Field label="Display Name" req cl="s2"><GIn value={pForm.name} onChange={e => pf("name", e.target.value)} /></Field>
+          <Field label="Username" req cl="s2"><GIn value={pForm.username !== undefined ? pForm.username : (user.username||"")} onChange={e => pf("username", e.target.value)} placeholder={user.username} /></Field>
+          <Field label="New Password"><GIn type="password" value={pForm.newPass||""} onChange={e => pf("newPass", e.target.value)} placeholder="Leave blank to keep" /></Field>
+          <Field label="Confirm Password"><GIn type="password" value={pForm.confirmPass||""} onChange={e => pf("confirmPass", e.target.value)} /></Field>
+        </div>
+        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 16 }}><GBtn onClick={saveProfile} icon={<Check size={13} />}>Save Profile</GBtn></div>
       </div>
-      <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 16 }}><GBtn onClick={saveProfile} icon={<Check size={13} />}>Save Profile</GBtn></div>
+      <div className="glass" style={{ padding: 22, borderRadius: T.radius }}>
+        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 14 }}>Appearance</div>
+        <div style={{ display: "flex", gap: 10 }}>
+          {[{m:"light",l:"Light Mode"},{m:"dark",l:"Dark Mode"}].map(({m,l}) => (
+            <button key={m} onClick={() => { if ((m==="dark") !== isDark) ctx.toggleTheme?.(); }}
+              style={{ flex:1, padding:"12px 16px", borderRadius:T.radius, border:`2px solid ${(m==="dark")===isDark?T.accent:T.border}`, background:(m==="dark")===isDark?T.accentBg:"transparent", cursor:"pointer", fontWeight:600, fontSize:13, color:(m==="dark")===isDark?T.accent:T.textSub }}>
+              {l}
+            </button>
+          ))}
+        </div>
+      </div>
     </div>}
 
     {tab === "users" && isAdmin && <div className="glass" style={{ padding: 20, borderRadius: T.radius }}>
