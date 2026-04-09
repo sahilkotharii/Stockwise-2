@@ -192,8 +192,8 @@ export default function Purchase({ ctx }) {
                       <div style={{ overflowX: "auto", marginBottom: 10 }}>
                         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11 }}>
                           <thead><tr style={{ background: T.isDark?"rgba(255,255,255,0.04)":"rgba(0,0,0,0.04)" }}>
-                            {["#","Description","HSN","Qty","Unit","Cost (ex-GST)","GST%","GST Amt","Line Total"].map((h,i) => (
-                              <th key={i} style={{ padding:"5px 8px", textAlign:["Qty","Cost (ex-GST)","GST%","GST Amt","Line Total"].includes(h)?"right":"left", fontWeight:700, fontSize:11, color:T.textSub, background: T.isDark?"rgba(255,255,255,0.05)":"rgba(0,0,0,0.04)", letterSpacing:"0.04em", borderBottom:`1px solid ${T.borderSubtle}`, whiteSpace:"nowrap" }}>{h}</th>
+                            {["#","Description","HSN","Qty","Unit","MRP","Cost (ex-GST)","GST%","GST Amt","Line Total"].map((h,i) => (
+                              <th key={i} style={{ padding:"5px 8px", textAlign:["Qty","MRP","Cost (ex-GST)","GST%","GST Amt","Line Total"].includes(h)?"right":"left", fontWeight:700, fontSize:11, color:T.textSub, background: T.isDark?"rgba(255,255,255,0.05)":"rgba(0,0,0,0.04)", letterSpacing:"0.04em", borderBottom:`1px solid ${T.borderSubtle}`, whiteSpace:"nowrap" }}>{h}</th>
                             ))}
                           </tr></thead>
                           <tbody>
@@ -210,6 +210,7 @@ export default function Purchase({ ctx }) {
                                   <td style={{ padding:"5px 8px", color:T.textSub, fontFamily:"monospace" }}>{it.hsn||"—"}</td>
                                   <td style={{ padding:"5px 8px", textAlign:"right", fontWeight:600, color:T.text }}>{qty}</td>
                                   <td style={{ padding:"5px 8px", color:T.textMuted }}>{it.unit||"pcs"}</td>
+                                  <td style={{ padding:"5px 8px", textAlign:"right", color:T.textSub }}>{fmtCur(it.mrp||0)}</td>
                                   <td style={{ padding:"5px 8px", textAlign:"right", color:T.textSub }}>{fmtCur(price)}</td>
                                   <td style={{ padding:"5px 8px", textAlign:"right", color:T.amber }}>{rate > 0 ? rate+"%" : "—"}</td>
                                   <td style={{ padding:"5px 8px", textAlign:"right", color:T.amber }}>{gstAmt > 0 ? fmtCur(gstAmt) : "—"}</td>
