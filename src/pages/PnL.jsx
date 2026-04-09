@@ -151,7 +151,7 @@ export default function PnL({ ctx }) {
       </div>
 
       {/* KPI Cards */}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))",gap:12}}>
+      <div className="kgrid">
         {[
           {label:"Total Sales",   value:grossSalesInclGst, sub:"incl. GST",        icon:TrendingUp,  color:T.green},
           {label:"Net Sales",     value:netSalesExclGst,   sub:"excl. GST",         icon:DollarSign,  color:T.accent},
@@ -159,13 +159,7 @@ export default function PnL({ ctx }) {
           {label:"Gross Profit",  value:grossProfit,       sub:`${margin.toFixed(1)}% margin`, icon:TrendingDown,color:grossProfit>=0?T.green:T.red},
           {label:"Closing Stock", value:closingStock,      sub:"ex-GST · at cost",  icon:Package,     color:T.amber},
         ].map((k,i)=>(
-          <div key={i} className="kcard glass">
-            <div style={{position:"absolute",top:-20,right:-20,width:70,height:70,borderRadius:"50%",background:`${k.color}12`}}/>
-            <div style={{width:34,height:34,borderRadius:9,background:`${k.color}1A`,display:"flex",alignItems:"center",justifyContent:"center",marginBottom:10}}><k.icon size={15} color={k.color}/></div>
-            <div style={{fontFamily:T.displayFont,fontWeight:700,fontSize:18,color:k.value<0?T.red:T.text}}>{fmtCur(k.value)}</div>
-            <div style={{fontSize:11,fontWeight:600,color:T.textSub,marginTop:1}}>{k.label}</div>
-            <div style={{fontSize:11,color:T.textMuted}}>{k.sub}</div>
-          </div>
+          <KCard key={i} label={k.label} value={fmtCur(k.value)} sub={k.sub} icon={k.icon} color={k.color} />
         ))}
       </div>
 
