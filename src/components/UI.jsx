@@ -54,7 +54,7 @@ export function StChip({ stock, min }) {
 export function Toast({ msg, type }) {
   const T = useT();
   const c = type === "error" ? T.red : type === "success" ? T.green : T.amber;
-  return <div style={{ position: "fixed", bottom: 90, left: "50%", transform: "translateX(-50%)", zIndex: 500, padding: "10px 20px", borderRadius: 12, background: T.surfaceStrong, border: `1.5px solid ${c}40`, color: c, fontSize: 13, fontWeight: 600, boxShadow: T.shadowXl, whiteSpace: "nowrap" }}>{msg}</div>;
+  return <div style={{ position: "fixed", bottom: 90, left: "50%", transform: "translateX(-50%)", zIndex: 500, padding: "10px 20px", borderRadius: T.radius, background: T.surfaceStrong, border: `1.5px solid ${c}40`, color: c, fontSize: 13, fontWeight: 600, boxShadow: T.shadowXl, whiteSpace: "nowrap" }}>{msg}</div>;
 }
 
 export function Modal({ open, onClose, title, children, footer, width = 520 }) {
@@ -71,7 +71,7 @@ export function Modal({ open, onClose, title, children, footer, width = 520 }) {
         <div className="glass-strong fade-up" onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: width, borderRadius: T.radiusXl, boxShadow: T.shadowXl, flexShrink: 0, alignSelf: "flex-start", overflow: "visible" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: `1px solid ${T.borderSubtle}`, background: T.surfaceStrong, borderRadius: `${T.radiusXl} ${T.radiusXl} 0 0` }}>
             <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 16, color: T.text, letterSpacing: "-0.01em" }}>{title}</div>
-            <button onClick={onClose} className="btn-ghost" style={{ padding: "5px", borderRadius: 8, flexShrink: 0 }}><X size={15} /></button>
+            <button onClick={onClose} className="btn-ghost" style={{ padding: "5px", borderRadius: T.radius, flexShrink: 0 }}><X size={15} /></button>
           </div>
           <div style={{ padding: 20, overflowY: "auto", maxHeight: "75vh", WebkitOverflowScrolling: "touch" }}>{children}</div>
           {footer && <div style={{ padding: "14px 20px", borderTop: `1px solid ${T.borderSubtle}`, display: "flex", justifyContent: "flex-end", gap: 10, background: T.surfaceStrong, flexWrap: "wrap", borderRadius: `0 0 ${T.radiusXl} ${T.radiusXl}` }}>{footer}</div>}
@@ -95,7 +95,7 @@ export function KCard({ label, value, sub, icon: Icon, color, delta }) {
   return <div className="kcard glass" style={cardStyle}>
     <div style={{ position: "absolute", top: -24, right: -24, width: 90, height: 90, borderRadius: "50%", background: isSolid ? "rgba(255,255,255,0.12)" : `${color}10` }} />
     <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 12, flex: "0 0 auto" }}>
-      <div style={{ width: 40, height: 40, borderRadius: 10, background: isSolid ? "rgba(255,255,255,0.2)" : `${color}18`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ width: 40, height: 40, borderRadius: T.radius, background: isSolid ? "rgba(255,255,255,0.2)" : `${color}18`, display: "flex", alignItems: "center", justifyContent: "center" }}>
         <Icon size={19} color={isSolid ? "#fff" : color} />
       </div>
       {delta !== undefined && <span className="badge" style={{ background: isSolid ? "rgba(255,255,255,0.2)" : (delta >= 0 ? T.greenBg : T.redBg), color: isSolid ? "#fff" : (delta >= 0 ? T.green : T.red) }}>{delta >= 0 ? "↑" : "↓"}{Math.abs(delta).toFixed(1)}%</span>}
@@ -138,7 +138,7 @@ export function PeriodBar({ df, setDf, dt, setDt, preset, setPreset, noFY = fals
     }
   };
   const btnStyle = (k) => ({
-    padding: "5px 12px", borderRadius: T.radius === "0px" ? "2px" : 99,
+    padding: "5px 12px", borderRadius: T.radiusFull,
     fontSize: 12, fontWeight: 600, border: "none", cursor: "pointer",
     background: preset === k ? T.accent : "transparent",
     color: preset === k ? "#fff" : T.textSub, transition: "all .15s", whiteSpace: "nowrap"
@@ -176,7 +176,7 @@ export function SearchInput({ value, onChange, placeholder = "Search…", style 
 export function CTip({ active, payload, label, fmt }) {
   const T = useT();
   if (!active || !payload?.length) return null;
-  return <div className="glass-strong" style={{ padding: "10px 14px", borderRadius: 12, fontSize: 12 }}>
+  return <div className="glass-strong" style={{ padding: "10px 14px", borderRadius: T.radius, fontSize: 12 }}>
     <div style={{ fontWeight: 700, color: T.text, marginBottom: 5 }}>{label}</div>
     {payload.map((p, i) => <div key={i} style={{ color: p.color, fontWeight: 600 }}>{p.name}: {fmt ? ("₹" + Number(p.value || 0).toLocaleString("en-IN")) : p.value}</div>)}
   </div>;
@@ -188,19 +188,19 @@ export function Pager({ total, page, ps, setPage, setPs }) {
   if (total <= 0) return null;
   let s = Math.max(1, page - 2), e = Math.min(tp, s + 4);
   if (e - s < 4) s = Math.max(1, e - 4);
-  const nb = dis => ({ padding: "5px 9px", minWidth: 32, borderRadius: 8, border: `1px solid ${T.borderSubtle}`, cursor: dis ? "not-allowed" : "pointer", fontWeight: 600, fontSize: 12, background: "transparent", color: dis ? T.textMuted : T.textSub, opacity: dis ? .4 : 1 });
+  const nb = dis => ({ padding: "5px 9px", minWidth: 32, borderRadius: T.radius, border: `1px solid ${T.borderSubtle}`, cursor: dis ? "not-allowed" : "pointer", fontWeight: 600, fontSize: 12, background: "transparent", color: dis ? T.textMuted : T.textSub, opacity: dis ? .4 : 1 });
   const range = [];
   for (let i = s; i <= e; i++) range.push(i);
   return <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 16px", borderTop: `1px solid ${T.borderSubtle}`, flexWrap: "wrap" }}>
     <span style={{ fontSize: 12, color: T.textMuted, flex: 1, minWidth: 100 }}>{Math.min((page - 1) * ps + 1, total)}–{Math.min(page * ps, total)} <span style={{ color: T.textSub }}>of {total}</span></span>
-    <select className="sel" value={ps} onChange={e => { setPs(Number(e.target.value)); setPage(1); }} style={{ width: "auto", padding: "5px 26px 5px 8px", fontSize: 12, borderRadius: 8 }}>
+    <select className="sel" value={ps} onChange={e => { setPs(Number(e.target.value)); setPage(1); }} style={{ width: "auto", padding: "5px 26px 5px 8px", fontSize: 12, borderRadius: T.radius }}>
       {[20, 50, 100].map(n => <option key={n} value={n}>{n}/page</option>)}
     </select>
     <div style={{ display: "flex", gap: 3 }}>
       <button onClick={() => setPage(1)} disabled={page <= 1} style={nb(page <= 1)}>«</button>
       <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1} style={nb(page <= 1)}>‹</button>
       {s > 1 && <span style={{ fontSize: 12, color: T.textMuted, padding: "0 4px", alignSelf: "center" }}>…</span>}
-      {range.map(p => <button key={p} onClick={() => setPage(p)} style={{ padding: "5px 9px", minWidth: 32, borderRadius: 8, border: `1px solid ${p === page ? T.accent : T.borderSubtle}`, cursor: "pointer", fontWeight: 600, fontSize: 12, background: p === page ? T.accent : "transparent", color: p === page ? "#fff" : T.textSub }}>{p}</button>)}
+      {range.map(p => <button key={p} onClick={() => setPage(p)} style={{ padding: "5px 9px", minWidth: 32, borderRadius: T.radius, border: `1px solid ${p === page ? T.accent : T.borderSubtle}`, cursor: "pointer", fontWeight: 600, fontSize: 12, background: p === page ? T.accent : "transparent", color: p === page ? "#fff" : T.textSub }}>{p}</button>)}
       {e < tp && <span style={{ fontSize: 12, color: T.textMuted, padding: "0 4px", alignSelf: "center" }}>…</span>}
       <button onClick={() => setPage(p => Math.min(tp, p + 1))} disabled={page >= tp} style={nb(page >= tp)}>›</button>
       <button onClick={() => setPage(tp)} disabled={page >= tp} style={nb(page >= tp)}>»</button>
