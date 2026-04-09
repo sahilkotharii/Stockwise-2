@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { checkPassword } from "../utils";
 import { Layers, Eye, EyeOff } from "lucide-react";
 import { useT } from "../theme";
 import { GIn, GBtn, Field } from "./UI";
@@ -10,19 +9,12 @@ export default function Login({ users, onLogin }) {
   const [pass, setPass] = useState("");
   const [err, setErr] = useState("");
   const [showP, setShowP] = useState(false);
-  const [loading, setLoading] = useState(false);
 
-  const handle = async () => {
+  const handle = () => {
     if (!un || !pass) { setErr("Enter username and password"); return; }
-    setLoading(true); setErr("");
-    try {
-      const match = users.find(x => x.username === un);
-      if (!match) { setErr("Invalid username or password"); setLoading(false); return; }
-      const ok = await checkPassword(pass, match.password);
-      if (ok) { onLogin(match); }
-      else setErr("Invalid username or password");
-    } catch(e) { setErr("Login error — try again"); }
-    setLoading(false);
+    const match = users.find(x => x.username === un && x.password === pass);
+    if (match) { onLogin(match); setErr(""); }
+    else setErr("Invalid username or password");
   };
 
   return <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 16, background: T.bg }}>
@@ -51,13 +43,8 @@ export default function Login({ users, onLogin }) {
             </div>
           </Field>
           {err && <div style={{ padding: "10px 14px", borderRadius: T.radius, background: T.redBg, color: T.red, fontSize: 12, fontWeight: 600, textAlign: "center" }}>{err}</div>}
-          <GBtn onClick={handle} sz="lg" style={{ width: "100%", opacity: loading ? 0.7 : 1 }} disabled={loading}>
-            {loading ? "Signing in…" : "Sign In →"}
-          </GBtn>
+          <GBtn onClick={handle} sz="lg" style={{ width: "100%" }}>Sign In →</GBtn>
         </div>
-      </div>
-      <div style={{ textAlign: "center", marginTop: 16, fontSize: 11, color: T.textMuted }}>
-        Default: admin / admin123 &nbsp;·&nbsp; manager / store123
       </div>
     </div>
   </div>;
