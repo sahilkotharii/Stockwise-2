@@ -84,9 +84,11 @@ export default function Purchase({ ctx }) {
       gstAmount: item.gstAmount || 0,
       vendorId: bill.vendorId, date: bill.date,
       notes: `Bill: ${bill.billNo}${bill.notes ? ` · ${bill.notes}` : ""}`,
-      userId: user.id, userName: user.name, billId: bill.id, isDamaged: item.isDamaged
+      userId: user.id, userName: user.name, billId: bill.id, isDamaged: item.isDamaged,
+      paymentMode: bill.paymentMode || ""
     }));
-    saveBills([bill, ...bills]);
+    const billWithUser = { ...bill, userId: user.id, userName: user.name };
+    saveBills([billWithUser, ...bills]);
     saveTransactions([...newTxns, ...transactions]);
     addLog("created", "purchase bill", bill.billNo, `${bill.items.length} items · ${fmtCur(bill.total)}`);
     setModal(false);
@@ -105,9 +107,11 @@ export default function Purchase({ ctx }) {
       vendorId: updatedBill.vendorId, date: updatedBill.date,
       notes: `Bill: ${updatedBill.billNo} (edited)`,
       gstType: updatedBill.gstType || "",
-      userId: user.id, userName: user.name, billId: updatedBill.id, isDamaged: item.isDamaged
+      userId: user.id, userName: user.name, billId: updatedBill.id, isDamaged: item.isDamaged,
+      paymentMode: updatedBill.paymentMode || ""
     }));
-    saveBills(bills.map(b => b.id === updatedBill.id ? updatedBill : b));
+    const updatedWithUser = { ...updatedBill, userId: user.id, userName: user.name };
+    saveBills(bills.map(b => b.id === updatedBill.id ? updatedWithUser : b));
     saveTransactions([...newTxns, ...filteredTxns]);
     addLog("edited", "purchase bill", updatedBill.billNo);
     setEditBill(null);
