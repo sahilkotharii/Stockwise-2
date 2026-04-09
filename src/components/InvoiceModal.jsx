@@ -86,6 +86,7 @@ export function buildHTML(bill, inv, vendor) {
       <td style="padding:6px 8px;text-align:center;border-bottom:1px solid #eee;font-family:monospace;font-size:11px;color:#555">${it.hsnCode || it.hsn || "—"}</td>
       <td style="padding:6px 8px;text-align:center;border-bottom:1px solid #eee">${it.unit || "Pcs"}</td>
       <td style="padding:6px 8px;text-align:right;border-bottom:1px solid #eee">${it.qty}</td>
+      <td style="padding:6px 8px;text-align:right;border-bottom:1px solid #eee;color:#777">₹${(it.mrp||it.effPrice||0).toFixed(2)}</td>
       <td style="padding:6px 8px;text-align:right;border-bottom:1px solid #eee">₹${it.taxablePerUnit.toFixed(2)}</td>
       <td style="padding:6px 8px;text-align:right;border-bottom:1px solid #eee;font-weight:600">₹${it.taxableTotal.toFixed(2)}</td>
       <td style="padding:6px 8px;text-align:right;border-bottom:1px solid #eee;font-weight:700">₹${(it.qty * it.effPrice).toFixed(2)}</td>
@@ -226,9 +227,10 @@ export function buildHTML(bill, inv, vendor) {
         <th style="width:80px;text-align:center">HSN / SAC</th>
         <th style="width:50px">Unit</th>
         <th style="width:45px">Qty</th>
-        <th style="width:100px;text-align:right">Rate (ex-GST)</th>
-        <th style="width:110px;text-align:right">Taxable Value</th>
-        <th style="width:110px;text-align:right">Total (incl. GST)</th>
+        <th style="width:90px;text-align:right">MRP</th>
+        <th style="width:90px;text-align:right">Rate (ex-GST)</th>
+        <th style="width:100px;text-align:right">Taxable Value</th>
+        <th style="width:100px;text-align:right">Total (incl. GST)</th>
       </tr>
     </thead>
     <tbody>
@@ -236,7 +238,7 @@ export function buildHTML(bill, inv, vendor) {
     </tbody>
     <tfoot>
       <tr>
-        <td colspan="6" style="text-align:right;padding:7px 8px">Totals</td>
+        <td colspan="7" style="text-align:right;padding:7px 8px">Totals</td>
         <td style="text-align:right;padding:7px 8px">₹${grandTaxable.toFixed(2)}</td>
         <td style="text-align:right;padding:7px 8px">₹${grandTotal.toFixed(2)}</td>
       </tr>
@@ -302,7 +304,7 @@ export default function InvoiceModal({ bill, invSettings, vendors, products, onC
 
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(0,0,0,.75)", display: "flex", alignItems: "center", justifyContent: "center", padding: "12px" }}>
-      <div style={{ background: T.surfaceStrong, borderRadius: 18, boxShadow: T.shadowXl, width: "100%", maxWidth: 880, maxHeight: "95vh", display: "flex", flexDirection: "column" }}>
+      <div style={{ background: T.surfaceStrong, borderRadius: T.radiusXl, boxShadow: T.shadowXl, width: "100%", maxWidth: 880, maxHeight: "95vh", display: "flex", flexDirection: "column" }}>
 
         {/* Header */}
         <div style={{ padding: "14px 18px", display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: `1px solid ${T.borderSubtle}`, flexShrink: 0 }}>
