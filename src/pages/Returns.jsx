@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import { Plus, Search, X, Eye, Trash2, RotateCcw, Package, Truck, AlertTriangle, Edit2 } from "lucide-react";
 import { useT } from "../theme";
 import { KCard, GBtn, GIn, GS, GTa, Field, Modal, Pager, PeriodBar, SearchInput } from "../components/UI";
+import { ProductSearch } from "../components/BillForm";
 import VendorSearch from "../components/VendorSearch";
 import { uid, today, fmtCur, fmtDate, inRange } from "../utils";
 
@@ -38,7 +39,6 @@ export default function Returns({ ctx }) {
   const [selRets, setSelRets] = useState(new Set());
   const tgRet = id => setSelRets(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
   const [exp, setExp] = useState({});
-  const [prodSearch, setProdSearch] = useState({});
   const [viewTxn, setViewTxn] = useState(null);
   const [editTxn, setEditTxn] = useState(null);
   useEffect(() => setPg(1), [df, dt, typeFilter, search, ps]);
@@ -237,10 +237,7 @@ export default function Returns({ ctx }) {
     <div className="glass" style={{ padding: 18, borderRadius: T.radius }}>
       <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 14 }}>Returns Log</div>
       <div className="filter-wrap" style={{ marginBottom: 12 }}>
-        <div style={{ position: "relative", flex: "1 1 160px" }}>
-          
-          <input className="inp" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search product, notes…" style={{ paddingLeft: 28 }} />
-        </div>
+        <SearchInput value={search} onChange={e => setSearch(e.target.value)} placeholder="Search product, notes…" style={{ flex: "1 1 160px" }} />
         <div style={{ display: "flex", gap: 5 }}>
           {["all", "sales_return", "purchase_return", "damaged"].map(f => (
             <button key={f} onClick={() => setTypeFilter(f)} style={{ padding: "5px 12px", borderRadius: T.radiusFull, fontSize: 11, fontWeight: 600, border: "none", cursor: "pointer", background: typeFilter === f ? T.accent : T.isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.05)", color: typeFilter === f ? "#fff" : T.textSub }}>
@@ -457,36 +454,8 @@ export default function Returns({ ctx }) {
               const stk = item.productId ? getStock(item.productId) : null;
               return (
                 <div key={item.id} style={{ display: "grid", gridTemplateColumns: "1fr 70px 100px 70px 32px", gap: 8, padding: "8px 12px", alignItems: "center", borderTop: `1px solid ${T.borderSubtle}` }}>
-                  <div style={{ position: "relative" }}>
-                    <div style={{ position: "relative" }}>
-                      <svg style={{ position:"absolute", left:10, top:"50%", transform:"translateY(-50%)", width:13, height:13, fill:"none", stroke:T.textMuted, strokeWidth:2, pointerEvents:"none" }} viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                      <input className="inp" style={{ paddingLeft:30 }}
-                        value={prodSearch[item.id] !== undefined ? prodSearch[item.id] : (products.find(p=>p.id===item.productId)?.name || "")}
-                        onChange={e => setProdSearch(s => ({...s, [item.id]: e.target.value}))}
-                        onFocus={e => setProdSearch(s => ({...s, [item.id]: ""}))}
-                        onBlur={() => setTimeout(() => setProdSearch(s => { const n={...s}; delete n[item.id]; return n; }), 180)}
-                        placeholder={`Search product ${i + 1}…`}
-                      />
-                    </div>
-                    {prodSearch[item.id] !== undefined && (
-                      <div style={{ position:"absolute", top:"100%", left:0, right:0, zIndex:99, background:T.surfaceStrong, border:`1px solid ${T.border}`, borderRadius:T.radius, boxShadow:T.shadowLg, maxHeight:200, overflowY:"auto", marginTop:2 }} className="spring-down">
-                        {products.filter(p => {
-                          const q = (prodSearch[item.id]||"").toLowerCase();
-                          return !q || p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q);
-                        }).slice(0,20).map(p => (
-                          <div key={p.id} onMouseDown={() => { upItem(item.id, "productId", p.id); setProdSearch(s => { const n={...s}; delete n[item.id]; return n; }); }}
-                            style={{ padding:"9px 12px", cursor:"pointer", borderBottom:`1px solid ${T.borderSubtle}`, transition:"background .12s" }}
-                            onMouseEnter={e => e.currentTarget.style.background=T.isDark?"rgba(255,255,255,0.07)":"rgba(0,0,0,0.04)"}
-                            onMouseLeave={e => e.currentTarget.style.background="transparent"}>
-                            <div style={{ fontWeight:600, fontSize:13, color:T.text }}>{p.name}</div>
-                            <div style={{ fontSize:11, color:T.textMuted }}>{p.sku} · Stock: {getStock(p.id)}</div>
-                          </div>
-                        ))}
-                        {products.filter(p => { const q=(prodSearch[item.id]||"").toLowerCase(); return !q||p.name.toLowerCase().includes(q)||p.sku.toLowerCase().includes(q); }).length === 0 && (
-                          <div style={{ padding:"10px 12px", color:T.textMuted, fontSize:12 }}>No products found</div>
-                        )}
-                      </div>
-                    )}
+                  <div>
+                    <ProductSearch value={item.productId} onChange={v => upItem(item.id, "productId", v)} products={products} placeholder={`Product ${i + 1}…`} />
                     {stk !== null && <div style={{ fontSize:11, marginTop:2, color:T.textMuted }}>Stock: {stk}</div>}
                   </div>
                   <GIn type="number" min="1" value={item.qty} onChange={e => upItem(item.id, "qty", e.target.value)} />
