@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { Calendar, Download, TrendingUp, RotateCcw, Activity, DollarSign, ShoppingCart, Box, Truck, Tag } from "lucide-react";
 import { useT } from "../theme";
-import { KCard, CTip, GBtn, GS, StChip } from "../components/UI";
+import { KCard, CTip, GBtn, GS, StChip, PeriodBar } from "../components/UI";
 import { fmtCur, today, inRange, getLast12Months, monthOf, safeDate, toCSV, dlCSV, calcBillGst } from "../utils";
 
 const TABS = ["Sales", "Purchase", "Products", "Inventory"];
@@ -13,6 +13,7 @@ export default function Reports({ ctx }) {
   const [tab, setTab] = useState("Sales");
 
   // ── Global date filter ──────────────────────────────────────────────────
+  const [preset, setPreset] = useState("90d");
   const [df, setDf] = useState(() => { const d = new Date(); d.setMonth(d.getMonth() - 3); return d.toISOString().split("T")[0]; });
   const [dt, setDt] = useState(today());
   const [catF, setCatF] = useState("");
@@ -178,21 +179,12 @@ export default function Reports({ ctx }) {
   }, [products, categories, getStock]);
 
   const filterBar = (
-    <div className="glass" style={{ padding: "12px 16px", borderRadius: 12, marginBottom: 16 }}>
-      <div className="filter-wrap">
-        <Calendar size={14} color={T.textMuted} />
-        <input type="date" className="inp" value={df} onChange={e => setDf(e.target.value)} style={{ flex: "0 1 120px" }} />
-        <span style={{ fontSize: 12, color: T.textMuted }}>→</span>
-        <input type="date" className="inp" value={dt} onChange={e => setDt(e.target.value)} style={{ flex: "0 1 120px" }} />
-        {tab === "Sales" && <>
-          <GS value={catF} onChange={e => setCatF(e.target.value)} placeholder="All Categories">{categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</GS>
-        </>}
-        {tab === "Purchase" && <GS value={vendorF} onChange={e => setVendorF(e.target.value)} placeholder="All Vendors">{vendors.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}</GS>}
-        {tab === "Products" && <>
-          <GS value={catF} onChange={e => setCatF(e.target.value)} placeholder="All Categories">{categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</GS>
-        </>}
-        <GBtn v="ghost" sz="sm" onClick={() => dlCSV(toCSV(prodPerf.map(x => ({ product: x.p?.name, sku: x.p?.sku, units: x.units, revenue: x.revenue, cost: x.cost, profit: x.profit, margin: x.margin + "%" })), ["product", "sku", "units", "revenue", "cost", "profit", "margin"]), "report")} icon={<Download size={13} />}>Export</GBtn>
-      </div>
+    <div className="filter-wrap" style={{ marginBottom: 14 }}>
+      <PeriodBar df={df} setDf={setDf} dt={dt} setDt={setDt} preset={preset} setPreset={setPreset} />
+      {tab === "Sales" && <GS value={catF} onChange={e => setCatF(e.target.value)} placeholder="All Categories">{categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</GS>}
+      {tab === "Purchase" && <GS value={vendorF} onChange={e => setVendorF(e.target.value)} placeholder="All Vendors">{vendors.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}</GS>}
+      {tab === "Products" && <GS value={catF} onChange={e => setCatF(e.target.value)} placeholder="All Categories">{categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</GS>}
+      <GBtn v="ghost" sz="sm" onClick={() => dlCSV(toCSV(prodPerf.map(x => ({ product: x.p?.name, sku: x.p?.sku, units: x.units, revenue: x.revenue, cost: x.cost, profit: x.profit, margin: x.margin + "%" })), ["product", "sku", "units", "revenue", "cost", "profit", "margin"]), "report")} icon={<Download size={13} />}>Export</GBtn>
     </div>
   );
 
@@ -207,7 +199,7 @@ export default function Reports({ ctx }) {
 
       {/* ── SALES TAB ── */}
       {tab === "Sales" && <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-        <div className="kgrid" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14 }}>
+        <div className="kgrid" style={{ display: "grid", gap: 14, gap: 14 }}>
           <KCard label="Total Sales" value={fmtCur(finalRevenue)} sub="incl. GST · after returns" icon={TrendingUp} color={T.green} />
           <KCard label="Returns" value={fmtCur(retAmt)} sub="at return price" icon={RotateCcw} color={T.red} />
           <KCard label="Net Revenue" value={fmtCur(netRev)} sub="excl. GST · after returns" icon={Activity} color={T.accent} />
