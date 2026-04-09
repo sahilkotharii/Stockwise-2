@@ -61,9 +61,12 @@ export default function App() {
     setTimeout(() => setToast(null), 3500);
   };
 
-  // Debounce helper for push — prevents rapid sequential saves from flooding GAS
+  // Debounce helper — tracks pending pushes so pull() doesn't overwrite unsaved data
   const pushTimers = {};
-  const debouncedPush = (entity, rows, delay = 1500) => {
+  const pushPending = React.useRef(false);
+
+  const debouncedPush = (entity, rows, delay = 2000) => {
+    pushPending.current = true;
     if (pushTimers[entity]) clearTimeout(pushTimers[entity]);
     pushTimers[entity] = setTimeout(() => push(entity, rows), delay);
   };
@@ -163,6 +166,8 @@ export default function App() {
   // ── Sheets sync ───────────────────────────────────────────────────────────
   async function pull(url) {
     if (!url) return;
+    // Don't pull while we have unsaved local changes pending upload
+    if (pushPending.current) { setSyncSt("syncing"); setTimeout(() => pull(url), 3000); return; }
     setSyncSt("syncing");
     try {
       const data = await sheetsGet(url);
@@ -243,6 +248,8 @@ export default function App() {
   }
 
   async function push(entity, rows) {
+    delete pushTimers[entity];
+    if (!Object.keys(pushTimers).length) pushPending.current = false;
     const url = sheetsUrl || DEFAULT_SHEETS_URL;
     if (!url) return;
     setSyncSt("syncing");
