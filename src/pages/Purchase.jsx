@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Plus, X, Eye, Trash2, Edit2, ShoppingCart, FileText, Box, Package, Download } from "lucide-react";
 import { useT } from "../theme";
-import { KCard, GBtn, GS, Modal, Pager } from "../components/UI";
+import { KCard, GBtn, GS, Modal, Pager, PeriodBar, SearchInput } from "../components/UI";
 import BillForm from "../components/BillForm";
 import { uid, fmtCur, fmtDate, inRange, today } from "../utils";
 
@@ -130,7 +130,7 @@ export default function Purchase({ ctx }) {
       <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
         <span style={{ fontSize:11, fontWeight: 700, color: T.textMuted, letterSpacing: "0.05em" }}>PERIOD</span>
         {PRESETS.map(p => (
-          <button key={p.k} onClick={() => handlePreset(p.k)} style={{ padding: "5px 12px", borderRadius: 99, fontSize: 12, fontWeight: 600, border: "none", cursor: "pointer", background: preset === p.k ? T.blue : "transparent", color: preset === p.k ? "#fff" : T.textSub, transition: "all .15s" }}>{p.l}</button>
+          <button key={p.k} onClick={() => handlePreset(p.k)} style={{ padding: "5px 12px", borderRadius: 99, fontSize: 12, fontWeight: 600, border: "none", cursor: "pointer", background: preset === p.k ? T.accent : "transparent", color: preset === p.k ? "#fff" : T.textSub, transition: "all .15s" }}>{p.l}</button>
         ))}
         <input type="date" className="inp" value={df} onChange={e => { setDf(e.target.value); setPreset(""); }} style={{ width: 120, fontSize: 12 }} />
         <span style={{ fontSize: 12, color: T.textMuted }}>→</span>
@@ -216,7 +216,7 @@ export default function Purchase({ ctx }) {
                                   <td style={{ padding:"5px 8px", color:T.textMuted }}>{idx+1}</td>
                                   <td style={{ padding:"5px 8px", fontWeight:600, color:T.text }}>{it.productName||"—"}</td>
                                   <td style={{ padding:"5px 8px", color:T.textSub, fontFamily:"monospace" }}>{it.hsn||"—"}</td>
-                                  <td style={{ padding:"5px 8px", textAlign:"right", fontWeight:600 }}>{qty}</td>
+                                  <td style={{ padding:"5px 8px", textAlign:"right", fontWeight:600, color:T.text }}>{qty}</td>
                                   <td style={{ padding:"5px 8px", color:T.textMuted }}>{it.unit||"pcs"}</td>
                                   <td style={{ padding:"5px 8px", textAlign:"right" }}>{fmtCur(price)}</td>
                                   <td style={{ padding:"5px 8px", textAlign:"right", color:T.amber }}>{rate > 0 ? rate+"%" : "—"}</td>
@@ -233,7 +233,7 @@ export default function Purchase({ ctx }) {
                           <tbody>
                             <tr><td style={{ padding:"3px 8px", color:T.textSub }}>Subtotal (ex-GST)</td><td style={{ padding:"3px 8px", textAlign:"right", fontWeight:600 }}>{fmtCur(b.subtotal)}</td></tr>
                             {(b.totalGst||0) > 0 && <tr><td style={{ padding:"3px 8px", color:T.amber }}>GST</td><td style={{ padding:"3px 8px", textAlign:"right", color:T.amber }}>+{fmtCur(b.totalGst)}</td></tr>}
-                            {b.paymentMode && <tr><td style={{ padding:"3px 8px", color:T.textMuted, fontSize:11 }}>Payment</td><td style={{ padding:"3px 8px", textAlign:"right", fontSize:11 }}>{b.paymentMode}</td></tr>}
+                            {b.paymentMode && <tr><td style={{ padding:"3px 8px", color:T.textMuted, fontSize:11 }}>Payment</td><td style={{ padding:"3px 8px", textAlign:"right", fontSize:11, color:T.textSub }}>{b.paymentMode}</td></tr>}
                             <tr style={{ borderTop:`2px solid ${T.borderSubtle}` }}><td style={{ padding:"5px 8px", fontWeight:700, color:T.text }}>Total Paid</td><td style={{ padding:"5px 8px", textAlign:"right", fontWeight:800, fontSize:14, color:T.blue }}>{fmtCur(b.total)}</td></tr>
                           </tbody>
                         </table>
