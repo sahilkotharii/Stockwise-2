@@ -192,14 +192,14 @@ export default function Reports({ ctx }) {
     <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
       {/* Tabs */}
       <div style={{ display: "flex", gap: 6, marginBottom: 16, flexWrap: "wrap" }}>
-        {TABS.map(t => <button key={t} onClick={() => setTab(t)} style={{ padding: "8px 18px", borderRadius: 10, border: `1px solid ${tab === t ? T.accent : T.borderSubtle}`, cursor: "pointer", fontWeight: 600, fontSize: 13, background: tab === t ? T.accent : "transparent", color: tab === t ? "#fff" : T.textSub, transition: "all .15s" }}>{t}</button>)}
+        {TABS.map(t => <button key={t} onClick={() => setTab(t)} style={{ padding: "8px 18px", borderRadius: T.radius, border: `1px solid ${tab === t ? T.accent : T.borderSubtle}`, cursor: "pointer", fontWeight: 600, fontSize: 13, background: tab === t ? T.accent : "transparent", color: tab === t ? "#fff" : T.textSub, transition: "all .15s" }}>{t}</button>)}
       </div>
 
       {filterBar}
 
       {/* ── SALES TAB ── */}
       {tab === "Sales" && <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-        <div className="kgrid" style={{ display: "grid", gap: 14, gap: 14 }}>
+        <div className="kgrid" style={{ gap: 14 }}>
           <KCard label="Total Sales" value={fmtCur(finalRevenue)} sub="incl. GST · after returns" icon={TrendingUp} color={T.green} />
           <KCard label="Returns" value={fmtCur(retAmt)} sub="at return price" icon={RotateCcw} color={T.red} />
           <KCard label="Net Revenue" value={fmtCur(netRev)} sub="excl. GST · after returns" icon={Activity} color={T.accent} />
@@ -260,7 +260,7 @@ export default function Reports({ ctx }) {
                 <Pie data={catPerf} cx="50%" cy="50%" outerRadius={65} dataKey="revenue" paddingAngle={3} nameKey="name">
                   {catPerf.map((_, i) => <Cell key={i} fill={catPerf[i].color || PC[i % PC.length]} />)}
                 </Pie>
-                <Tooltip formatter={v => fmtCur(v)} contentStyle={{ background: T.surfaceStrong, border: `1px solid ${T.border}`, borderRadius: 10, fontSize: 11 }} />
+                <Tooltip formatter={v => fmtCur(v)} contentStyle={{ background: T.surfaceStrong, border: `1px solid ${T.border}`, borderRadius: T.radius, fontSize: 11 }} />
               </PieChart>
             </ResponsiveContainer>}
             <div style={{ overflowX: "auto", marginTop: 4 }}>
@@ -282,7 +282,7 @@ export default function Reports({ ctx }) {
 
       {/* ── PURCHASE TAB ── */}
       {tab === "Purchase" && <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-        <div className="kgrid" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14 }}>
+        <div className="kgrid" style={{ gap: 14 }}>
           <KCard label="Total Purchase Cost" value={fmtCur(pc)} sub={`${pu} units`} icon={ShoppingCart} color={T.blue} />
           <KCard label="Vendors Used" value={vendorPerf.length.toString()} sub="In selected period" icon={Truck} color={T.accent} />
           <KCard label="Orders Placed" value={new Set(purch.map(t => t.billId).filter(Boolean)).size.toString()} sub="Purchase orders" icon={Box} color={T.purple} />
@@ -310,8 +310,8 @@ export default function Reports({ ctx }) {
               {vendorPerf.slice(0, 5).map((v, i) => <div key={i} style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 12, fontWeight: 600, color: T.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{v.name}</div>
-                  <div style={{ height: 4, borderRadius: 99, background: T.isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)", marginTop: 4, overflow: "hidden" }}>
-                    <div style={{ height: "100%", borderRadius: 99, width: `${(v.cost / vendorPerf[0].cost) * 100}%`, background: T.blue }} />
+                  <div style={{ height: 4, borderRadius: T.radiusFull, background: T.isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)", marginTop: 4, overflow: "hidden" }}>
+                    <div style={{ height: "100%", borderRadius: T.radiusFull, width: `${(v.cost / vendorPerf[0].cost) * 100}%`, background: T.blue }} />
                   </div>
                 </div>
                 <div style={{ fontSize: 12, fontWeight: 600, color: T.blue, flexShrink: 0 }}>{fmtCur(v.cost)}</div>
@@ -394,7 +394,7 @@ export default function Reports({ ctx }) {
 
       {/* ── INVENTORY TAB ── */}
       {tab === "Inventory" && <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-        <div className="kgrid" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14 }}>
+        <div className="kgrid" style={{ gap: 14 }}>
           <KCard label="Total Inventory Value" value={fmtCur(products.reduce((s, p) => s + getStock(p.id) * Number(p.purchasePrice), 0))} sub={`${products.length} SKUs`} icon={Box} color={T.accent} />
           <KCard label="Low Stock Items" value={products.filter(p => getStock(p.id) > 0 && getStock(p.id) <= Number(p.minStock)).length.toString()} sub="Below min level" icon={Tag} color={T.amber} />
           <KCard label="Out of Stock" value={products.filter(p => getStock(p.id) <= 0).length.toString()} sub="Zero units" icon={Box} color={T.red} />
@@ -408,7 +408,7 @@ export default function Reports({ ctx }) {
               <BarChart data={products.map(p => ({ name: (p.name || "").slice(0, 20), fullName: p.name, sku: p.sku, stock: getStock(p.id) })).sort((a, b) => b.stock - a.stock).slice(0, 15)} layout="vertical" margin={{ left: 140, right: 30 }}>
                 <XAxis type="number" tick={{ fontSize:11, fill: T.textMuted }} axisLine={false} tickLine={false} />
                 <YAxis type="category" dataKey="name" tick={{ fontSize:11, fill: T.textMuted }} width={140} axisLine={false} tickLine={false} />
-                <Tooltip content={({ active, payload }) => active && payload?.length ? <div style={{ background: T.surfaceStrong, border: `1px solid ${T.border}`, borderRadius: 8, padding: "8px 12px", fontSize: 11 }}><div style={{ fontWeight: 600, color: T.text }}>{payload[0].payload.fullName}</div><div style={{ color: T.textMuted }}>{payload[0].payload.sku}</div><div style={{ color: T.accent, fontWeight: 700 }}>{payload[0].value} units</div></div> : null} />
+                <Tooltip content={({ active, payload }) => active && payload?.length ? <div style={{ background: T.surfaceStrong, border: `1px solid ${T.border}`, borderRadius: T.radius, padding: "8px 12px", fontSize: 11 }}><div style={{ fontWeight: 600, color: T.text }}>{payload[0].payload.fullName}</div><div style={{ color: T.textMuted }}>{payload[0].payload.sku}</div><div style={{ color: T.accent, fontWeight: 700 }}>{payload[0].value} units</div></div> : null} />
                 <Bar dataKey="stock" name="Stock" fill={T.accent} radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -421,7 +421,7 @@ export default function Reports({ ctx }) {
                 <Pie data={invStats} cx="50%" cy="50%" outerRadius={60} dataKey="value" paddingAngle={3}>
                   {invStats.map((_, i) => <Cell key={i} fill={invStats[i].color || PC[i % PC.length]} />)}
                 </Pie>
-                <Tooltip formatter={v => fmtCur(v)} contentStyle={{ background: T.surfaceStrong, border: `1px solid ${T.border}`, borderRadius: 10, fontSize: 11 }} />
+                <Tooltip formatter={v => fmtCur(v)} contentStyle={{ background: T.surfaceStrong, border: `1px solid ${T.border}`, borderRadius: T.radius, fontSize: 11 }} />
               </PieChart>
             </ResponsiveContainer>}
             <div style={{ display: "flex", flexDirection: "column", gap: 5, marginTop: 8 }}>
