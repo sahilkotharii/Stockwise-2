@@ -380,22 +380,6 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
       </div>
 
       <div className="glass" style={{ padding: 20, borderRadius: T.radius }}>
-        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 4 }}>Corner Style</div>
-        <div style={{ fontSize: 12, color: T.textMuted, marginBottom: 16 }}>Controls corner radius everywhere — buttons, cards, inputs, badges.</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10 }}>
-          {Object.entries(RADIUS_MODES || {}).map(([key, rm]) => (
-            <button key={key} onClick={() => setRadiusMode && setRadiusMode(key)}
-              style={{ padding: "14px 10px", borderRadius: rm.radius === "0px" ? "0px" : rm.radius === "14px" ? "12px" : "20px", border: `2px solid ${radiusMode === key ? T.accent : T.border}`, background: radiusMode === key ? T.accentBg : "transparent", cursor: "pointer", textAlign: "center", transition: "all .15s" }}>
-              <div style={{ fontSize: 20, marginBottom: 6 }}>{rm.icon}</div>
-              <div style={{ fontWeight: 700, color: T.text, fontSize: 13 }}>{rm.name}</div>
-              <div style={{ fontSize: 11, color: T.textMuted, marginTop: 2 }}>{rm.desc}</div>
-              {radiusMode === key && <div style={{ marginTop: 6, fontSize: 11, fontWeight: 700, color: T.accent }}>Active</div>}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="glass" style={{ padding: 20, borderRadius: T.radius }}>
         <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 4 }}>Accent Colour</div>
         <div style={{ fontSize: 12, color: T.textMuted, marginBottom: 16 }}>Changes the primary action colour throughout the app.</div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
@@ -423,17 +407,6 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
               {cornerStyle === k && <div style={{ fontSize: 11, color: T.accent, marginTop: 4, fontWeight: 700 }}>Active</div>}
             </button>
           ))}
-        </div>
-      </div>
-
-      {/* Logo / Branding */}
-      <div className="glass" style={{ padding: 20, borderRadius: T.radius }}>
-        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 4 }}>Custom Logo</div>
-        <div style={{ fontSize: 12, color: T.textMuted, marginBottom: 12 }}>Paste an image URL to replace the StockWise logo with your own brand.</div>
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          {logoUrl && <img src={logoUrl} alt="logo" style={{ height: 40, maxWidth: 80, objectFit: "contain", borderRadius: T.radius, border: `1px solid ${T.border}` }} />}
-          <GIn value={logoUrl || ""} onChange={e => setLogoUrl && setLogoUrl(e.target.value)} placeholder="https://your-domain.com/logo.png" style={{ flex: 1 }} />
-          {logoUrl && <GBtn v="ghost" sz="sm" onClick={() => setLogoUrl && setLogoUrl("")}>Clear</GBtn>}
         </div>
       </div>
 
