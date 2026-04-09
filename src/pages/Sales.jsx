@@ -125,7 +125,8 @@ ${sharedStyle}
       gstRate: item.gstRate || 0, gstAmount: item.gstAmount || 0,
       vendorId: bill.vendorId, date: bill.date,
       notes: `Bill: ${bill.billNo}${bill.notes ? ` · ${bill.notes}` : ""}`,
-      userId: user.id, userName: user.name, billId: bill.id, isDamaged: item.isDamaged
+      userId: user.id, userName: user.name, billId: bill.id, isDamaged: item.isDamaged,
+      paymentMode: bill.paymentMode || ""
     }));
     saveBills([bill, ...bills]);
     saveTransactions([...newTxns, ...transactions]);
@@ -143,7 +144,8 @@ ${sharedStyle}
       vendorId: updatedBill.vendorId, date: updatedBill.date,
       notes: `Bill: ${updatedBill.billNo} (edited)`,
       gstType: updatedBill.gstType || "",
-      userId: user.id, userName: user.name, billId: updatedBill.id, isDamaged: item.isDamaged
+      userId: user.id, userName: user.name, billId: updatedBill.id, isDamaged: item.isDamaged,
+      paymentMode: updatedBill.paymentMode || ""
     }));
     saveBills(bills.map(b => b.id === updatedBill.id ? updatedBill : b));
     saveTransactions([...newTxns, ...filteredTxns]);
