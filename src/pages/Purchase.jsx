@@ -142,10 +142,7 @@ export default function Purchase({ ctx }) {
     <div className="glass" style={{ padding: 18, borderRadius: T.radius }}>
       <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 14 }}>Purchase Bills</div>
       <div className="filter-wrap" style={{ marginBottom: 12 }}>
-        <div style={{ position: "relative", flex: "1 1 160px" }}>
-          <span style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: T.textMuted, fontSize: 12 }}>🔍</span>
-          <input className="inp" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search bill, product…" style={{ paddingLeft: 28 }} />
-        </div>
+        <SearchInput value={search} onChange={e => setSearch(e.target.value)} placeholder="Search bill, product…" style={{ flex: "1 1 160px" }} />
         <GS value={vF} onChange={e => setVF(e.target.value)} placeholder="All Vendors">{vendors.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}</GS>
         {(vF || search) && <GBtn v="ghost" sz="sm" onClick={() => { setVF(""); setSearch(""); }} icon={<X size={12} />}>Clear</GBtn>}
       </div>
