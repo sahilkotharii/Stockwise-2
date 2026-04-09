@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Layers } from "lucide-react";
 
-import { buildTheme, ThemeCtx, makeCSS, THEMES, ACCENT_PRESETS } from "./theme";
+import { buildTheme, ThemeCtx, makeCSS, THEMES, ACCENT_PRESETS, CORNER_STYLES } from "./theme";
 import { SK, lsGet, lsSet } from "./storage";
 import { sheetsGet, syncEnt } from "./sheets";
 import { uid, today } from "./utils";
@@ -48,12 +48,13 @@ export default function App() {
   const [accentKey, setAccentKey] = useState("copper");
   const [customColor, setCustomColorState] = useState("");
   const [bgImage, setBgImageState] = useState("");
+  const [cornerStyle, setCornerStyleState] = useState("rounded");
+  const [logoUrl, setLogoUrlState] = useState("");
   const [changeReqs, setChangeReqs] = useState([]);
   const [actLog, setActLog] = useState([]);
   const [toast, setToast] = useState(null);
   const [invoiceSettings, setInvoiceSettings] = useState({});
 
-  const theme = buildTheme(themeId, accentKey, isDark, customColor, bgImage);
 
   const showToast = (msg, type = "success") => {
     setToast({ msg, type });
@@ -75,13 +76,15 @@ export default function App() {
     document.head.appendChild(lnk);
 
     (async () => {
-      const [u, p, c, v, t, b, sUrl, ok, dp, cr, al, tid, ak, cc, bgi] = await Promise.all([
+      const [u, p, c, v, t, b, sUrl, ok, dp, cr, al, tid, ak, cc, bgi, rm, lu] = await Promise.all([
         lsGet(SK.users, null), lsGet(SK.products, null), lsGet(SK.categories, null),
         lsGet(SK.vendors, null), lsGet(SK.transactions, null),
         lsGet(SK.bills, []), lsGet(SK.sheetsUrl, DEFAULT_SHEETS_URL), lsGet("sw_ok", false),
         lsGet(SK.theme, false), lsGet(SK.changeReqs, []), lsGet(SK.actLog, []),
         lsGet("sw_theme_id", "glass"), lsGet("sw_accent_key", "copper"),
-        lsGet("sw_custom_color", ""), lsGet("sw_bg_image", "")
+        lsGet("sw_custom_color", ""), lsGet("sw_bg_image", ""),
+        lsGet("sw_corner_style", "rounded"), lsGet("sw_logo_url", ""),
+        lsGet("sw_radius_mode", "rounded"), lsGet("sw_logo_url", "")
       ]);
 
       const SEED_USERS = [
@@ -104,6 +107,7 @@ export default function App() {
       setSheetsUrl(sUrl || DEFAULT_SHEETS_URL); setIsDark(dp || false);
       setThemeId(tid || "glass"); setAccentKey(ak || "copper");
       setCustomColorState(cc || ""); setBgImageState(bgi || "");
+      setCornerStyleState(cs || "rounded"); setLogoUrlState(lu || "");
       setChangeReqs(cr || []); setActLog(al || []);
       const invS = await lsGet(SK.invoiceSettings, {});
       setInvoiceSettings(invS || {});
@@ -169,19 +173,22 @@ export default function App() {
     })();
   }, []);
 
+
   // ── CSS injection ─────────────────────────────────────────────────────────
   useEffect(() => {
     let el = document.getElementById("sw-css");
     if (!el) { el = document.createElement("style"); el.id = "sw-css"; document.head.appendChild(el); }
     el.textContent = makeCSS(theme);
     document.body.style.background = theme.bg;
-  }, [themeId, accentKey, isDark, customColor, bgImage]);
+  }, [themeId, accentKey, isDark, customColor, bgImage, cornerStyle]);
 
   const toggleTheme = () => { const n = !isDark; setIsDark(n); lsSet(SK.theme, n); };
   const setTheme = (tid) => { setThemeId(tid); lsSet("sw_theme_id", tid); };
   const setAccent = (ak) => { setAccentKey(ak); lsSet("sw_accent_key", ak); };
   const setCustomColor = (c) => { setCustomColorState(c); lsSet("sw_custom_color", c); };
   const setBgImage = (url) => { setBgImageState(url); lsSet("sw_bg_image", url); };
+  const setCornerStyle = (cs) => { setCornerStyleState(cs); lsSet("sw_corner_style", cs); };
+  const setLogoUrl = (url) => { setLogoUrlState(url); lsSet("sw_logo_url", url); };
 
   // ── Sheets sync ───────────────────────────────────────────────────────────
   async function pull(url) {
@@ -338,9 +345,13 @@ export default function App() {
     saveUsers, saveBills, changeReqs, saveChangeReqs,
     actLog, saveActLog, addChangeReq, addLog,
     invoiceSettings, saveInvoiceSettings,
-    themeId, setTheme, accentKey, setAccent, customColor, setCustomColor, bgImage, setBgImage, THEMES, ACCENT_PRESETS,
+    themeId, setTheme, accentKey, setAccent, customColor, setCustomColor, bgImage, setBgImage,
+    cornerStyle, setCornerStyle, logoUrl, setLogoUrl,
+    THEMES, ACCENT_PRESETS, CORNER_STYLES,
     settingsTab, setSettingsTab, isDark, toggleTheme,
   };
+
+  const theme = buildTheme(themeId, accentKey, isDark, customColor, bgImage, cornerStyle);
 
   const T = theme;
   const ml = `${T.sidebarW + 24}px`;
@@ -388,7 +399,7 @@ export default function App() {
 
   if (!user) return (
     <ThemeCtx.Provider value={T}>
-      <Login users={users} onLogin={handleLogin} />
+      <Login users={users} onLogin={handleLogin} logoUrl={logoUrl} />
     </ThemeCtx.Provider>
   );
 
