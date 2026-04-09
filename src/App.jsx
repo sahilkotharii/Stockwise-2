@@ -416,6 +416,7 @@ export default function App() {
         page={actualPage} setPage={setPage} user={user}
         onLogout={handleLogout} isDark={isDark} toggleTheme={toggleTheme}
         pendingCnt={changeReqs.filter(r => r.status === "pending").length}
+        ctx={ctx}
       />
 
       <div className="main-wrap" style={{ marginLeft: ml, padding: "12px 16px 24px", minHeight: "100vh", transition: "margin .2s" }}>
