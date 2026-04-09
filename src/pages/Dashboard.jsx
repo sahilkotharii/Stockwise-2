@@ -2,21 +2,23 @@ import React, { useState, useMemo } from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { TrendingUp, DollarSign, ShoppingCart, Box, AlertTriangle } from "lucide-react";
 import { useT } from "../theme";
-import { KCard, CTip } from "../components/UI";
+import { KCard, CTip, PeriodBar } from "../components/UI";
 import { fmtCur, fmtDate, calcBillGst } from "../utils";
 const safeDate = v => { if (!v) return ""; if (typeof v === "string") return v.slice(0,10); if (v instanceof Date && !isNaN(v)) return v.toISOString().split("T")[0]; return ""; };
 
 export default function Dashboard({ ctx }) {
   const T = useT();
   const { products, transactions, getStock, bills, vendors } = ctx;
-  const [range, setRange] = useState("30");
+  const [preset, setPreset] = useState("30d");
+  const [df, setDf] = useState(new Date(Date.now()-30*864e5).toISOString().split("T")[0]);
+  const [dt, setDt] = useState(new Date().toISOString().split("T")[0]);
 
   const now = new Date();
-  const fStr = new Date(now.getTime() - parseInt(range) * 86400000).toISOString().split("T")[0];
+  const fStr = df;
 
   // ── Revenue from BILLS (ground truth) ──────────────────────────────────
-  const periodSaleBills = useMemo(() => bills.filter(b => b.type === "sale" && safeDate(b.date) >= fStr), [bills, range]);
-  const periodPurBills = useMemo(() => bills.filter(b => b.type === "purchase" && safeDate(b.date) >= fStr), [bills, range]);
+  const periodSaleBills = useMemo(() => bills.filter(b => b.type === "sale" && safeDate(b.date) >= df && safeDate(b.date) <= dt), [bills, df, dt]);
+  const periodPurBills = useMemo(() => bills.filter(b => b.type === "purchase" && safeDate(b.date) >= df && safeDate(b.date) <= dt), [bills, df, dt]);
 
   // Revenue incl GST (bill.total = after discount, incl GST)
   const totalRevenue = periodSaleBills.reduce((s, b) => s + Number(b.total || 0), 0);
@@ -24,7 +26,7 @@ export default function Dashboard({ ctx }) {
   const netRevenue = totalRevenue - totalGstCollected; // excl GST
 
   // Returns reduce revenue
-  const retTxns = useMemo(() => transactions.filter(t => t.type === "return" && safeDate(t.date) >= fStr), [transactions, range]);
+  const retTxns = useMemo(() => transactions.filter(t => t.type === "return" && safeDate(t.date) >= df && safeDate(t.date) <= dt), [transactions, df, dt]);
   const retRevenue = retTxns.reduce((s, t) => s + Number(t.qty) * Number(t.price || 0), 0);
   const retGst = retTxns.reduce((s, t) => {
     const rate = Number(t.gstRate || products.find(p => p.id === t.productId)?.gstRate || 0);
@@ -54,10 +56,10 @@ export default function Dashboard({ ctx }) {
   // ── Daily chart ──────────────────────────────────────────────────────────
   const dailyData = useMemo(() => {
     const map = {};
-    for (let i = parseInt(range) - 1; i >= 0; i--) {
-      const d = new Date(now); d.setDate(d.getDate() - i);
+    const start = new Date(df), end = new Date(dt);
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
       const k = d.toISOString().split("T")[0];
-      map[k] = { date: d.toLocaleDateString("en-IN", { day: "2-digit", month: "short" }), revenue: 0, purchase: 0 };
+      map[k] = { date: new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short" }), revenue: 0, purchase: 0 };
     }
     bills.forEach(b => {
       if (map[b.date]) {
@@ -66,7 +68,7 @@ export default function Dashboard({ ctx }) {
       }
     });
     return Object.values(map);
-  }, [bills, range]);
+  }, [bills, df, dt]);
 
   const topProds = useMemo(() => {
     const m = {};
