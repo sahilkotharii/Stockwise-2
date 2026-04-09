@@ -126,60 +126,40 @@ select option{background:${T.isDark?"#1a1a1a":"#fff"};color:${T.text}}
 @keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 
-/* ── iOS liquid-glass spring animations ─────────────────────────── */
-@keyframes springIn{
-  0%{opacity:0;transform:scale(0.82) translateY(12px)}
-  55%{opacity:1;transform:scale(1.04) translateY(-3px)}
-  75%{transform:scale(0.97) translateY(1px)}
-  90%{transform:scale(1.01) translateY(0)}
-  100%{opacity:1;transform:scale(1) translateY(0)}
+/* ── Morphing glass animations ───────────────────────────────────── */
+@keyframes morphIn{
+  0%{opacity:0;transform:scale(0.94) translateY(8px);filter:blur(6px)}
+  60%{opacity:1;filter:blur(1px)}
+  100%{opacity:1;transform:scale(1) translateY(0);filter:blur(0)}
 }
-@keyframes springInDown{
-  0%{opacity:0;transform:scale(0.88) translateY(-16px)}
-  55%{opacity:1;transform:scale(1.03) translateY(4px)}
-  75%{transform:scale(0.98) translateY(-1px)}
-  100%{opacity:1;transform:scale(1) translateY(0)}
+@keyframes morphDown{
+  0%{opacity:0;transform:scale(0.96) translateY(-10px);filter:blur(4px)}
+  60%{opacity:1;filter:blur(0.5px)}
+  100%{opacity:1;transform:scale(1) translateY(0);filter:blur(0)}
 }
-@keyframes springInUp{
-  0%{opacity:0;transform:scale(0.88) translateY(20px)}
-  55%{opacity:1;transform:scale(1.03) translateY(-4px)}
-  75%{transform:scale(0.98) translateY(2px)}
-  100%{opacity:1;transform:scale(1) translateY(0)}
+@keyframes morphUp{
+  0%{opacity:0;transform:scale(0.96) translateY(14px);filter:blur(4px)}
+  60%{opacity:1;filter:blur(0.5px)}
+  100%{opacity:1;transform:scale(1) translateY(0);filter:blur(0)}
 }
-@keyframes jellyPop{
-  0%{transform:scale(1)}
-  25%{transform:scale(0.88)}
-  55%{transform:scale(1.12)}
-  75%{transform:scale(0.96)}
-  90%{transform:scale(1.03)}
-  100%{transform:scale(1)}
+@keyframes morphExpand{
+  0%{opacity:0;transform:scaleY(0.6);filter:blur(3px);transform-origin:top center}
+  70%{opacity:1;filter:blur(0)}
+  100%{opacity:1;transform:scaleY(1);filter:blur(0);transform-origin:top center}
 }
-@keyframes expandDown{
-  0%{opacity:0;transform:scaleY(0);transform-origin:top center}
-  55%{transform:scaleY(1.04);transform-origin:top center}
-  75%{transform:scaleY(0.97);transform-origin:top center}
-  100%{opacity:1;transform:scaleY(1);transform-origin:top center}
-}
-@keyframes overlayIn{from{opacity:0}to{opacity:1}}
-@keyframes shimmerSlide{
-  0%{background-position:200% center}
-  100%{background-position:-200% center}
-}
+@keyframes overlayIn{from{opacity:0;backdrop-filter:blur(0px)}to{opacity:1;backdrop-filter:blur(8px)}}
 
-.fade-up{animation:springIn .38s cubic-bezier(.34,1.56,.64,1) backwards}
-.spring-in{animation:springIn .38s cubic-bezier(.34,1.56,.64,1) backwards}
-.spring-down{animation:springInDown .32s cubic-bezier(.34,1.56,.64,1) backwards}
-.spring-up{animation:springInUp .32s cubic-bezier(.34,1.56,.64,1) backwards}
-.expand-down{animation:expandDown .3s cubic-bezier(.34,1.56,.64,1) backwards;transform-origin:top center}
-.jelly:active{animation:jellyPop .35s cubic-bezier(.34,1.56,.64,1)}
-.jelly{transition:transform .15s cubic-bezier(.34,1.56,.64,1)}
-.jelly:hover{transform:scale(1.04)}
+.fade-up{animation:morphIn .3s cubic-bezier(.25,.46,.45,.94) backwards}
+.spring-in{animation:morphIn .3s cubic-bezier(.25,.46,.45,.94) backwards}
+.spring-down{animation:morphDown .25s cubic-bezier(.25,.46,.45,.94) backwards}
+.spring-up{animation:morphUp .25s cubic-bezier(.25,.46,.45,.94) backwards}
+.expand-down{animation:morphExpand .28s cubic-bezier(.25,.46,.45,.94) backwards;transform-origin:top center}
 .glass{background:${T.surface};backdrop-filter:${T.blur};-webkit-backdrop-filter:${T.blur};border:1px solid ${T.border};box-shadow:${T.isGlass?T.shadow+", "+(T.shimmer||"none"):T.shadow}}
 .glass-strong{background:${T.surfaceStrong};backdrop-filter:${T.blur};-webkit-backdrop-filter:${T.blur};border:1px solid ${T.border};box-shadow:${T.isGlass?T.shadowLg+", "+(T.shimmer||"none"):T.shadowLg}}
-.btn-copper{background:${T.accent};color:#fff;border:none;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;border-radius:${T.radius};font-weight:600;transition:transform .15s cubic-bezier(.34,1.56,.64,1),opacity .15s,box-shadow .15s;box-shadow:${T.shadow};white-space:nowrap;letter-spacing:-0.01em}
-.btn-copper:hover{opacity:0.88;transform:scale(1.03)}.btn-copper:active{transform:scale(0.94)}
-.btn-ghost{background:${T.isDark?"rgba(255,255,255,0.06)":"rgba(0,0,0,0.04)"};color:${T.textSub};border:1px solid ${T.border};cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;border-radius:${T.radius};font-weight:500;transition:transform .15s cubic-bezier(.34,1.56,.64,1),background .15s,color .15s;white-space:nowrap}
-.btn-ghost:hover{background:${T.isDark?"rgba(255,255,255,0.10)":"rgba(0,0,0,0.08)"};color:${T.text};transform:scale(1.03)}.btn-ghost:active{transform:scale(0.93)}
+.btn-copper{background:${T.accent};color:#fff;border:none;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;border-radius:${T.radius};font-weight:600;transition:filter .18s ease,transform .18s ease,opacity .18s ease,box-shadow .18s ease;box-shadow:${T.shadow};white-space:nowrap;letter-spacing:-0.01em}
+.btn-copper:hover{opacity:0.88;filter:brightness(1.07)}.btn-copper:active{transform:scale(0.97);filter:brightness(0.95)}
+.btn-ghost{background:${T.isDark?"rgba(255,255,255,0.06)":"rgba(0,0,0,0.04)"};color:${T.textSub};border:1px solid ${T.border};cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;border-radius:${T.radius};font-weight:500;transition:background .18s ease,color .18s ease,transform .18s ease;white-space:nowrap}
+.btn-ghost:hover{background:${T.isDark?"rgba(255,255,255,0.10)":"rgba(0,0,0,0.08)"};color:${T.text}}.btn-ghost:active{transform:scale(0.97)}
 .btn-green{background:${T.green};color:#fff;border:none;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;border-radius:${T.radius};font-weight:600;transition:all .15s;white-space:nowrap}
 .btn-green:hover{opacity:0.88}
 .btn-danger{background:${T.redBg};color:${T.red};border:1px solid ${T.red}25;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:4px;border-radius:${T.radius};font-weight:500;transition:all .15s}
@@ -190,14 +170,14 @@ select option{background:${T.isDark?"#1a1a1a":"#fff"};color:${T.text}}
 .sel{width:100%;background:${T.isDark?"rgba(255,255,255,0.07)":T.surface};border:1.5px solid ${T.border};border-radius:${T.radius};padding:9px 12px;color:${T.text};outline:none;appearance:none;transition:all .15s;cursor:pointer}
 .sel:focus{border-color:${T.accent};box-shadow:0 0 0 3px ${T.accent}20}
 .nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:${T.radius};cursor:pointer;transition:all .15s;color:${T.textSub};font-weight:500;font-size:13px;border:none;background:transparent;width:100%;text-align:left;letter-spacing:-0.01em;white-space:nowrap}
-.nav-item{transition:transform .15s cubic-bezier(.34,1.56,.64,1),background .15s,color .15s}.nav-item:hover{background:${T.isDark?"rgba(255,255,255,0.07)":"rgba(0,0,0,0.06)"};color:${T.text};transform:translateX(3px)}.nav-item:active{transform:scale(0.96)}
+.nav-item{transition:background .18s ease,color .18s ease,transform .18s ease}.nav-item:hover{background:${T.isDark?"rgba(255,255,255,0.07)":"rgba(0,0,0,0.06)"};color:${T.text}}.nav-item:active{transform:scale(0.97)}
 .nav-item.active{background:${T.accent}1C;color:${T.accent};font-weight:600}
 .badge{display:inline-flex;align-items:center;gap:3px;padding:4px 10px;border-radius:${T.radiusFull};font-size:12px;font-weight:600;letter-spacing:.01em}
 .trow:hover{background:${T.isDark?"rgba(255,255,255,0.04)":"rgba(0,0,0,0.03)"}}
 .trow.row-sel{background:${T.accent}18!important}
 .tag{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:${T.radiusFull};font-size:11px;font-weight:600}
 .kcard{border-radius:${T.radiusXl};padding:20px;position:relative;overflow:hidden;transition:transform .2s,box-shadow .2s;border:1px solid ${T.border};display:flex;flex-direction:column;min-height:140px}
-.kcard:hover{box-shadow:${T.shadowLg};transform:translateY(-2px) scale(1.01)}.kcard{transition:transform .22s cubic-bezier(.34,1.56,.64,1),box-shadow .22s}
+.kcard{transition:transform .22s ease,box-shadow .22s ease,filter .22s ease}.kcard:hover{box-shadow:${T.shadowLg};transform:translateY(-3px);filter:brightness(1.03)}
 .kgrid{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:14px;align-items:stretch}
 .fgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .fgrid .s2{grid-column:1/-1}
