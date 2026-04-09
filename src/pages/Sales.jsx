@@ -262,7 +262,7 @@ ${sharedStyle}
                               return (
                                 <tr key={idx} style={{ borderBottom:`1px solid ${T.borderSubtle}40` }}>
                                   <td style={{ padding:"5px 8px", color:T.textMuted }}>{idx+1}</td>
-                                  <td style={{ padding:"5px 8px", fontWeight:600, color:T.text }}>{it.productName||"—"}{it.isDamaged&&<span style={{color:T.red,fontSize:11,marginLeft:6}}> DMG</span>}</td>
+                                  <td style={{ padding:"5px 8px", fontWeight:600, color:T.text, maxWidth:140, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{it.productName||"—"}{it.isDamaged&&<span style={{color:T.red,fontSize:11,marginLeft:6}}> DMG</span>}</td>
                                   <td style={{ padding:"5px 8px", color:T.textSub, fontFamily:"monospace" }}>{it.hsn||"—"}</td>
                                   <td style={{ padding:"5px 8px", textAlign:"right", fontWeight:600, color:T.text }}>{qty}</td>
                                   <td style={{ padding:"5px 8px", color:T.textMuted }}>{it.unit||"pcs"}</td>
