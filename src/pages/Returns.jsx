@@ -37,6 +37,7 @@ export default function Returns({ ctx }) {
   const [search, setSearch] = useState("");
   const [selRets, setSelRets] = useState(new Set());
   const tgRet = id => setSelRets(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const [exp, setExp] = useState({});
   const [viewTxn, setViewTxn] = useState(null);
   const [editTxn, setEditTxn] = useState(null);
   useEffect(() => setPg(1), [df, dt, typeFilter, search, ps]);
@@ -288,14 +289,14 @@ export default function Returns({ ctx }) {
               const v = vendors.find(x => x.id === t.vendorId);
               const typeColor = t.type === "return" ? T.red : t.type === "purchase_return" ? T.blue : T.amber;
               const typeLabel = t.type === "return" ? "Sales Return" : t.type === "purchase_return" ? "Purchase Return" : "Damaged";
-              return (
-                <tr key={t.id} className={`trow${selRets.has(t.id)?" row-sel":""}`}>
+              return (<React.Fragment key={t.id}>
+                <tr className={`trow${selRets.has(t.id)?` row-sel`:``}`}>
                   <td className="td" onClick={e=>e.stopPropagation()}><input type="checkbox" className="cb" checked={selRets.has(t.id)} onChange={()=>tgRet(t.id)}/></td>
                   <td className="td m">{fmtDate(t.date)}</td>
                   <td className="td">
                     <span className="badge" style={{ background: typeColor + "18", color: typeColor }}>{typeLabel}</span>
                   </td>
-                  <td className="td">
+                  <td className="td td-name">
                     <div style={{ fontWeight: 600, color: T.text }}>{pr?.name || "—"}</div>
                     <div style={{ fontSize:11, color: T.textMuted }}>{pr?.sku}</div>
                   </td>
@@ -310,13 +311,38 @@ export default function Returns({ ctx }) {
                   </td>
                   <td className="td">
                     <div style={{ display: "flex", gap: 3 }}>
-                      <button className="btn-ghost" onClick={() => setViewTxn(t)} style={{ padding: "3px 6px" }} title="View"><Eye size={13} /></button>
+                      <button className="btn-ghost" onClick={() => setExp(p => ({...p,[t.id]:!p[t.id]}))} style={{ padding: "3px 6px" }} title="View"><Eye size={13} /></button>
                       {isAdmin && <button className="btn-ghost" onClick={() => { setEditTxn(t); setReturnType(t.type === "purchase_return" ? "purchase_return" : "sales_return"); setForm({ date: t.date, vendorId: t.vendorId || "", gstType: t.gstType || "cgst_sgst", notes: t.notes || "", items: [{ id: uid(), productId: t.productId, qty: t.qty, price: t.price || "", isDamaged: t.isDamaged || false }] }); setModal(true); }} style={{ padding: "3px 6px" }} title="Edit"><Edit2 size={13} /></button>}
                       <button className="btn-danger" onClick={e => { e.stopPropagation(); deleteTxn(t); }} style={{ padding: "3px 6px" }}><Trash2 size={11} /></button>
                     </div>
                   </td>
                 </tr>
-              );
+                {exp[t.id] && (
+                  <tr style={{ background: T.isDark?"rgba(255,255,255,0.02)":"rgba(0,0,0,0.012)" }}>
+                    <td colSpan={9} style={{ padding:0, borderBottom:`1px solid ${T.borderSubtle}` }}>
+                      <div style={{ padding:"12px 20px 14px", display:"flex", flexWrap:"wrap", gap:"16px 32px", fontSize:12 }}>
+                        {(() => {
+                          const pr2 = products.find(p => p.id === t.productId);
+                          const v2 = vendors.find(x => x.id === t.vendorId);
+                          const gst = t.gstRate ? Number(t.qty)*(Number(t.effectivePrice||t.price||0))*Number(t.gstRate)/(100+Number(t.gstRate)) : 0;
+                          return <>
+                            <div><div style={{ fontSize:11, fontWeight:700, color:T.textSub, marginBottom:3 }}>PRODUCT</div><div style={{ color:T.text, fontWeight:600 }}>{pr2?.name||"—"}</div><div style={{ color:T.textMuted, fontSize:11 }}>{pr2?.sku}</div></div>
+                            <div><div style={{ fontSize:11, fontWeight:700, color:T.textSub, marginBottom:3 }}>QTY × PRICE</div><div style={{ color:T.text }}>{t.qty} × {fmtCur(t.price||0)}</div></div>
+                            <div><div style={{ fontSize:11, fontWeight:700, color:T.textSub, marginBottom:3 }}>GST</div><div style={{ color:T.amber }}>{t.gstRate?t.gstRate+"%":"—"} · {fmtCur(gst)}</div><div style={{ fontSize:11, color:T.textMuted }}>{t.gstType==="igst"?"IGST":"CGST+SGST"}</div></div>
+                            <div><div style={{ fontSize:11, fontWeight:700, color:T.textSub, marginBottom:3 }}>VENDOR</div><div style={{ color:T.text }}>{v2?.name||"—"}</div></div>
+                            {t.notes && <div><div style={{ fontSize:11, fontWeight:700, color:T.textSub, marginBottom:3 }}>NOTES</div><div style={{ color:T.textSub, fontStyle:"italic" }}>{t.notes}</div></div>}
+                            <div><div style={{ fontSize:11, fontWeight:700, color:T.textSub, marginBottom:3 }}>BY</div><div style={{ color:T.text }}>{t.userName||"—"}</div></div>
+                            <div style={{ marginLeft:"auto", textAlign:"right" }}>
+                              <div style={{ fontSize:11, fontWeight:700, color:T.textSub, marginBottom:3 }}>TOTAL VALUE</div>
+                              <div style={{ fontSize:16, fontWeight:800, color:T.accent }}>{fmtCur(Number(t.qty)*Number(t.price||0))}</div>
+                            </div>
+                          </>;
+                        })()}
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </React.Fragment>);
             })}
           </tbody>
         </table>
@@ -455,40 +481,6 @@ export default function Returns({ ctx }) {
       </div>
     </Modal>
     {/* View Return Detail Modal */}
-    {viewTxn && (() => {
-      const pr = products.find(p => p.id === viewTxn.productId);
-      const v = vendors?.find(x => x.id === viewTxn.vendorId);
-      const typeColor = viewTxn.type === "return" ? T.red : viewTxn.type === "purchase_return" ? T.blue : T.amber;
-      const typeLabel = viewTxn.type === "return" ? "Sales Return" : viewTxn.type === "purchase_return" ? "Purchase Return" : "Damaged";
-      return (
-        <Modal open={true} onClose={() => setViewTxn(null)} title="Return Detail" width={420}
-          footer={<GBtn v="ghost" onClick={() => setViewTxn(null)}>Close</GBtn>}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 12, fontSize: 13 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span className="badge" style={{ background: typeColor+"18", color: typeColor, fontSize: 12, padding: "4px 12px" }}>{typeLabel}</span>
-              <span style={{ color: T.textMuted, fontSize: 12 }}>{fmtDate(viewTxn.date)}</span>
-            </div>
-            {[
-              { l: "Product", v: pr?.name || "—" },
-              { l: "SKU", v: pr?.sku || "—" },
-              { l: "Qty", v: viewTxn.qty },
-              { l: "Price / Unit", v: fmtCur(viewTxn.price || 0) },
-              { l: "Total Value", v: fmtCur(Number(viewTxn.qty) * Number(viewTxn.price || 0)), bold: true },
-              { l: "GST Rate", v: viewTxn.gstRate ? viewTxn.gstRate + "%" : "—" },
-              { l: "GST Type", v: viewTxn.gstType === "igst" ? "IGST" : "CGST + SGST" },
-              { l: "Vendor", v: v?.name || "—" },
-              { l: "Damaged?", v: viewTxn.isDamaged ? " Yes" : "No" },
-              { l: "Notes", v: viewTxn.notes || "—" },
-              { l: "By", v: viewTxn.userName || "—" },
-            ].map(row => (
-              <div key={row.l} style={{ display: "flex", justifyContent: "space-between", borderBottom: `1px solid ${T.borderSubtle}`, paddingBottom: 6 }}>
-                <span style={{ color: T.textMuted }}>{row.l}</span>
-                <span style={{ fontWeight: row.bold ? 700 : 500, color: row.bold ? T.accent : T.text }}>{row.v}</span>
-              </div>
-            ))}
-          </div>
-        </Modal>
-      );
-    })()}
+
   </div>;
 }
