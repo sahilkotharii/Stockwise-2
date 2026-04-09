@@ -93,7 +93,7 @@ export default function Approvals({ ctx }) {
   return <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
       <div style={{ display: "flex", gap: 6 }}>
-        {["pending", "history"].map(t => <button key={t} onClick={() => setTab(t)} style={{ padding: "7px 16px", borderRadius: 99, fontSize: 12, fontWeight: 600, border: `1px solid ${tab === t ? T.accent : T.borderSubtle}`, cursor: "pointer", background: tab === t ? T.accent : "transparent", color: tab === t ? "#fff" : T.textSub, transition: "all .15s" }}>{t === "pending" ? `Pending (${pending.length})` : `History (${hist.length})`}</button>)}
+        {["pending", "history"].map(t => <button key={t} onClick={() => setTab(t)} style={{ padding: "7px 16px", borderRadius: T.radiusFull, fontSize: 12, fontWeight: 600, border: `1px solid ${tab === t ? T.accent : T.borderSubtle}`, cursor: "pointer", background: tab === t ? T.accent : "transparent", color: tab === t ? "#fff" : T.textSub, transition: "all .15s" }}>{t === "pending" ? `Pending (${pending.length})` : `History (${hist.length})`}</button>)}
       </div>
       {tab === "history" && hist.length > 0 && (
         <button className="btn-danger" style={{ padding: "6px 14px", fontSize: 12 }} onClick={() => {
@@ -112,7 +112,7 @@ export default function Approvals({ ctx }) {
     {shown.map(req => <div key={req.id} className="glass fade-up" style={{ padding: 20, borderRadius: T.radius, borderLeft: `4px solid ${sc[req.status]}` }}>
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 10, marginBottom: 12 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 36, height: 36, borderRadius: 9, background: `${sc[req.status]}18`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ width: 36, height: 36, borderRadius: T.radius, background: `${sc[req.status]}18`, display: "flex", alignItems: "center", justifyContent: "center" }}>
             {req.action === "delete" ? <Trash2 size={16} color={sc[req.status]} /> : req.action === "update" ? <Edit2 size={16} color={sc[req.status]} /> : <Plus size={16} color={sc[req.status]} />}
           </div>
           <div>
@@ -126,13 +126,13 @@ export default function Approvals({ ctx }) {
       </div>
 
       {req.action === "delete" && (
-        <div style={{ marginBottom: 12, padding: "10px 14px", borderRadius: 10, background: T.redBg, border: `1px solid ${T.red}30`, fontSize: 12, color: T.red, display: "flex", alignItems: "center", gap: 8 }}>
+        <div style={{ marginBottom: 12, padding: "10px 14px", borderRadius: T.radius, background: T.redBg, border: `1px solid ${T.red}30`, fontSize: 12, color: T.red, display: "flex", alignItems: "center", gap: 8 }}>
           <Trash2 size={14} />
           <span><strong>Delete Request</strong> — approving will permanently remove this {req.entity} record{req.entity === "sale" || req.entity === "purchase" ? " and all its transactions" : ""}.</span>
         </div>
       )}
       {req.action !== "delete" && req.proposedData?.items && (
-        <div style={{ marginTop: 10, marginBottom: 12, padding: 14, background: T.isDark ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.015)", borderRadius: 10, border: `1px solid ${T.borderSubtle}` }}>
+        <div style={{ marginTop: 10, marginBottom: 12, padding: 14, background: T.isDark ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.015)", borderRadius: T.radius, border: `1px solid ${T.borderSubtle}` }}>
           <div style={{ fontSize:11, fontWeight: 700, color: T.textMuted, marginBottom: 8 }}>BILL ITEMS REVIEW</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             {req.proposedData.items.map((it, idx) => (
@@ -150,11 +150,11 @@ export default function Approvals({ ctx }) {
 
       {req.action === "update" && req.currentData && req.proposedData && (
         <div className="fgrid" style={{ marginBottom: 12, gap: 10 }}>
-          <div style={{ padding: "10px 12px", borderRadius: 10, background: T.isDark ? "rgba(248,113,113,0.07)" : "rgba(254,226,226,0.6)", border: `1px solid ${T.red}20` }}>
+          <div style={{ padding: "10px 12px", borderRadius: T.radius, background: T.isDark ? "rgba(248,113,113,0.07)" : "rgba(254,226,226,0.6)", border: `1px solid ${T.red}20` }}>
             <div style={{ fontSize:11, fontWeight: 700, color: T.red, marginBottom: 6, letterSpacing: "0.05em" }}>CURRENT</div>
             {Object.keys(req.proposedData).filter(k => req.currentData[k] !== req.proposedData[k] && !["id", "margin"].includes(k)).slice(0, 5).map(k => <div key={k} style={{ fontSize: 11, color: T.textSub, marginBottom: 2 }}><span style={{ color: T.textMuted, textTransform: "capitalize" }}>{k}:</span> {String(req.currentData[k] || "—")}</div>)}
           </div>
-          <div style={{ padding: "10px 12px", borderRadius: 10, background: T.isDark ? "rgba(74,222,128,0.07)" : "rgba(220,252,231,0.6)", border: `1px solid ${T.green}20` }}>
+          <div style={{ padding: "10px 12px", borderRadius: T.radius, background: T.isDark ? "rgba(74,222,128,0.07)" : "rgba(220,252,231,0.6)", border: `1px solid ${T.green}20` }}>
             <div style={{ fontSize:11, fontWeight: 700, color: T.green, marginBottom: 6, letterSpacing: "0.05em" }}>PROPOSED</div>
             {Object.keys(req.proposedData).filter(k => req.currentData[k] !== req.proposedData[k] && !["id", "margin"].includes(k)).slice(0, 5).map(k => <div key={k} style={{ fontSize: 11, color: T.textSub, marginBottom: 2 }}><span style={{ color: T.textMuted, textTransform: "capitalize" }}>{k}:</span> <strong style={{ color: T.text }}>{String(req.proposedData[k] || "—")}</strong></div>)}
           </div>
