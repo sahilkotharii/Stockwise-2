@@ -164,18 +164,18 @@ export default function Inventory({ ctx }) {
 
 
     {/* Total Inventory Value Banner */}
-    <div className="glass" style={{ padding: "14px 20px", borderRadius: 14, background: `linear-gradient(135deg, ${T.accentBg}, ${T.accent}10)`, border: `1px solid ${T.accent}30`, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+    <div className="glass" style={{ padding: "14px 20px", borderRadius: T.radius, background: `linear-gradient(135deg, ${T.accentBg}, ${T.accent}10)`, border: `1px solid ${T.accent}30`, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <div style={{ width: 40, height: 40, borderRadius: 12, background: `linear-gradient(135deg,${T.accent},${T.accentDark})`, display: "flex", alignItems: "center", justifyContent: "center" }}><DollarSign size={18} color="#fff" /></div>
+        <div style={{ width: 40, height: 40, borderRadius: T.radius, background: `linear-gradient(135deg,${T.accent},${T.accentDark})`, display: "flex", alignItems: "center", justifyContent: "center" }}><DollarSign size={18} color="#fff" /></div>
         <div>
           <div style={{ fontFamily: T.displayFont, fontWeight: 800, fontSize: 22, color: T.accent }}>{fmtCur(totalValue)}</div>
           <div style={{ fontSize: 12, color: T.textSub, marginTop: 1 }}>Total Inventory Value in Hand <span style={{ color: T.textMuted }}>(ex-GST · at purchase price)</span></div>
         </div>
       </div>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-        <div style={{ padding: "6px 14px", borderRadius: 99, background: T.greenBg, border: `1px solid ${T.green}25`, fontSize: 12 }}><span style={{ color: T.green, fontWeight: 700 }}>{healthy.length}</span><span style={{ color: T.textMuted }}> healthy</span></div>
-        <div style={{ padding: "6px 14px", borderRadius: 99, background: T.amberBg, border: `1px solid ${T.amber}25`, fontSize: 12 }}><span style={{ color: T.amber, fontWeight: 700 }}>{low.length}</span><span style={{ color: T.textMuted }}> low</span></div>
-        <div style={{ padding: "6px 14px", borderRadius: 99, background: T.redBg, border: `1px solid ${T.red}25`, fontSize: 12 }}><span style={{ color: T.red, fontWeight: 700 }}>{oos.length}</span><span style={{ color: T.textMuted }}> OOS</span></div>
+        <div style={{ padding: "6px 14px", borderRadius: T.radiusFull, background: T.greenBg, border: `1px solid ${T.green}25`, fontSize: 12 }}><span style={{ color: T.green, fontWeight: 700 }}>{healthy.length}</span><span style={{ color: T.textMuted }}> healthy</span></div>
+        <div style={{ padding: "6px 14px", borderRadius: T.radiusFull, background: T.amberBg, border: `1px solid ${T.amber}25`, fontSize: 12 }}><span style={{ color: T.amber, fontWeight: 700 }}>{low.length}</span><span style={{ color: T.textMuted }}> low</span></div>
+        <div style={{ padding: "6px 14px", borderRadius: T.radiusFull, background: T.redBg, border: `1px solid ${T.red}25`, fontSize: 12 }}><span style={{ color: T.red, fontWeight: 700 }}>{oos.length}</span><span style={{ color: T.textMuted }}> OOS</span></div>
       </div>
     </div>
 
@@ -230,7 +230,7 @@ export default function Inventory({ ctx }) {
                 <tr key={p.id} className="trow">
                   <td className="td" style={{ maxWidth: 200 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      {p.imageUrl && <img src={p.imageUrl} alt="" style={{ width: 28, height: 28, borderRadius: 6, objectFit: "cover", flexShrink: 0 }} onError={e => e.target.style.display = "none"} />}
+                      {p.imageUrl && <img src={p.imageUrl} alt="" style={{ width: 28, height: 28, borderRadius: T.radius, objectFit: "cover", flexShrink: 0 }} onError={e => e.target.style.display = "none"} />}
                       <div style={{ minWidth: 0 }}>
                         <div style={{ fontWeight: 600, color: T.text, fontSize: 12, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</div>
                         <div style={{ color: T.textMuted, fontSize:11 }}>{p.alias}</div>
@@ -275,7 +275,7 @@ export default function Inventory({ ctx }) {
       footer={<><GBtn v="ghost" onClick={() => setEditOsModal(false)}>Cancel</GBtn><GBtn onClick={saveEditOs} icon={<Layers size={13} />}>Save Opening Stock</GBtn></>}>
       {editOsProduct && (
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <div style={{ padding: "10px 14px", borderRadius: 10, background: T.blueBg, border: `1px solid ${T.blue}25`, fontSize: 12, color: T.blue }}>
+          <div style={{ padding: "10px 14px", borderRadius: T.radius, background: T.blueBg, border: `1px solid ${T.blue}25`, fontSize: 12, color: T.blue }}>
             Current opening stock: <strong>{transactions.filter(t => t.productId === editOsProduct.id && t.type === "opening").reduce((s, t) => s + Number(t.qty), 0)} units</strong> · Current total stock: <strong>{getStock(editOsProduct.id)} units</strong>
           </div>
           <Field label="New Opening Qty" req>
@@ -284,7 +284,7 @@ export default function Inventory({ ctx }) {
           <Field label="Date">
             <GIn type="date" value={editOsDate} onChange={e => setEditOsDate(e.target.value)} />
           </Field>
-          <div style={{ fontSize: 11, color: T.textMuted, padding: "8px 12px", background: T.isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)", borderRadius: 8 }}>
+          <div style={{ fontSize: 11, color: T.textMuted, padding: "8px 12px", background: T.isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)", borderRadius: T.radius }}>
              This replaces all existing opening stock entries for this product. Other transactions (purchases, sales) are unaffected.
           </div>
         </div>
