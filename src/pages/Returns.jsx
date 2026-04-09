@@ -178,18 +178,18 @@ export default function Returns({ ctx }) {
   }, 0);
   const totalDamagedUnits = Object.values(damagedStockByProduct).reduce((s, q) => s + Math.max(0, q), 0);
 
-  // ── Group returns by returnId (or fallback: date+vendor+type) ────────────
+  // ── Group returns by returnId; old entries (no returnId) = own group ────────
   const groupedReturns = useMemo(() => {
     const m = {};
     allReturns.forEach(t => {
-      // Use returnId if available, else group by date+vendorId+type as a key
-      const key = t.returnId || `${t.date}__${t.vendorId||""}__${t.type}`;
+      // New entries have returnId (groups items from one submission)
+      // Old entries get their own unique key (each appears as its own row)
+      const key = t.returnId || t.id;
       if (!m[key]) m[key] = [];
       m[key].push(t);
     });
-    // Sort groups by date desc (using first item in group)
     return Object.values(m).sort((a, b) =>
-      new Date(b[0].date) - new Date(a[0].date)
+      new Date(b[0].date) - new Date(a[0].date) || b[0].id.localeCompare(a[0].id)
     );
   }, [allReturns]);
 
@@ -332,39 +332,46 @@ export default function Returns({ ctx }) {
                   <tr style={{ background: T.isDark?"rgba(255,255,255,0.02)":"rgba(0,0,0,0.012)" }}>
                     <td colSpan={9} style={{ padding:0, borderBottom:`1px solid ${T.borderSubtle}`, overflow:"hidden" }}>
                       <div className="expand-down" style={{ padding:"12px 20px 14px" }}>
-                        {first.notes && <div style={{ fontSize:12, color:T.textSub, fontStyle:"italic", marginBottom:10 }}>{first.notes}</div>}
-                        <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12 }}>
-                          <thead><tr style={{ background:T.isDark?"rgba(255,255,255,0.04)":"rgba(0,0,0,0.03)" }}>
-                            {["#","Product","Qty","Price/Unit","GST","Value","Damaged"].map((h,i)=>(
-                              <th key={i} style={{ padding:"5px 10px", textAlign:["Qty","Price/Unit","GST","Value"].includes(h)?"right":"left", fontSize:11, fontWeight:700, color:T.textSub, borderBottom:`1px solid ${T.borderSubtle}` }}>{h.toUpperCase()}</th>
-                            ))}
-                          </tr></thead>
-                          <tbody>
-                            {group.map((t,idx)=>{
-                              const pr2 = products.find(p=>p.id===t.productId);
-                              const val = Number(t.qty)*Number(t.price||0);
-                              return (
-                                <tr key={t.id} style={{ borderBottom:`1px solid ${T.borderSubtle}40` }}>
-                                  <td style={{ padding:"6px 10px", color:T.textMuted }}>{idx+1}</td>
-                                  <td style={{ padding:"6px 10px" }}><div style={{ fontWeight:600, color:T.text }}>{pr2?.name||"—"}</div><div style={{ fontSize:11, color:T.textMuted }}>{pr2?.sku}</div></td>
-                                  <td style={{ padding:"6px 10px", textAlign:"right", color:T.text, fontWeight:600 }}>{t.qty}</td>
-                                  <td style={{ padding:"6px 10px", textAlign:"right", color:T.textSub }}>{fmtCur(t.price||0)}</td>
-                                  <td style={{ padding:"6px 10px", textAlign:"right", color:T.amber }}>{t.gstRate?t.gstRate+"%":"—"}</td>
-                                  <td style={{ padding:"6px 10px", textAlign:"right", fontWeight:700, color:typeColor }}>{fmtCur(val)}</td>
-                                  <td style={{ padding:"6px 10px" }}>{t.isDamaged?<span style={{ color:T.amber, fontWeight:700, fontSize:11 }}>YES</span>:<span style={{ color:T.textMuted, fontSize:11 }}>—</span>}</td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                          <tfoot><tr style={{ borderTop:`2px solid ${T.borderSubtle}` }}>
-                            <td colSpan={2} style={{ padding:"6px 10px", fontWeight:700, color:T.text, fontSize:12 }}>Total</td>
-                            <td style={{ padding:"6px 10px", textAlign:"right", fontWeight:700, color:T.text }}>{totalQty}</td>
-                            <td colSpan={2}/>
-                            <td style={{ padding:"6px 10px", textAlign:"right", fontWeight:800, fontSize:14, color:typeColor }}>{fmtCur(totalVal)}</td>
-                            <td/>
-                          </tr></tfoot>
-                        </table>
-                        <div style={{ fontSize:11, color:T.textMuted, marginTop:8 }}>By {first.userName||"—"} · {fmtDate(first.date)}</div>
+                        <div style={{ overflowX:"auto", marginBottom:10 }}>
+                          <table style={{ width:"100%", borderCollapse:"collapse", fontSize:11 }}>
+                            <thead><tr style={{ background: T.isDark?"rgba(255,255,255,0.04)":"rgba(0,0,0,0.04)" }}>
+                              {["#","Description","HSN","Qty","Unit","MRP","Price/Unit","GST%","Value","Damaged"].map((h,i)=>(
+                                <th key={i} style={{ padding:"5px 8px", textAlign:["Qty","MRP","Price/Unit","GST%","Value"].includes(h)?"right":"left", fontWeight:700, fontSize:11, color:T.textSub, background:T.isDark?"rgba(255,255,255,0.05)":"rgba(0,0,0,0.04)", letterSpacing:"0.04em", borderBottom:`1px solid ${T.borderSubtle}`, whiteSpace:"nowrap" }}>{h}</th>
+                              ))}
+                            </tr></thead>
+                            <tbody>
+                              {group.map((t,idx)=>{
+                                const pr2 = products.find(p=>p.id===t.productId);
+                                const mrp = pr2?.mrp || t.price || 0;
+                                const val = Number(t.qty)*Number(t.price||0);
+                                return (
+                                  <tr key={t.id} style={{ borderBottom:`1px solid ${T.borderSubtle}40` }}>
+                                    <td style={{ padding:"5px 8px", color:T.textMuted }}>{idx+1}</td>
+                                    <td style={{ padding:"5px 8px", fontWeight:600, color:T.text }}>{pr2?.name||"—"}{t.isDamaged&&<span style={{color:T.amber,fontSize:11,marginLeft:6}}>DMG</span>}<div style={{fontSize:11,color:T.textMuted}}>{pr2?.sku}</div></td>
+                                    <td style={{ padding:"5px 8px", color:T.textSub, fontFamily:"monospace" }}>{pr2?.hsn||"—"}</td>
+                                    <td style={{ padding:"5px 8px", textAlign:"right", fontWeight:600, color:T.text }}>{t.qty}</td>
+                                    <td style={{ padding:"5px 8px", color:T.textMuted }}>{pr2?.unit||"pcs"}</td>
+                                    <td style={{ padding:"5px 8px", textAlign:"right", color:T.textSub }}>{fmtCur(mrp)}</td>
+                                    <td style={{ padding:"5px 8px", textAlign:"right", color:T.textSub }}>{fmtCur(t.price||0)}</td>
+                                    <td style={{ padding:"5px 8px", textAlign:"right", color:T.amber }}>{t.gstRate?t.gstRate+"%":"—"}</td>
+                                    <td style={{ padding:"5px 8px", textAlign:"right", fontWeight:700, color:typeColor }}>{fmtCur(val)}</td>
+                                    <td style={{ padding:"5px 8px" }}>{t.isDamaged?<span style={{color:T.amber,fontWeight:700,fontSize:11}}>YES</span>:<span style={{color:T.textMuted,fontSize:11}}>—</span>}</td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                        <div style={{ display:"flex", justifyContent:"flex-end" }}>
+                          <table style={{ fontSize:12, borderCollapse:"collapse", minWidth:220 }}>
+                            <tbody>
+                              {first.notes && <tr><td style={{ padding:"3px 8px", color:T.textMuted, fontSize:11 }}>Notes</td><td style={{ padding:"3px 8px", color:T.textSub, fontStyle:"italic" }}>{first.notes}</td></tr>}
+                              <tr><td style={{ padding:"3px 8px", color:T.textSub }}>Vendor</td><td style={{ padding:"3px 8px", fontWeight:600, color:T.text }}>{vendors.find(x=>x.id===first.vendorId)?.name||"—"}</td></tr>
+                              <tr><td style={{ padding:"3px 8px", color:T.textMuted, fontSize:11 }}>Recorded by</td><td style={{ padding:"3px 8px", fontSize:11, color:T.textSub }}>{first.userName||"—"}</td></tr>
+                              <tr style={{ borderTop:`2px solid ${T.borderSubtle}` }}><td style={{ padding:"5px 8px", fontWeight:700, color:T.text }}>Total Value</td><td style={{ padding:"5px 8px", textAlign:"right", fontWeight:800, fontSize:14, color:typeColor }}>{fmtCur(totalVal)}</td></tr>
+                            </tbody>
+                          </table>
+                        </div>
                       </div>
                     </td>
                   </tr>
