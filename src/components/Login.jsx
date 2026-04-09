@@ -3,7 +3,7 @@ import { Layers, Eye, EyeOff } from "lucide-react";
 import { useT } from "../theme";
 import { GIn, GBtn, Field } from "./UI";
 
-export default function Login({ users, onLogin }) {
+export default function Login({ users, onLogin, logoUrl }) {
   const T = useT();
   const [un, setUn] = useState("");
   const [pass, setPass] = useState("");
@@ -21,7 +21,7 @@ export default function Login({ users, onLogin }) {
     <div style={{ width: "100%", maxWidth: 360 }}>
       <div style={{ textAlign: "center", marginBottom: 28 }}>
         <div style={{ width: 62, height: 62, borderRadius: T.radiusXl, background: `linear-gradient(135deg,${T.accent},${T.accentDark})`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", boxShadow: `0 10px 30px ${T.accent}50` }}>
-          <Layers size={28} color="#fff" />
+          {logoUrl ? <img src={logoUrl} alt="logo" style={{ width: "100%", height: "100%", objectFit: "contain", padding: 4 }} /> : <Layers size={28} color="#fff" />}
         </div>
         <div style={{ fontFamily: T.displayFont, fontWeight: 800, fontSize: 26, color: T.text, letterSpacing: "-0.03em" }}>StockWise</div>
         <div style={{ fontSize: 13, color: T.textMuted, marginTop: 4, fontWeight: 500 }}>Pipal Home · Inventory Management</div>
