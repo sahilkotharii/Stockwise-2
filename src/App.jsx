@@ -136,18 +136,11 @@ export default function App() {
           const data = await sheetsGet(url);
           // Always prefer Sheets users over seed users
           if (data.users?.length) {
-            // Sheets returns users WITHOUT passwords (stripped server-side for security)
-            // Merge with locally-stored users to preserve password hashes
-            const localUsers = await lsGet(SK.users, fu);
-            const merged = data.users.map(sheetsUser => {
-              const local = (localUsers || []).find(l => l.id === sheetsUser.id);
-              return { ...sheetsUser, password: local?.password || sheetsUser.password || "" };
-            });
-            setUsers(merged); await lsSet(SK.users, merged);
-            // Re-resolve session user from merged data
+            setUsers(data.users); await lsSet(SK.users, data.users);
+            // Re-resolve session user from fresh Sheets data
             const savedSession2 = await lsGet(SK.session, null);
             if (savedSession2?.userId) {
-              const freshUser = merged.find(x => x.id === savedSession2.userId);
+              const freshUser = data.users.find(x => x.id === savedSession2.userId);
               if (freshUser) setUser(freshUser);
             }
           }
@@ -207,15 +200,7 @@ export default function App() {
       if (data.categories?.length) { setCategories(data.categories); lsSet(SK.categories, data.categories); }
       if (data.vendors?.length) { setVendors(data.vendors); lsSet(SK.vendors, data.vendors); }
       if (data.transactions?.length) { const rows = fixDates(data.transactions); setTransactions(rows); lsSet(SK.transactions, rows); }
-      if (data.users?.length) {
-        // Preserve local password hashes when merging Sheets user data
-        const currentUsers = await lsGet(SK.users, []);
-        const mergedUsers = data.users.map(su => {
-          const local = (currentUsers || []).find(l => l.id === su.id);
-          return { ...su, password: local?.password || su.password || "" };
-        });
-        setUsers(mergedUsers); lsSet(SK.users, mergedUsers);
-      }
+      if (data.users?.length) { setUsers(data.users); lsSet(SK.users, data.users); }
       if (data.bills?.length) { const rows = fixDates(data.bills); setBills(rows); lsSet(SK.bills, rows); }
       if (data.changeReqs?.length) { setChangeReqs(data.changeReqs); lsSet(SK.changeReqs, data.changeReqs); }
       // Load appConfig (invoice settings, bill series)
