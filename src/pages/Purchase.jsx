@@ -150,7 +150,7 @@ export default function Purchase({ ctx }) {
         {(vF || search) && <GBtn v="ghost" sz="sm" onClick={() => { setVF(""); setSearch(""); }} icon={<X size={12} />}>Clear</GBtn>}
       </div>
       {selBills.size > 0 && (
-        <div style={{ marginBottom: 10, padding: "8px 14px", borderRadius: 10, background: T.blueBg, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+        <div style={{ marginBottom: 10, padding: "8px 14px", borderRadius: T.radius, background: T.blueBg, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
           <span style={{ fontSize: 12, fontWeight: 600, color: T.blue }}>{selBills.size} selected</span>
           <GBtn v="danger" sz="sm" onClick={() => { if(isManager){if(window.confirm(`Request admin to delete ${selBills.size} bills?`)){purBills.filter(b=>selBills.has(b.id)).forEach(b=>addChangeReq({entity:'purchase',action:'delete',entityId:b.id,entityName:b.billNo,currentData:b,proposedData:null}));setSelBills(new Set());}}else if(window.confirm(`Delete ${selBills.size} bills?`)){const toDelIds=new Set(selBills);saveBills(bills.filter(x=>!toDelIds.has(x.id)));saveTransactions(transactions.filter(t=>!toDelIds.has(t.billId)));setSelBills(new Set());}}} icon={<Trash2 size={13} />}>{isManager?"Request Delete":"Delete Selected"}</GBtn>
           <button onClick={()=>setSelBills(new Set())} style={{marginLeft:"auto",background:"none",border:"none",cursor:"pointer",fontSize:11,color:T.textMuted}}>Clear</button>
@@ -210,10 +210,10 @@ export default function Purchase({ ctx }) {
                                   <td style={{ padding:"5px 8px", color:T.textSub, fontFamily:"monospace" }}>{it.hsn||"—"}</td>
                                   <td style={{ padding:"5px 8px", textAlign:"right", fontWeight:600, color:T.text }}>{qty}</td>
                                   <td style={{ padding:"5px 8px", color:T.textMuted }}>{it.unit||"pcs"}</td>
-                                  <td style={{ padding:"5px 8px", textAlign:"right" }}>{fmtCur(price)}</td>
+                                  <td style={{ padding:"5px 8px", textAlign:"right", color:T.textSub }}>{fmtCur(price)}</td>
                                   <td style={{ padding:"5px 8px", textAlign:"right", color:T.amber }}>{rate > 0 ? rate+"%" : "—"}</td>
                                   <td style={{ padding:"5px 8px", textAlign:"right", color:T.amber }}>{gstAmt > 0 ? fmtCur(gstAmt) : "—"}</td>
-                                  <td style={{ padding:"5px 8px", textAlign:"right", fontWeight:700 }}>{fmtCur(lineTotal)}</td>
+                                  <td style={{ padding:"5px 8px", textAlign:"right", fontWeight:700, color:T.text }}>{fmtCur(lineTotal)}</td>
                                 </tr>
                               );
                             })}
