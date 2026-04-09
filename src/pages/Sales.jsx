@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Plus, X, Eye, Trash2, Send, Edit2, TrendingUp, DollarSign, FileText, Package, Printer, Download } from "lucide-react";
 import { useT } from "../theme";
-import { KCard, GBtn, GIn, GS, Field, Modal, Pager } from "../components/UI";
+import { KCard, GBtn, GIn, GS, Field, Modal, Pager, PeriodBar, SearchInput } from "../components/UI";
 import BillForm from "../components/BillForm";
 import InvoiceModal, { buildHTML } from "../components/InvoiceModal";
 import { uid, today, fmtCur, fmtDate, inRange, calcBillGst, safeDate } from "../utils";
@@ -163,7 +163,7 @@ ${sharedStyle}
   };
 
   return <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-    {isManager && <div style={{ padding: "10px 14px", borderRadius: 12, background: T.amberBg, border: `1px solid ${T.amber}30`, fontSize: 12, color: T.amber, fontWeight: 600 }}> Manager mode — new sales require admin approval</div>}
+    {isManager && <div style={{ padding: "10px 14px", borderRadius: T.radius, background: T.amberBg, border: `1px solid ${T.amber}30`, fontSize: 12, color: T.amber, fontWeight: 600 }}> Manager mode — new sales require admin approval</div>}
 
     {/* Filter + Actions */}
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
@@ -194,7 +194,7 @@ ${sharedStyle}
         {(vendorF || search) && <GBtn v="ghost" sz="sm" onClick={() => { setVendorF(""); setSearch(""); }} icon={<X size={12} />}>Clear</GBtn>}
       </div>
       {selBills.size > 0 && (
-        <div style={{ marginBottom: 10, padding: "8px 14px", borderRadius: 10, background: T.accentBg, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+        <div style={{ marginBottom: 10, padding: "8px 14px", borderRadius: T.radius, background: T.accentBg, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
           <span style={{ fontSize: 12, fontWeight: 600, color: T.accent }}>{selBills.size} selected</span>
           <GBtn sz="sm" onClick={downloadBulkInvoices} icon={<Download size={13} />}>Download {selBills.size} Invoice{selBills.size!==1?"s":""}</GBtn>
           <GBtn v="danger" sz="sm" onClick={() => { if(isManager){if(window.confirm(`Request admin to delete ${selBills.size} bills?`)){saleBills.filter(b=>selBills.has(b.id)).forEach(b=>addChangeReq({entity:'sale',action:'delete',entityId:b.id,entityName:b.billNo,currentData:b,proposedData:null}));setSelBills(new Set());}}else if(window.confirm(`Delete ${selBills.size} bills?`)){const toDelIds=new Set(selBills);saveBills(bills.filter(x=>!toDelIds.has(x.id)));saveTransactions(transactions.filter(t=>!toDelIds.has(t.billId)));setSelBills(new Set());}}} icon={<Trash2 size={13} />}>{isManager?"Request Delete":"Delete Selected"}</GBtn>
@@ -278,7 +278,7 @@ ${sharedStyle}
                           </tbody>
                         </table>
                       </div>
-                      {b.ewayBill && <div style={{ marginTop:8, fontSize:11, color:T.blue, padding:"6px 10px", borderRadius:8, background:T.blueBg }}> E-Way: {b.ewayBillNo} · {b.transportName} · {b.vehicleNo}</div>}
+                      {b.ewayBill && <div style={{ marginTop:8, fontSize:11, color:T.blue, padding:"6px 10px", borderRadius: T.radius, background:T.blueBg }}> E-Way: {b.ewayBillNo} · {b.transportName} · {b.vehicleNo}</div>}
                       {b.notes && <div style={{ fontSize:11, color:T.textSub, marginTop:6, fontStyle:"italic" }}>Note: {b.notes}</div>}
                     </div>
                   </td>
