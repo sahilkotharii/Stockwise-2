@@ -6,7 +6,8 @@ import { fmtCur, fmtDate, inRange, toCSV, dlCSV } from "../utils";
 
 export default function Transactions({ ctx }) {
   const T = useT();
-  const { transactions, products, vendors, saveTransactions, user } = ctx;
+  const { transactions, products, vendors, saveTransactions, saveBills, bills, user } = ctx;
+  const canDelete = user.role === 'admin' || !ctx.changeReqs; // admin always, or if no approval system
   const [tab, setTab] = useState("all");
   const [search, setSearch] = useState("");
   const [df, setDf] = useState("");
@@ -15,6 +16,9 @@ export default function Transactions({ ctx }) {
   const [pg, setPg] = useState(1);
   const [ps, setPs] = useState(20);
   const [sel, setSel] = useState(new Set());
+  const [delConfirm, setDelConfirm] = useState(null); // {mode:'single'|'bulk', target}
+  const [delPass, setDelPass] = useState("");
+  const [delErr, setDelErr] = useState("");
   useEffect(() => { setPg(1); setSel(new Set()); }, [tab, search, df, dt, ps]);
 
   const TT = [
@@ -41,6 +45,31 @@ export default function Transactions({ ctx }) {
   const tgAll = () => setSel(allSel ? new Set() : new Set(paged.map(t => t.id)));
   const tiMap = { opening: "#7C3AED", purchase: T.blue, sale: T.green, return: T.amber, purchase_return: T.cyan, damaged: T.red };
 
+  const confirmDelete = (target) => { setDelConfirm({ mode: 'single', target }); setDelPass(""); setDelErr(""); };
+  const confirmDeleteBulk = () => { setDelConfirm({ mode: 'bulk', target: [...sel] }); setDelPass(""); setDelErr(""); };
+  const executeDelete = () => {
+    if (!delPass) { setDelErr("Enter your password"); return; }
+    const me = user;
+    if (delPass !== me.password) { setDelErr("Incorrect password"); return; }
+    if (delConfirm.mode === 'single') {
+      const t = delConfirm.target;
+      const updated = transactions.filter(x => x.id !== t.id);
+      saveTransactions(updated);
+      // If this txn belongs to a bill, remove the bill too (and all its txns)
+      if (t.billId) {
+        saveBills(bills.filter(b => b.id !== t.billId));
+        saveTransactions(updated.filter(x => x.billId !== t.billId));
+      }
+    } else {
+      const toDelIds = new Set(delConfirm.target);
+      const billIds = new Set(transactions.filter(t => toDelIds.has(t.id) && t.billId).map(t => t.billId));
+      const remaining = transactions.filter(t => !toDelIds.has(t.id) && !billIds.has(t.billId));
+      saveTransactions(remaining);
+      if (billIds.size) saveBills(bills.filter(b => !billIds.has(b.id)));
+      setSel(new Set());
+    }
+    setDelConfirm(null); setDelPass(""); setDelErr("");
+  };
   const exportCSV = () => dlCSV(toCSV(fil.map(t => ({
     date: t.date,
     type: t.type,
@@ -60,20 +89,15 @@ export default function Transactions({ ctx }) {
 
   return <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
-      <div className="glass" style={{ padding: "10px 14px", borderRadius: 12, fontSize: 12, color: T.textSub }}> Raw transaction log — add Sales and Purchases from their dedicated pages</div>
-      {sel.size > 0 && user.role === "admin" && (
-        <GBtn v="danger" sz="sm" icon={<Trash2 size={12} />} onClick={() => {
-          if (window.confirm(`Delete ${sel.size} transactions?`)) {
-            saveTransactions(transactions.filter(t => !sel.has(t.id)));
-            setSel(new Set());
-          }
-        }}>Delete Selected ({sel.size})</GBtn>
+      <div className="glass" style={{ padding: "10px 14px", borderRadius: T.radius, fontSize: 12, color: T.textSub }}> Raw transaction log — add Sales and Purchases from their dedicated pages</div>
+      {sel.size > 0 && (
+        <GBtn v="danger" sz="sm" icon={<Trash2 size={12} />} onClick={confirmDeleteBulk}>Delete Selected ({sel.size})</GBtn>
       )}
     </div>
 
     <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
       {TT.map(t => (
-        <button key={t.id} onClick={() => setTab(t.id)} style={{ padding: "6px 14px", borderRadius: 99, fontSize: 12, fontWeight: 600, cursor: "pointer", background: tab === t.id ? (t.color || T.accent) : "transparent", color: tab === t.id ? "#fff" : T.textMuted, border: `1px solid ${tab === t.id ? (t.color || T.accent) : T.borderSubtle}`, transition: "all .15s" }}>{t.label}</button>
+        <button key={t.id} onClick={() => setTab(t.id)} style={{ padding: "6px 14px", borderRadius: T.radiusFull, fontSize: 12, fontWeight: 600, cursor: "pointer", background: tab === t.id ? (t.color || T.accent) : "transparent", color: tab === t.id ? "#fff" : T.textMuted, border: `1px solid ${tab === t.id ? (t.color || T.accent) : T.borderSubtle}`, transition: "all .15s" }}>{t.label}</button>
       ))}
     </div>
 
@@ -95,7 +119,7 @@ export default function Transactions({ ctx }) {
               {["Date", "Product", "Type", "Qty", "Price", "Value", "Vendor", "By", "Bill Ref"].map((h, i) => (
                 <th key={i} className="th" style={{ textAlign: ["Qty", "Price", "Value"].includes(h) ? "right" : "left" }}>{h.toUpperCase()}</th>
               ))}
-              {user.role === "admin" && <th className="th" />}
+              <th className="th" />
             </tr>
           </thead>
           <tbody>
@@ -142,5 +166,27 @@ export default function Transactions({ ctx }) {
       </div>
       <Pager total={fil.length} page={pg} ps={ps} setPage={setPg} setPs={setPs} />
     </div>
+    {delConfirm && (
+      <div onClick={() => setDelConfirm(null)} style={{ position:"fixed", inset:0, zIndex:400, background:"rgba(0,0,0,0.5)", backdropFilter:"blur(6px)", display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}>
+        <div className="glass-strong spring-in" onClick={e=>e.stopPropagation()} style={{ width:"100%", maxWidth:380, borderRadius:T.radiusXl, padding:24, boxShadow:T.shadowXl }}>
+          <div style={{ fontFamily:T.displayFont, fontWeight:700, fontSize:16, color:T.text, marginBottom:6 }}>Confirm Delete</div>
+          <div style={{ fontSize:13, color:T.textSub, marginBottom:16 }}>
+            {delConfirm.mode === 'single' ? "This will delete the transaction" : `Delete ${delConfirm.target.length} transaction(s)`}
+            {delConfirm.mode === 'single' && delConfirm.target.billId ? " and its parent bill." : "."}
+            {" "}This cannot be undone.
+          </div>
+          <div style={{ fontSize:12, fontWeight:700, color:T.textMuted, marginBottom:6, letterSpacing:"0.05em" }}>ENTER YOUR PASSWORD TO CONFIRM</div>
+          <input className="inp" type="password" value={delPass} onChange={e=>{setDelPass(e.target.value);setDelErr("");}}
+            placeholder="Your login password" autoFocus
+            onKeyDown={e => e.key==="Enter" && executeDelete()}
+            style={{ marginBottom: delErr?6:12 }} />
+          {delErr && <div style={{ fontSize:12, color:T.red, marginBottom:10 }}>{delErr}</div>}
+          <div style={{ display:"flex", gap:8, justifyContent:"flex-end" }}>
+            <button className="btn-ghost" onClick={()=>setDelConfirm(null)} style={{ padding:"8px 16px", fontSize:13 }}>Cancel</button>
+            <button className="btn-copper" onClick={executeDelete} style={{ padding:"8px 16px", fontSize:13 }}>Delete</button>
+          </div>
+        </div>
+      </div>
+    )}
   </div>;
 }
