@@ -121,16 +121,15 @@ export function MobNav({ page, setPage, user, onLogout, isDark, toggleTheme, pen
     {/* Bottom nav bar */}
     <div className="mobile-nav">
       {mainItems.slice(0, 5).map(n => (
-        <button key={n.id} onClick={() => setPage(n.id)} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, padding: "5px 10px", border: "none", background: "transparent", cursor: "pointer", color: page === n.id ? T.accent : T.textMuted, fontSize: 10, fontWeight: 600, flexShrink: 0, minWidth: 52, position: "relative" }}>
-          <n.icon size={18} />
-          <span style={{ whiteSpace: "nowrap" }}>{n.label.split(" ")[0]}</span>
-          {n.id === "approvals" && pendingCnt > 0 && <span style={{ position: "absolute", top: 2, right: 6, minWidth: 14, height: 14, borderRadius: 99, background: T.red, color: "#fff", fontSize: 10, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>{pendingCnt}</span>}
+        <button key={n.id} onClick={() => setPage(n.id)} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3, padding: "8px 4px", border: "none", background: "transparent", cursor: "pointer", color: page === n.id ? T.accent : T.textMuted, fontSize: 10, fontWeight: 600, position: "relative" }}>
+          <n.icon size={20} />
+          <span style={{ whiteSpace: "nowrap", lineHeight: 1 }}>{n.label.split(" ")[0]}</span>
+          {n.id === "approvals" && pendingCnt > 0 && <span style={{ position: "absolute", top: 4, right: "25%", minWidth: 14, height: 14, borderRadius: 99, background: T.red, color: "#fff", fontSize: 10, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>{pendingCnt}</span>}
         </button>
       ))}
-      {/* More button */}
-      <button onClick={() => setShowMenu(true)} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, padding: "5px 10px", border: "none", background: "transparent", cursor: "pointer", color: T.textMuted, fontSize: 10, fontWeight: 600, flexShrink: 0, minWidth: 52 }}>
-        <Layers size={18} />
-        <span>More</span>
+      <button onClick={() => setShowMenu(true)} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3, padding: "8px 4px", border: "none", background: "transparent", cursor: "pointer", color: T.textMuted, fontSize: 10, fontWeight: 600 }}>
+        <Layers size={20} />
+        <span style={{ lineHeight: 1 }}>More</span>
       </button>
     </div>
   </>;
