@@ -119,42 +119,40 @@ const fyBounds = () => {
 export function PeriodBar({ df, setDf, dt, setDt, preset, setPreset, noFY = false }) {
   const T = useT();
   const PRESETS = [
+    { k: "",    l: "All time" },
     { k: "1d",  l: "Today" },
-    { k: "7d",  l: "7d" },
-    { k: "30d", l: "30d" },
-    { k: "90d", l: "90d" },
-    { k: "1y",  l: "1Y" },
+    { k: "7d",  l: "Last 7 days" },
+    { k: "30d", l: "Last 30 days" },
+    { k: "90d", l: "Last 90 days" },
   ];
   const applyPreset = k => {
     setPreset(k);
+    if (!k) { setDf(""); setDt(""); return; }
+    const tod = new Date().toISOString().split("T")[0];
     switch (k) {
-      case "1d":  setDf(todayStr()); setDt(todayStr()); break;
-      case "7d":  setDf(daysAgo(7)); setDt(todayStr()); break;
-      case "30d": setDf(daysAgo(30)); setDt(todayStr()); break;
-      case "90d": setDf(daysAgo(90)); setDt(todayStr()); break;
-      case "1y":  setDf(daysAgo(365)); setDt(todayStr()); break;
-      case "cfy": { const b = fyBounds(); setDf(b.s); setDt(b.e); } break;
-      case "caly": { const y = now().getFullYear(); setDf(`${y}-01-01`); setDt(`${y}-12-31`); } break;
+      case "1d":  setDf(tod); setDt(tod); break;
+      case "7d":  setDf(new Date(Date.now()-7*864e5).toISOString().split("T")[0]); setDt(tod); break;
+      case "30d": setDf(new Date(Date.now()-30*864e5).toISOString().split("T")[0]); setDt(tod); break;
+      case "90d": setDf(new Date(Date.now()-90*864e5).toISOString().split("T")[0]); setDt(tod); break;
     }
   };
-  const btnStyle = (k) => ({
-    padding: "5px 12px", borderRadius: T.radiusFull,
-    fontSize: 12, fontWeight: 600, border: "none", cursor: "pointer",
-    background: preset === k ? T.accent : "transparent",
-    color: preset === k ? "#fff" : T.textSub, transition: "all .15s", whiteSpace: "nowrap"
-  });
+  const selStyle = {
+    padding: "7px 10px", borderRadius: T.radius, border: `1.5px solid ${preset !== undefined && PRESETS.some(p=>p.k===preset) && preset !== "" ? T.accent : T.border}`,
+    background: T.isDark ? "rgba(255,255,255,0.07)" : T.surface, color: T.text,
+    fontSize: 12, fontWeight: 600, cursor: "pointer", outline: "none",
+    appearance: "none", WebkitAppearance: "none",
+    paddingRight: 28, backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6' fill='none' stroke='%23999' stroke-width='1.5'/%3E%3C/svg%3E")`,
+    backgroundRepeat: "no-repeat", backgroundPosition: "right 8px center"
+  };
   return (
-    <div className="filter-wrap" style={{ alignItems: "center" }}>
-      <span style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, letterSpacing: "0.05em" }}>PERIOD</span>
-      {PRESETS.map(p => <button key={p.k} style={btnStyle(p.k)} onClick={() => applyPreset(p.k)}>{p.l}</button>)}
-      <span style={{ fontSize: 12, color: T.textMuted }}>|</span>
-      <input type="date" className="inp" value={df} onChange={e => { setDf(e.target.value); setPreset(""); }} style={{ width: 128, fontSize: 12 }} />
+    <div className="filter-wrap" style={{ alignItems: "center", flexWrap: "wrap" }}>
+      <span style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, letterSpacing: "0.05em", whiteSpace: "nowrap" }}>PERIOD</span>
+      <select value={preset || ""} onChange={e => applyPreset(e.target.value)} style={selStyle}>
+        {PRESETS.map(p => <option key={p.k} value={p.k}>{p.l}</option>)}
+      </select>
+      <input type="date" className="inp" value={df || ""} onChange={e => { setDf(e.target.value); setPreset("custom"); }} style={{ width: 130, fontSize: 12 }} />
       <span style={{ fontSize: 12, color: T.textMuted }}>→</span>
-      <input type="date" className="inp" value={dt} onChange={e => { setDt(e.target.value); setPreset(""); }} style={{ width: 128, fontSize: 12 }} />
-      {!noFY && <>
-        <button style={btnStyle("cfy")} onClick={() => applyPreset("cfy")}>Current FY</button>
-        <button style={btnStyle("caly")} onClick={() => applyPreset("caly")}>Calendar Year</button>
-      </>}
+      <input type="date" className="inp" value={dt || ""} onChange={e => { setDt(e.target.value); setPreset("custom"); }} style={{ width: 130, fontSize: 12 }} />
     </div>
   );
 }
@@ -168,6 +166,38 @@ export function SearchInput({ value, onChange, placeholder = "Search…", style 
         <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
       </svg>
       <input className="inp" value={value} onChange={onChange} placeholder={placeholder} style={{ paddingLeft: 30 }} />
+    </div>
+  );
+}
+
+
+// ── Shared Password-Confirm Delete Modal ─────────────────────────────────────
+export function DeleteConfirmModal({ open, onClose, onConfirm, user, label = "this item", extra = "" }) {
+  const T = useT();
+  const [pass, setPass] = React.useState("");
+  const [err, setErr] = React.useState("");
+  if (!open) return null;
+  const go = () => {
+    if (!pass) { setErr("Enter your password"); return; }
+    if (pass !== user?.password) { setErr("Incorrect password"); return; }
+    onConfirm(); setPass(""); setErr(""); onClose();
+  };
+  return (
+    <div onClick={onClose} style={{ position:"fixed", inset:0, zIndex:500, background:"rgba(0,0,0,0.5)", backdropFilter:"blur(6px)", display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}>
+      <div className="glass-strong spring-in" onClick={e=>e.stopPropagation()} style={{ width:"100%", maxWidth:360, borderRadius:T.radiusXl, padding:24, boxShadow:T.shadowXl }}>
+        <div style={{ fontFamily:T.displayFont, fontWeight:700, fontSize:16, color:T.text, marginBottom:4 }}>Confirm Delete</div>
+        <div style={{ fontSize:13, color:T.textSub, marginBottom:4 }}>Delete <strong>{label}</strong>?{extra ? " " + extra : ""}</div>
+        <div style={{ fontSize:12, color:T.red, marginBottom:14 }}>This cannot be undone.</div>
+        <div style={{ fontSize:12, fontWeight:700, color:T.textMuted, marginBottom:6, letterSpacing:"0.05em" }}>ENTER YOUR PASSWORD TO CONFIRM</div>
+        <input className="inp" type="password" value={pass} onChange={e=>{setPass(e.target.value);setErr("");}}
+          placeholder="Your login password" autoFocus onKeyDown={e=>e.key==="Enter"&&go()}
+          style={{ marginBottom: err?6:12 }} />
+        {err && <div style={{ fontSize:12, color:T.red, marginBottom:10 }}>{err}</div>}
+        <div style={{ display:"flex", gap:8, justifyContent:"flex-end" }}>
+          <button className="btn-ghost" onClick={()=>{onClose();setPass("");setErr("");}} style={{ padding:"8px 16px", fontSize:13 }}>Cancel</button>
+          <button className="btn-copper" onClick={go} style={{ padding:"8px 16px", fontSize:13 }}>Delete</button>
+        </div>
+      </div>
     </div>
   );
 }
