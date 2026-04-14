@@ -40,6 +40,7 @@ export default function Sales({ ctx }) {
   const [search, setSearch] = useState("");
   const [exp, setExp] = useState({});
   const [delConfirm, setDelConfirm] = useState(null);
+  const [delBulkConfirm, setDelBulkConfirm] = useState(false);
   useEffect(() => setPg(1), [df, dt, vendorF, search, ps]);
 
   const handlePreset = k => { setPreset(k); setDf(getPresetDate(k)); setDt(today()); };
@@ -315,6 +316,17 @@ ${sharedStyle}
 
     {invoiceBill && <InvoiceModal bill={invoiceBill} invSettings={invoiceSettings||{}} vendors={vendors} products={products} onClose={() => setInvoiceBill(null)} />}
 
+
+
+
+    <DeleteConfirmModal
+      open={!!delBulkConfirm}
+      onClose={()=>setDelBulkConfirm(false)}
+      onConfirm={()=>{const ids=new Set(selBills);saveBills(bills.filter(x=>!ids.has(x.id)));saveTransactions(transactions.filter(t=>!ids.has(t.billId)));setSelBills(new Set());}}
+      user={user}
+      label={selBills.size + " bills"}
+      extra="All transactions will also be deleted."
+    />
     <DeleteConfirmModal
       open={!!delConfirm}
       onClose={()=>setDelConfirm(null)}
