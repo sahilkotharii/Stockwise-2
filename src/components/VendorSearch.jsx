@@ -4,26 +4,32 @@ import { useT } from "../theme";
 
 export default function VendorSearch({ value, onChange, vendors = [], placeholder = "Search vendor…" }) {
   const T = useT();
-  const [query, setQuery] = useState("");
+  const selected = vendors.find(v => v.id === value);
+
+  // Single source of truth: what's shown in the input
+  const [inputVal, setInputVal] = useState(selected?.name || "");
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   const inputRef = useRef(null);
-  const openRef = useRef(false);
   const [dropPos, setDropPos] = useState({ top: 0, left: 0, width: 200 });
-  const selected = vendors.find(v => v.id === value);
 
-  // Keep openRef in sync so the focus handler always sees the latest value
-  useEffect(() => { openRef.current = open; }, [open]);
+  // Sync display when parent changes the selected vendor externally
+  useEffect(() => {
+    if (!open) {
+      setInputVal(selected?.name || "");
+    }
+  }, [value, selected, open]);
 
   const filtered = useMemo(() => {
-    const q = (query || "").toLowerCase().trim();
+    if (!open) return [];
+    const q = (inputVal || "").toLowerCase().trim();
     if (!q) return vendors.slice(0, 40);
     return vendors.filter(v =>
       (v.name || "").toLowerCase().includes(q) ||
       (v.city || "").toLowerCase().includes(q) ||
       (v.gstin || "").toLowerCase().includes(q)
     ).slice(0, 50);
-  }, [query, vendors]);
+  }, [inputVal, vendors, open]);
 
   const updatePos = () => {
     if (inputRef.current) {
@@ -32,10 +38,13 @@ export default function VendorSearch({ value, onChange, vendors = [], placeholde
     }
   };
 
+  // Close on outside click/touch
   useEffect(() => {
     const close = e => {
       if (ref.current && !ref.current.contains(e.target)) {
-        setOpen(false); setQuery("");
+        setOpen(false);
+        // Restore selected name if user didn't pick anything
+        setInputVal(selected?.name || "");
       }
     };
     document.addEventListener("mousedown", close);
@@ -44,20 +53,31 @@ export default function VendorSearch({ value, onChange, vendors = [], placeholde
       document.removeEventListener("mousedown", close);
       document.removeEventListener("touchstart", close);
     };
-  }, []);
+  }, [selected]);
 
   const selectItem = id => {
-    onChange(id); setOpen(false); setQuery("");
+    const v = vendors.find(x => x.id === id);
+    onChange(id);
+    setInputVal(v?.name || "");
+    setOpen(false);
     inputRef.current?.blur();
   };
 
   const handleFocus = () => {
-    // Only clear query when first opening — never clear while user is typing
-    if (!openRef.current) {
-      setQuery("");
-      updatePos();
-      setOpen(true);
-    }
+    setInputVal(""); // clear to show all vendors
+    updatePos();
+    setOpen(true);
+  };
+
+  const handleChange = e => {
+    setInputVal(e.target.value);
+    if (!open) { updatePos(); setOpen(true); }
+  };
+
+  const handleClear = () => {
+    onChange("");
+    setInputVal("");
+    setOpen(false);
   };
 
   return (
@@ -68,21 +88,21 @@ export default function VendorSearch({ value, onChange, vendors = [], placeholde
           ref={inputRef}
           className="inp"
           style={{ paddingLeft: 26 }}
-          value={open ? query : (selected ? selected.name : "")}
+          value={inputVal}
           placeholder={placeholder}
           autoComplete="off"
-          onChange={e => { setQuery(e.target.value); if (!open) { updatePos(); setOpen(true); } }}
+          onChange={handleChange}
           onFocus={handleFocus}
         />
         {value && !open && (
-          <button type="button" onClick={() => { onChange(""); setQuery(""); }}
+          <button type="button" onClick={handleClear}
             style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: T.textMuted, padding: 2, fontSize: 16, lineHeight: 1 }}>×</button>
         )}
       </div>
       {open && (
         <div style={{ position: "fixed", top: dropPos.top, left: dropPos.left, width: dropPos.width, zIndex: 9999, background: T.surfaceStrong, border: `1px solid ${T.accent}40`, borderRadius: T.radius, boxShadow: T.shadowXl, maxHeight: 240, overflowY: "auto" }}>
           {vendors.length === 0 && <div style={{ padding: 12, fontSize: 12, color: T.textMuted }}>No vendors yet</div>}
-          {vendors.length > 0 && filtered.length === 0 && <div style={{ padding: "10px 12px", fontSize: 12, color: T.textMuted }}>No match for "{query}"</div>}
+          {vendors.length > 0 && filtered.length === 0 && <div style={{ padding: "10px 12px", fontSize: 12, color: T.textMuted }}>No match for "{inputVal}"</div>}
           {filtered.map(v => (
             <div key={v.id}
               onMouseDown={e => { e.preventDefault(); selectItem(v.id); }}
