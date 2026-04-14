@@ -15,7 +15,7 @@ async function fetchPincodeData(pin) {
 import React, { useState, useMemo } from "react";
 import { Plus, Edit2, Trash2, Send, Search } from "lucide-react";
 import { useT } from "../theme";
-import { GBtn, GIn, GS, GTa, Field, Modal } from "../components/UI";
+import { GBtn, DeleteConfirmModal, GIn, GS, GTa, Field, Modal } from "../components/UI";
 import { uid, today, fmtCur } from "../utils";
 
 export default function Vendors({ ctx }) {
@@ -24,6 +24,7 @@ export default function Vendors({ ctx }) {
   const isAdmin = user.role === "admin";
   const isManager = user.role === "manager";
   const [modal, setModal] = useState(false);
+  const [delConfirmVend, setDelConfirmVend] = useState(null);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({});
   const [search, setSearch] = useState("");
@@ -77,8 +78,8 @@ export default function Vendors({ ctx }) {
 
   const doDelete = v => {
     const used = (bills || []).some(b => b.vendorId === v.id);
-    if (used && !window.confirm(`${v.name} has bills. Delete anyway? (Bills won't be deleted, just unlinked.)`)) return;
-    if (!used && !window.confirm(`Delete vendor "${v.name}"?`)) return;
+    if (used) { alert(`${v.name} has bills. Vendor cannot be deleted while bills exist.`); return; }
+    setDelConfirmVend(v);
     saveVendors(vendors.filter(x => x.id !== v.id));
     addLog("deleted", "vendor", v.name);
   };
@@ -178,9 +179,23 @@ export default function Vendors({ ctx }) {
         <Field label="Address Line 1" cl="s2"><GIn value={form.address1 || ""} onChange={e => ff("address1", e.target.value)} placeholder="Street, Building No." /></Field>
         <Field label="Address Line 2" cl="s2"><GIn value={form.address2 || ""} onChange={e => ff("address2", e.target.value)} placeholder="Area, Landmark" /></Field>
         <Field label="City"><GIn value={form.city || ""} onChange={e => ff("city", e.target.value)} placeholder="Mumbai" /></Field>
-        <Field label="Pincode"><GIn value={form.pincode || ""} onChange={e => ff("pincode", e.target.value)} placeholder="400001" /></Field>
+        <Field label="Pincode"><GIn value={form.pincode || ""} onChange={async e => {
+              const pin = e.target.value; ff("pincode", pin);
+              if (pin.length === 6) {
+                const d = await fetchPincodeData(pin);
+                if (d) { ff("city", d.city); ff("state", d.state); }
+              }
+            }} placeholder="400001" maxLength={6} /></Field>
         <Field label="Notes" cl="s2"><GTa value={form.notes || ""} onChange={e => ff("notes", e.target.value)} placeholder="Payment terms, lead time…" rows={2} /></Field>
       </div>
     </Modal>
+
+    <DeleteConfirmModal
+      open={!!delConfirmVend}
+      onClose={() => setDelConfirmVend(null)}
+      onConfirm={() => saveVendors(vendors.filter(x => x.id !== delConfirmVend.id))}
+      user={user}
+      label={`vendor "${delConfirmVend?.name}"`}
+    />
   </div>;
 }
