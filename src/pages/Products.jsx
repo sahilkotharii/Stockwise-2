@@ -14,6 +14,8 @@ export default function Products({ ctx }) {
   const [search, setSearch] = useState("");
   const [cf, setCf] = useState("");
   const [modal, setModal] = useState(false);
+  const [delConfirmProd, setDelConfirmProd] = useState(null);
+  const [delConfirmCat, setDelConfirmCat] = useState(null);
   const [editId, setEditId] = useState(null);
   const [lb, setLb] = useState(null);
   const [form, setForm] = useState({});
@@ -187,7 +189,7 @@ export default function Products({ ctx }) {
 
       <div style={{ display: "flex", gap: 6 }}>
         {["products", "categories"].map(t => (
-          <button key={t} onClick={() => setTab(t)} style={{ padding: "8px 18px", borderRadius: 10, border: `1px solid ${tab === t ? T.accent : T.borderSubtle}`, cursor: "pointer", fontWeight: 600, fontSize: 13, background: tab === t ? T.accent : "transparent", color: tab === t ? "#fff" : T.textSub, transition: "all .15s" }}>
+          <button key={t} onClick={() => setTab(t)} style={{ padding: "8px 18px", borderRadius: T.radius, border: `1px solid ${tab === t ? T.accent : T.borderSubtle}`, cursor: "pointer", fontWeight: 600, fontSize: 13, background: tab === t ? T.accent : "transparent", color: tab === t ? "#fff" : T.textSub, transition: "all .15s" }}>
             {t.charAt(0).toUpperCase() + t.slice(1)}
           </button>
         ))}
@@ -196,7 +198,7 @@ export default function Products({ ctx }) {
       {tab === "products" && (
         <React.Fragment>
           {isManager && (
-            <div style={{ padding: "10px 14px", borderRadius: 12, background: T.amberBg, border: `1px solid ${T.amber}30`, fontSize: 12, color: T.amber, fontWeight: 600 }}>
+            <div style={{ padding: "10px 14px", borderRadius: T.radius, background: T.amberBg, border: `1px solid ${T.amber}30`, fontSize: 12, color: T.amber, fontWeight: 600 }}>
                Product changes require admin approval
             </div>
           )}
@@ -241,7 +243,7 @@ export default function Products({ ctx }) {
                       <tr key={p.id} className="trow">
                         <td className="td">
                           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                            <div style={{ width: 34, height: 34, borderRadius: 8, overflow: "hidden", background: T.isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,.05)", cursor: "pointer", flexShrink: 0 }} onClick={() => p.imageUrl && setLb(p.imageUrl)}>
+                            <div style={{ width: 34, height: 34, borderRadius: T.radius, overflow: "hidden", background: T.isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,.05)", cursor: "pointer", flexShrink: 0 }} onClick={() => p.imageUrl && setLb(p.imageUrl)}>
                               {p.imageUrl
                                 ? <img src={p.imageUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                                 : <Package size={13} style={{ margin: "11px auto", display: "block", color: T.textMuted }} />}
@@ -274,7 +276,7 @@ export default function Products({ ctx }) {
                               <Edit2 size={12} />
                             </button>
                             {isAdmin && (
-                              <button className="btn-danger" onClick={() => { if(isManager){if(window.confirm("Request admin to delete this product?"))addChangeReq({entity:"product",action:"delete",entityId:p.id,entityName:p.name,currentData:p,proposedData:null});}else if(window.confirm("Delete product?"))saveProducts(products.filter(x=>x.id!==p.id)); }} style={{ padding: "4px 7px" }}>
+                              <button className="btn-danger" onClick={() => { if(isManager){if(window.confirm("Request admin to delete this product?"))addChangeReq({entity:"product",action:"delete",entityId:p.id,entityName:p.name,currentData:p,proposedData:null});}else { setDelConfirmProd(p); } }} style={{ padding: "4px 7px" }}>
                                 <Trash2 size={12} />
                               </button>
                             )}
@@ -307,7 +309,7 @@ export default function Products({ ctx }) {
                 <div key={c.id} className="glass" style={{ padding: 16, borderRadius: T.radius, display: "flex", flexDirection: "column", gap: 10 }}>
                   {/* icon row */}
                   <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
-                    <div style={{ width: 40, height: 40, borderRadius: 10, background: col + "18", border: "2px solid " + col + "28", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <div style={{ width: 40, height: 40, borderRadius: T.radius, background: col + "18", border: "2px solid " + col + "28", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                       <Tag size={18} color={col} />
                     </div>
                     <div style={{ display: "flex", gap: 4 }}>
@@ -315,7 +317,7 @@ export default function Products({ ctx }) {
                         <Edit2 size={11} />
                       </button>
                       {isAdmin && (
-                        <button className="btn-danger" onClick={() => { if (cnt > 0) { alert("Remove products first."); return; } if (window.confirm("Delete?")) saveCategories(categories.filter(x => x.id !== c.id)); }} style={{ padding: "3px 6px" }}>
+                        <button className="btn-danger" onClick={() => { if (cnt > 0) { alert("Remove all products in this category first."); return; } setDelConfirmCat(c); }} style={{ padding: "3px 6px" }}>
                           <Trash2 size={11} />
                         </button>
                       )}
@@ -327,8 +329,8 @@ export default function Products({ ctx }) {
                     <div style={{ fontSize: 11, color: T.textMuted, marginTop: 3 }}>{cnt} product{cnt !== 1 ? "s" : ""}</div>
                   </div>
                   {/* color bar */}
-                  <div style={{ height: 3, borderRadius: 99, background: col + "40", overflow: "hidden" }}>
-                    <div style={{ height: "100%", width: cnt > 0 ? "100%" : "20%", background: col, borderRadius: 99, opacity: cnt > 0 ? 1 : 0.3 }} />
+                  <div style={{ height: 3, borderRadius: T.radiusFull, background: col + "40", overflow: "hidden" }}>
+                    <div style={{ height: "100%", width: cnt > 0 ? "100%" : "20%", background: col, borderRadius: T.radiusFull, opacity: cnt > 0 ? 1 : 0.3 }} />
                   </div>
                 </div>
               );
@@ -340,7 +342,7 @@ export default function Products({ ctx }) {
       {lb && (
         <div onClick={() => setLb(null)} style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(0,0,0,.78)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
           <div style={{ position: "relative", maxWidth: 500, width: "100%" }} onClick={e => e.stopPropagation()}>
-            <img src={lb} alt="" style={{ width: "100%", borderRadius: 18 }} />
+            <img src={lb} alt="" style={{ width: "100%", borderRadius: T.radiusXl }} />
             <button onClick={() => setLb(null)} style={{ position: "absolute", top: -12, right: -12, width: 30, height: 30, borderRadius: "50%", background: T.surfaceStrong, border: `1px solid ${T.border}`, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <X size={14} color={T.text} />
             </button>
@@ -375,7 +377,7 @@ export default function Products({ ctx }) {
           <Field label="Unit"><GIn value={form.unit || ""} onChange={e => ff("unit", e.target.value)} placeholder="pcs / set / kg" /></Field>
           <Field label="Image URL"><GIn value={form.imageUrl || ""} onChange={e => ff("imageUrl", e.target.value)} placeholder="https://…" /></Field>
           <Field label="Description" cl="s2"><GTa value={form.description || ""} onChange={e => ff("description", e.target.value)} rows={2} /></Field>
-          {form.imageUrl ? <div className="s2" style={{ display: "flex", justifyContent: "center" }}><img src={form.imageUrl} alt="" style={{ width: 80, height: 80, objectFit: "cover", borderRadius: 12 }} onError={e => { e.target.style.display = "none"; }} /></div> : null}
+          {form.imageUrl ? <div className="s2" style={{ display: "flex", justifyContent: "center" }}><img src={form.imageUrl} alt="" style={{ width: 80, height: 80, objectFit: "cover", borderRadius: T.radius }} onError={e => { e.target.style.display = "none"; }} /></div> : null}
         </div>
       </Modal>
 
@@ -384,7 +386,7 @@ export default function Products({ ctx }) {
           <Field label="Name" req><GIn value={catForm.name} onChange={e => setCatForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Copper" /></Field>
           <Field label="Color">
             <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-              <input type="color" value={catForm.color} onChange={e => setCatForm(p => ({ ...p, color: e.target.value }))} style={{ width: 42, height: 38, borderRadius: 8, border: `1.5px solid ${T.borderSubtle}`, padding: 3, background: "transparent", cursor: "pointer" }} />
+              <input type="color" value={catForm.color} onChange={e => setCatForm(p => ({ ...p, color: e.target.value }))} style={{ width: 42, height: 38, borderRadius: T.radius, border: `1.5px solid ${T.borderSubtle}`, padding: 3, background: "transparent", cursor: "pointer" }} />
               <GIn value={catForm.color} onChange={e => setCatForm(p => ({ ...p, color: e.target.value }))} />
             </div>
           </Field>
@@ -400,7 +402,7 @@ export default function Products({ ctx }) {
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
 
           {csvErrors.length > 0 && (
-            <div style={{ padding: "10px 14px", borderRadius: 10, background: T.amberBg, border: `1px solid ${T.amber}30` }}>
+            <div style={{ padding: "10px 14px", borderRadius: T.radius, background: T.amberBg, border: `1px solid ${T.amber}30` }}>
               <div style={{ display: "flex", alignItems: "center", gap: 6, fontWeight: 700, fontSize: 12, color: T.amber, marginBottom: 6 }}>
                 <AlertTriangle size={13} /> {csvErrors.length} row{csvErrors.length !== 1 ? "s" : ""} skipped
               </div>
@@ -410,7 +412,7 @@ export default function Products({ ctx }) {
           )}
 
           {csvPreview.length > 0 && (
-            <div style={{ padding: "8px 12px", borderRadius: 10, background: T.greenBg, border: `1px solid ${T.green}30`, display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: T.green }}>
+            <div style={{ padding: "8px 12px", borderRadius: T.radius, background: T.greenBg, border: `1px solid ${T.green}30`, display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: T.green }}>
               <CheckCircle size={13} /> {csvPreview.length} products ready to import. Duplicate SKUs will be skipped.
             </div>
           )}
@@ -454,7 +456,7 @@ export default function Products({ ctx }) {
             {csvPreview.length === 0 && <div style={{ padding: "24px 0", textAlign: "center", color: T.textMuted }}>No valid products found in file</div>}
           </div>
           {csvPreview.some(p => p.categoryName && !p.categoryId) && (
-            <div style={{ padding: "8px 12px", borderRadius: 8, background: T.amberBg, fontSize: 11, color: T.amber }}>
+            <div style={{ padding: "8px 12px", borderRadius: T.radius, background: T.amberBg, fontSize: 11, color: T.amber }}>
                Categories marked in orange don't exist yet — products will be imported without a category. Create the categories first and re-import to match them.
             </div>
           )}
