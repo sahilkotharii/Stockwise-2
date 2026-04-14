@@ -21,6 +21,7 @@ export default function Purchase({ ctx }) {
   const [search, setSearch] = useState("");
   const [exp, setExp] = useState({});
   const [delConfirm, setDelConfirm] = useState(null);
+  const [delBulkConfirm, setDelBulkConfirm] = useState(false);
   const [selBills, setSelBills] = useState(new Set());
   const tgBill = id => setSelBills(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
   useEffect(() => setPg(1), [df, dt, vF, search, ps]);
@@ -239,6 +240,17 @@ export default function Purchase({ ctx }) {
       {editBill && <BillForm type="purchase" bills={bills} onSave={handleEditBill} products={products} vendors={vendors} getStock={getStock} existingBill={editBill} invoiceSettings={invoiceSettings} />}
     </Modal>
 
+
+
+
+    <DeleteConfirmModal
+      open={!!delBulkConfirm}
+      onClose={()=>setDelBulkConfirm(false)}
+      onConfirm={()=>{const ids=new Set(selBills);saveBills(bills.filter(x=>!ids.has(x.id)));saveTransactions(transactions.filter(t=>!ids.has(t.billId)));setSelBills(new Set());}}
+      user={user}
+      label={selBills.size + " bills"}
+      extra="All transactions will also be deleted."
+    />
     <DeleteConfirmModal
       open={!!delConfirm}
       onClose={()=>setDelConfirm(null)}
