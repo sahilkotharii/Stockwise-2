@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useEffect } from "react";
+import React, { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { Search } from "lucide-react";
 import { useT } from "../theme";
 
@@ -6,44 +6,44 @@ export default function VendorSearch({ value, onChange, vendors = [], placeholde
   const T = useT();
   const selected = vendors.find(v => v.id === value);
 
-  // Single source of truth: what's shown in the input
-  const [inputVal, setInputVal] = useState(selected?.name || "");
+  const [inputVal, setInputVal] = useState("");
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   const inputRef = useRef(null);
+  const isOpen = useRef(false);
   const [dropPos, setDropPos] = useState({ top: 0, left: 0, width: 200 });
 
-  // Sync display when parent changes the selected vendor externally
+  // Keep ref in sync
+  useEffect(() => { isOpen.current = open; }, [open]);
+
+  // When closed and value changes externally, show selected name
   useEffect(() => {
-    if (!open) {
-      setInputVal(selected?.name || "");
-    }
-  }, [value, selected, open]);
+    if (!isOpen.current) setInputVal(selected?.name || "");
+  }, [value, selected]);
 
   const filtered = useMemo(() => {
     if (!open) return [];
     const q = (inputVal || "").toLowerCase().trim();
     if (!q) return vendors.slice(0, 40);
     return vendors.filter(v =>
-      (v.name || "").toLowerCase().includes(q) ||
-      (v.city || "").toLowerCase().includes(q) ||
-      (v.gstin || "").toLowerCase().includes(q)
+      String(v.name || "").toLowerCase().includes(q) ||
+      String(v.city || "").toLowerCase().includes(q) ||
+      String(v.gstin || "").toLowerCase().includes(q)
     ).slice(0, 50);
   }, [inputVal, vendors, open]);
 
-  const updatePos = () => {
+  const updatePos = useCallback(() => {
     if (inputRef.current) {
       const r = inputRef.current.getBoundingClientRect();
       setDropPos({ top: r.bottom + 4, left: r.left, width: r.width });
     }
-  };
+  }, []);
 
-  // Close on outside click/touch
   useEffect(() => {
     const close = e => {
       if (ref.current && !ref.current.contains(e.target)) {
         setOpen(false);
-        // Restore selected name if user didn't pick anything
+        isOpen.current = false;
         setInputVal(selected?.name || "");
       }
     };
@@ -55,29 +55,39 @@ export default function VendorSearch({ value, onChange, vendors = [], placeholde
     };
   }, [selected]);
 
+  const handleFocus = () => {
+    // Only clear + open on FIRST focus, never while already typing
+    if (!isOpen.current) {
+      setInputVal("");
+      updatePos();
+      setOpen(true);
+      isOpen.current = true;
+    }
+  };
+
+  const handleChange = e => {
+    setInputVal(e.target.value);
+    if (!isOpen.current) {
+      updatePos();
+      setOpen(true);
+      isOpen.current = true;
+    }
+  };
+
   const selectItem = id => {
     const v = vendors.find(x => x.id === id);
     onChange(id);
     setInputVal(v?.name || "");
     setOpen(false);
+    isOpen.current = false;
     inputRef.current?.blur();
-  };
-
-  const handleFocus = () => {
-    setInputVal(""); // clear to show all vendors
-    updatePos();
-    setOpen(true);
-  };
-
-  const handleChange = e => {
-    setInputVal(e.target.value);
-    if (!open) { updatePos(); setOpen(true); }
   };
 
   const handleClear = () => {
     onChange("");
     setInputVal("");
     setOpen(false);
+    isOpen.current = false;
   };
 
   return (
