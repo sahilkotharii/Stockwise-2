@@ -8,6 +8,7 @@ export default function VendorSearch({ value, onChange, vendors = [], placeholde
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   const inputRef = useRef(null);
+  const [rect, setRect] = React.useState(null);
   const selected = vendors.find(v => v.id === value);
 
   const filtered = useMemo(() => {
@@ -54,7 +55,20 @@ export default function VendorSearch({ value, onChange, vendors = [], placeholde
           value={open ? query : (selected ? selected.name : "")}
           placeholder={placeholder}
           onChange={e => { setQuery(e.target.value); setOpen(true); }}
-          onFocus={() => { setQuery(""); setOpen(true); }}
+          onFocus={() => {
+            setQuery("");
+            setOpen(true);
+            if (inputRef.current) {
+              const r = inputRef.current.getBoundingClientRect();
+              setRect({ top: r.bottom + window.scrollY, left: r.left + window.scrollX, width: r.width });
+            }
+          }}
+          onInput={() => {
+            if (inputRef.current) {
+              const r = inputRef.current.getBoundingClientRect();
+              setRect({ top: r.bottom + window.scrollY, left: r.left + window.scrollX, width: r.width });
+            }
+          }}
           autoComplete="off"
         />
         {value && !open && (
@@ -66,7 +80,7 @@ export default function VendorSearch({ value, onChange, vendors = [], placeholde
         )}
       </div>
       {open && (
-        <div className="spring-down" style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 500, marginTop: 3, background: T.surfaceStrong, border: `1px solid ${T.borderSubtle}`, borderRadius: T.radius, boxShadow: T.shadowLg, maxHeight: 260, overflowY: "auto" }}>
+        <div className="spring-down" style={{ position: "fixed", top: rect ? rect.top + 3 : 0, left: rect ? rect.left : 0, width: rect ? rect.width : 200, zIndex: 9999, background: T.surfaceStrong, border: `1px solid ${T.borderSubtle}`, borderRadius: T.radius, boxShadow: T.shadowLg, maxHeight: 260, overflowY: "auto" }}>
           {vendors.length === 0 && <div style={{ padding: "12px", fontSize: 12, color: T.textMuted }}>No vendors yet — add one in Vendors page</div>}
           {vendors.length > 0 && filtered.length === 0 && <div style={{ padding: "10px 12px", fontSize: 12, color: T.textMuted }}>No vendors match "{query}"</div>}
           {filtered.map(v => (
