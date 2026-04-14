@@ -12,9 +12,10 @@ export default function Inventory({ ctx }) {
   const [catF, setCatF] = useState("");
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState("stock");
+  const [stockF, setStockF] = useState("all"); // all|healthy|low|oos|dead
   const [pg, setPg] = useState(1);
   const [ps, setPs] = useState(50);
-  useEffect(() => setPg(1), [search, catF, sortBy]);
+  useEffect(() => setPg(1), [search, catF, sortBy, stockF]);
 
   // ── Bulk Opening Stock CSV ──────────────────────────────────────────────
   const csvRef = useRef(null);
@@ -137,12 +138,17 @@ export default function Inventory({ ctx }) {
       if (search && !p.name.toLowerCase().includes(search.toLowerCase()) && !(p.sku || "").toLowerCase().includes(search.toLowerCase())) return false;
       return true;
     });
+    // Stock filter
+    if (stockF === "healthy") d = d.filter(p => p.stock > Number(p.minStock||0));
+    else if (stockF === "low") d = d.filter(p => p.stock > 0 && p.stock <= Number(p.minStock||0));
+    else if (stockF === "oos") d = d.filter(p => p.stock <= 0);
+    else if (stockF === "dead") d = d.filter(p => p.sold === 0 && p.stock > 0);
     if (sortBy === "stock") d.sort((a, b) => a.stock - b.stock);
     else if (sortBy === "value") d.sort((a, b) => b.value - a.value);
     else if (sortBy === "sold") d.sort((a, b) => b.sold - a.sold);
     else if (sortBy === "name") d.sort((a, b) => a.name.localeCompare(b.name));
     return d;
-  }, [productStats, catF, search, sortBy]);
+  }, [productStats, catF, search, sortBy, stockF]);
 
   // Inventory value = ex-GST purchase price * stock (correct basis for costing)
   const totalValue = filtered.reduce((s, p) => s + p.value, 0);
@@ -154,11 +160,11 @@ export default function Inventory({ ctx }) {
   return <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 
     {/* KPIs */}
-    <div className="kgrid" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14 }}>
-      <KCard label="Inventory Value" value={fmtCur(totalValue)} sub={`ex-GST · ${filtered.length} products`} icon={Box} color={T.accent} />
-      <KCard label="Healthy Stock" value={healthy.length.toString()} sub="Above min level" icon={CheckCircle} color={T.green} />
-      <KCard label="Low Stock" value={low.length.toString()} sub="Below min level" icon={AlertTriangle} color={T.amber} />
-      <KCard label="Out of Stock" value={oos.length.toString()} sub="Needs restocking" icon={AlertOctagon} color={T.red} />
+    <div className="kgrid" style={{ gap: 14 }}>
+      <KCard label="Inventory Value" value={fmtCur(totalValue)} sub={`ex-GST · ${productStats.length} products`} icon={Box} color={T.accent} onClick={() => setStockF("all")} />
+      <KCard label="Healthy Stock" value={healthy.length.toString()} sub="Click to filter" icon={CheckCircle} color={T.green} onClick={() => setStockF(stockF==="healthy"?"all":"healthy")} active={stockF==="healthy"} />
+      <KCard label="Low Stock" value={low.length.toString()} sub="Click to filter" icon={AlertTriangle} color={T.amber} onClick={() => setStockF(stockF==="low"?"all":"low")} active={stockF==="low"} />
+      <KCard label="Out of Stock" value={oos.length.toString()} sub="Click to filter" icon={AlertOctagon} color={T.red} onClick={() => setStockF(stockF==="oos"?"all":"oos")} active={stockF==="oos"} />
     </div>
 
 
