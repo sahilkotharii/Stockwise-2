@@ -34,10 +34,11 @@ export default function Vendors({ ctx }) {
     if (!search) return vendors;
     const q = search.toLowerCase();
     return vendors.filter(v =>
-      (v.name || "").toLowerCase().includes(q) ||
-      (v.city || "").toLowerCase().includes(q) ||
-      (v.gstin || "").toLowerCase().includes(q) ||
-      (v.phone || "").includes(q)
+      String(v.name || "").toLowerCase().includes(q) ||
+      String(v.city || "").toLowerCase().includes(q) ||
+      String(v.gstin || "").toLowerCase().includes(q) ||
+      String(v.phone || "").toLowerCase().includes(q) ||
+      String(v.contact || "").toLowerCase().includes(q)
     );
   }, [vendors, search]);
 
