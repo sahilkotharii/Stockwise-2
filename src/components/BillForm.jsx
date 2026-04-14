@@ -24,45 +24,65 @@ export function ProductSearch({ value, onChange, products, placeholder }) {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
+  const inputRef = useRef(null);
+  const [dropPos, setDropPos] = useState({ top: 0, left: 0, width: 200 });
   const selected = products.find(p => p.id === value);
+  const ITEM_H = 52; // height per item
+  const VISIBLE = 4; // show 4 at a time
 
   const filtered = useMemo(() => {
-    const q = query.toLowerCase();
-    if (!q) return products.slice(0, 30);
+    const q = (query || "").toLowerCase().trim();
+    if (!q) return products.slice(0, 50);
     return products.filter(p =>
       (p.name || "").toLowerCase().includes(q) ||
       (p.sku || "").toLowerCase().includes(q) ||
       (p.alias || "").toLowerCase().includes(q)
-    ).slice(0, 25);
+    ).slice(0, 50);
   }, [query, products]);
 
+  const updatePos = () => {
+    if (inputRef.current) {
+      const r = inputRef.current.getBoundingClientRect();
+      setDropPos({ top: r.bottom + 4, left: r.left, width: Math.max(r.width, 280) });
+    }
+  };
+
   useEffect(() => {
-    const h = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
-    document.addEventListener("mousedown", h);
-    return () => document.removeEventListener("mousedown", h);
+    const close = e => { if (ref.current && !ref.current.contains(e.target)) { setOpen(false); setQuery(""); } };
+    document.addEventListener("mousedown", close);
+    document.addEventListener("touchstart", close);
+    return () => { document.removeEventListener("mousedown", close); document.removeEventListener("touchstart", close); };
   }, []);
 
   return (
     <div ref={ref} style={{ position: "relative" }}>
       <div style={{ position: "relative" }}>
         <Search size={11} style={{ position: "absolute", left: 9, top: "50%", transform: "translateY(-50%)", color: T.textMuted, pointerEvents: "none" }} />
-        <input className="inp" style={{ paddingLeft: 26 }}
+        <input ref={inputRef} className="inp" style={{ paddingLeft: 26 }}
           value={open ? query : (selected ? selected.name : "")}
           placeholder={placeholder || "Search product…"}
-          onChange={e => { setQuery(e.target.value); setOpen(true); }}
-          onFocus={() => { setQuery(""); setOpen(true); }}
+          autoComplete="off"
+          onChange={e => { setQuery(e.target.value); if (!open) { updatePos(); setOpen(true); } }}
+          onFocus={() => { setQuery(""); updatePos(); setOpen(true); }}
         />
+        {value && !open && (
+          <button type="button" onClick={() => onChange("")}
+            style={{ position:"absolute", right:8, top:"50%", transform:"translateY(-50%)", background:"none", border:"none", cursor:"pointer", color:T.textMuted, fontSize:16, lineHeight:1 }}>×</button>
+        )}
       </div>
       {open && (
-        <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 300, marginTop: 3, background: T.surfaceStrong, border: `1px solid ${T.borderSubtle}`, borderRadius: T.radius, boxShadow: T.shadowLg, maxHeight: 220, overflowY: "auto" }}>
+        <div style={{ position: "fixed", top: dropPos.top, left: dropPos.left, width: dropPos.width, zIndex: 9999, background: T.surfaceStrong, border: `1px solid ${T.accent}40`, borderRadius: T.radius, boxShadow: T.shadowXl, maxHeight: ITEM_H * VISIBLE + 4, overflowY: "auto" }}>
           {filtered.length === 0
-            ? <div style={{ padding: "10px 12px", fontSize: 12, color: T.textMuted }}>No products found</div>
+            ? <div style={{ padding: "12px", fontSize: 12, color: T.textMuted }}>No products found</div>
             : filtered.map(p => (
-              <div key={p.id} onMouseDown={() => { onChange(p.id); setOpen(false); setQuery(""); }}
-                style={{ padding: "8px 12px", cursor: "pointer", borderBottom: `1px solid ${T.borderSubtle}`, background: p.id === value ? T.accentBg : "transparent" }}>
-                <div style={{ fontSize: 12, fontWeight: 600, color: T.text }}>{p.name}</div>
-                <div style={{ fontSize:11, color: T.textMuted, marginTop: 1 }}>
-                  {p.sku}{p.gstRate > 0 ? ` · GST ${p.gstRate}%` : ""} · MRP ₹{Number(p.mrp || 0).toLocaleString("en-IN")} · Cost ₹{Number(p.purchasePrice || 0).toLocaleString("en-IN")}
+              <div key={p.id}
+                onMouseDown={e => { e.preventDefault(); onChange(p.id); setOpen(false); setQuery(""); }}
+                style={{ padding: "8px 12px", cursor: "pointer", borderBottom: `1px solid ${T.borderSubtle}`, background: p.id === value ? T.accentBg : "transparent", minHeight: ITEM_H }}
+                onMouseEnter={e => e.currentTarget.style.background = T.isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.05)"}
+                onMouseLeave={e => e.currentTarget.style.background = p.id === value ? T.accentBg : "transparent"}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{p.name}</div>
+                <div style={{ fontSize: 11, color: T.textMuted, marginTop: 2 }}>
+                  {p.sku}{p.gstRate > 0 ? ` · GST ${p.gstRate}%` : ""} · MRP ₹{Number(p.mrp || 0).toLocaleString("en-IN")} · Stock: {p.stock ?? ""}
                 </div>
               </div>
             ))}
@@ -187,7 +207,7 @@ export default function BillForm({ type, bills, onSave, products, vendors, getSt
       type, date, vendorId,
       gstType,
       billToAddress,
-      shipTo: type === "sale" ? (shipToSameAsBill ? billToAddress : [shipAddr.addr1, shipAddr.addr2, shipAddr.city, shipAddr.state, shipAddr.pincode].filter(Boolean).join(", ")) : "",
+      shipTo: type === "sale" ? (shipToSameAsBill ? billToAddress : [shipAddr.contactName, shipAddr.addr1, shipAddr.addr2, shipAddr.city, shipAddr.state, shipAddr.pincode].filter(Boolean).join(", ")) : "",
       shipToSameAsBill: type === "sale" ? shipToSameAsBill : true,
       ewayBill: type === "sale" ? ewayBill : false,
       ewayBillNo: type === "sale" && ewayBill ? ewayBillNo : "",
@@ -274,20 +294,25 @@ export default function BillForm({ type, bills, onSave, products, vendors, getSt
         </div>
       )}
 
-      {/* GST Type toggle */}
+      {/* GST Type — auto-detected when vendor+company states differ */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
         <span style={{ fontSize: 11, fontWeight: 700, color: T.textMuted, letterSpacing: "0.05em" }}>GST TYPE</span>
-        <div style={{ display: "flex", gap: 2, background: T.isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.05)", borderRadius: T.radius, padding: 3 }}>
-          {[{ k: "cgst_sgst", l: "CGST + SGST", sub: "Intra-state" }, { k: "igst", l: "IGST", sub: "Inter-state" }].map(g => (
-            <button type="button" key={g.k} onClick={() => setGstType(g.k)} style={{ padding: "5px 14px", borderRadius: T.radius, border: "none", cursor: "pointer", background: gstType === g.k ? T.accent : "transparent", color: gstType === g.k ? "#fff" : T.textMuted, fontSize: 12, fontWeight: 600, transition: "all .15s" }}>
-              {g.l} <span style={{ fontSize:11, opacity: .8 }}>({g.sub})</span>
-            </button>
-          ))}
-        </div>
-        <span style={{ fontSize: 11, color: gstType === "igst" ? T.blue : T.green }}>
-          {gstType === "igst" ? "Full GST as IGST on invoice" : "GST split CGST 50% + SGST 50%"}
-          {gstAutoSet && <span style={{ marginLeft:6, color:T.textMuted }}>(auto-detected)</span>}
-        </span>
+        {gstAutoSet
+          ? <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+              <span style={{ padding:"5px 14px", borderRadius:T.radius, background:gstType==="igst"?T.blueBg:T.greenBg, color:gstType==="igst"?T.blue:T.green, fontSize:12, fontWeight:700 }}>
+                {gstType === "igst" ? "IGST · Inter-state" : "CGST + SGST · Intra-state"}
+              </span>
+              <span style={{ fontSize:11, color:T.textMuted }}>Auto-detected</span>
+              <button type="button" onClick={() => setGstAutoSet(false)} style={{ fontSize:11, color:T.accent, background:"none", border:"none", cursor:"pointer" }}>Change</button>
+            </div>
+          : <div style={{ display:"flex", gap:2, background:T.isDark?"rgba(255,255,255,0.07)":"rgba(0,0,0,0.05)", borderRadius:T.radius, padding:3 }}>
+              {[{k:"cgst_sgst",l:"CGST + SGST",sub:"Intra-state"},{k:"igst",l:"IGST",sub:"Inter-state"}].map(g=>(
+                <button type="button" key={g.k} onClick={()=>setGstType(g.k)} style={{ padding:"5px 14px", borderRadius:T.radius, border:"none", cursor:"pointer", background:gstType===g.k?T.accent:"transparent", color:gstType===g.k?"#fff":T.textMuted, fontSize:12, fontWeight:600, transition:"all .15s" }}>
+                  {g.l} <span style={{fontSize:11,opacity:.8}}>({g.sub})</span>
+                </button>
+              ))}
+            </div>
+        }
       </div>
 
       {/* Ship-to address (sales only) */}
@@ -302,7 +327,23 @@ export default function BillForm({ type, bills, onSave, products, vendors, getSt
             </div>
           </div>
           {!shipToSameAsBill && (
-            <GTa value={shipTo} onChange={e => setShipTo(e.target.value)} rows={2} placeholder="Shipping address (if different)" style={{ marginTop: 8 }} />
+            <div style={{ display:"flex", flexDirection:"column", gap:8, marginTop:8 }}>
+              <div className="fgrid">
+                <Field label="Contact Name"><GIn value={shipAddr.contactName||""} onChange={e=>upShipAddr("contactName",e.target.value)} placeholder="Recipient name" /></Field>
+                <Field label="Contact Phone"><GIn value={shipAddr.contactPhone||""} onChange={e=>upShipAddr("contactPhone",e.target.value)} placeholder="Phone number" /></Field>
+                <Field label="Address Line 1" cl="s2"><GIn value={shipAddr.addr1||""} onChange={e=>upShipAddr("addr1",e.target.value)} placeholder="Building / Street" /></Field>
+                <Field label="Address Line 2" cl="s2"><GIn value={shipAddr.addr2||""} onChange={e=>upShipAddr("addr2",e.target.value)} placeholder="Area / Landmark (optional)" /></Field>
+                <Field label="Pincode">
+                  <GIn value={shipAddr.pincode||""} maxLength={6} onChange={async e=>{
+                    const pin=e.target.value; upShipAddr("pincode",pin);
+                    if(String(pin).length===6){const d=await fetchPincodeData(pin);if(d){upShipAddr("city",d.city);upShipAddr("state",d.state);}}
+                  }} placeholder="6-digit PIN" />
+                  {shipAddr.pincode?.length===6&&shipAddr.city&&<div style={{fontSize:11,color:T.green,marginTop:2}}>✓ {shipAddr.city}, {shipAddr.state}</div>}
+                </Field>
+                <Field label="City"><GIn value={shipAddr.city||""} onChange={e=>upShipAddr("city",e.target.value)} /></Field>
+                <Field label="State" cl="s2"><GIn value={shipAddr.state||""} onChange={e=>upShipAddr("state",e.target.value)} /></Field>
+              </div>
+            </div>
           )}
         </div>
       )}
