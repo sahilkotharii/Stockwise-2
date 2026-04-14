@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Plus, X, Eye, Trash2, Edit2, ShoppingCart, Box, Package } from "lucide-react";
 import { useT } from "../theme";
-import { KCard, GBtn, GS, Modal, Pager, PeriodBar, SearchInput } from "../components/UI";
+import { KCard, GBtn, DeleteConfirmModal, GS, Modal, Pager, PeriodBar, SearchInput } from "../components/UI";
 import BillForm from "../components/BillForm";
 import { uid, fmtCur, fmtDate, inRange, today } from "../utils";
 
@@ -20,6 +20,7 @@ export default function Purchase({ ctx }) {
   const [pg, setPg] = useState(1); const [ps, setPs] = useState(20);
   const [search, setSearch] = useState("");
   const [exp, setExp] = useState({});
+  const [delConfirm, setDelConfirm] = useState(null);
   const [selBills, setSelBills] = useState(new Set());
   const tgBill = id => setSelBills(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
   useEffect(() => setPg(1), [df, dt, vF, search, ps]);
@@ -103,9 +104,12 @@ export default function Purchase({ ctx }) {
       addChangeReq({ entity: "purchase", action: "delete", entityId: b.id, entityName: b.billNo, currentData: b, proposedData: null });
       return;
     }
-    if (!window.confirm(`Delete bill ${b.billNo}?`)) return;
+    setDelConfirm(b);
+  };
+  const doDeleteBill = b => {
     saveBills(bills.filter(x => x.id !== b.id));
     saveTransactions(transactions.filter(t => t.billId !== b.id));
+    addLog("deleted", "purchase bill", b.billNo);
   };
 
   return <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -234,5 +238,14 @@ export default function Purchase({ ctx }) {
       footer={<><GBtn v="ghost" onClick={() => setEditBill(null)}>Cancel</GBtn><GBtn type="submit" form="purchase-form" icon={<Edit2 size={13} />}>Save Changes</GBtn></>}>
       {editBill && <BillForm type="purchase" bills={bills} onSave={handleEditBill} products={products} vendors={vendors} getStock={getStock} existingBill={editBill} invoiceSettings={invoiceSettings} />}
     </Modal>
+
+    <DeleteConfirmModal
+      open={!!delConfirm}
+      onClose={()=>setDelConfirm(null)}
+      onConfirm={()=>doDeleteBill(delConfirm)}
+      user={user}
+      label={`bill ${delConfirm?.billNo}`}
+      extra="All transactions for this bill will also be deleted."
+    />
   </div>;
 }
