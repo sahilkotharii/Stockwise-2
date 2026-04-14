@@ -238,11 +238,60 @@ export function TopBar({ page, user, syncSt, lastSync, onSync, toggleTheme, isDa
               <div style={{ width: 36, height: 36, borderRadius: T.radius, background: T.amberBg, display: "flex", alignItems: "center", justifyContent: "center" }}><Bell size={16} color={T.amber} /></div>
               <div style={{ position: "absolute", top: -4, right: -4, minWidth: 17, height: 17, borderRadius: T.radiusFull, background: T.red, color: "#fff", fontSize: 11, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 3px" }}>{badgeCnt}</div>
               {showNotifs && (
-                <div className="glass-strong spring-down" style={{ position: "absolute", top: 45, right: 0, width: 260, borderRadius: T.radius, padding: 14, boxShadow: T.shadowLg, zIndex: 100 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: T.text, marginBottom: 8 }}>Alerts</div>
-                  {pending.length > 0 && <button onClick={() => { setPage("approvals"); setShowNotifs(false); }} className="btn-ghost" style={{ width: "100%", justifyContent: "flex-start", marginBottom: 6 }}><CheckCircle size={13} color={T.amber} /> {pending.length} Pending Approvals</button>}
-                  {alertsCnt > 0 && <button onClick={() => { setPage("inventory"); setShowNotifs(false); }} className="btn-ghost" style={{ width: "100%", justifyContent: "flex-start" }}><AlertTriangle size={13} color={T.red} /> {alertsCnt} Stock Alerts</button>}
-                </div>
+                <>
+                  <div style={{ position: "fixed", inset: 0, zIndex: 199 }} onClick={() => setShowNotifs(false)} />
+                  <div className="glass-strong spring-down" onClick={e=>e.stopPropagation()} style={{ position: "absolute", top: 46, right: 0, width: 300, borderRadius: T.radiusXl, boxShadow: T.shadowXl, zIndex: 200, maxHeight: "70vh", overflowY: "auto" }}>
+                    <div style={{ padding: "14px 16px 10px", borderBottom: `1px solid ${T.borderSubtle}`, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                      <span style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 14, color: T.text }}>Notifications</span>
+                      <button onClick={()=>setShowNotifs(false)} style={{ background:"none", border:"none", cursor:"pointer", color:T.textMuted, fontSize:18, lineHeight:1 }}>×</button>
+                    </div>
+                    {pending.length === 0 && alertsCnt === 0 && (
+                      <div style={{ padding: "20px 16px", textAlign:"center", color:T.textMuted, fontSize:13 }}>No new notifications</div>
+                    )}
+                    {pending.length > 0 && (
+                      <div>
+                        <div style={{ padding:"8px 16px 4px", fontSize:10, fontWeight:700, color:T.textMuted, letterSpacing:"0.05em" }}>APPROVALS PENDING</div>
+                        <button onClick={() => { setPage("approvals"); setShowNotifs(false); }}
+                          style={{ width:"100%", display:"flex", alignItems:"center", gap:10, padding:"10px 16px", background:"transparent", border:"none", borderBottom:`1px solid ${T.borderSubtle}`, cursor:"pointer", textAlign:"left" }}
+                          onMouseEnter={e=>e.currentTarget.style.background=T.isDark?"rgba(255,255,255,0.05)":"rgba(0,0,0,0.03)"}
+                          onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+                          <div style={{ width:32, height:32, borderRadius:T.radiusFull, background:T.amberBg, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}><CheckCircle size={15} color={T.amber}/></div>
+                          <div><div style={{ fontSize:13, fontWeight:600, color:T.text }}>{pending.length} Change Request{pending.length>1?"s":""} Pending</div><div style={{ fontSize:11, color:T.textMuted }}>Tap to review in Approvals</div></div>
+                        </button>
+                      </div>
+                    )}
+                    {oos.length > 0 && (
+                      <div>
+                        <div style={{ padding:"8px 16px 4px", fontSize:10, fontWeight:700, color:T.textMuted, letterSpacing:"0.05em" }}>OUT OF STOCK</div>
+                        {oos.slice(0,5).map(p => (
+                          <button key={p.id} onClick={() => { setPage("inventory"); setShowNotifs(false); }}
+                            style={{ width:"100%", display:"flex", alignItems:"center", gap:10, padding:"9px 16px", background:"transparent", border:"none", borderBottom:`1px solid ${T.borderSubtle}`, cursor:"pointer", textAlign:"left" }}
+                            onMouseEnter={e=>e.currentTarget.style.background=T.isDark?"rgba(255,255,255,0.05)":"rgba(0,0,0,0.03)"}
+                            onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+                            <div style={{ width:8, height:8, borderRadius:"50%", background:T.red, flexShrink:0 }}/>
+                            <div style={{ flex:1, minWidth:0 }}><div style={{ fontSize:12, fontWeight:600, color:T.text, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{p.name}</div><div style={{ fontSize:11, color:T.red }}>Out of stock</div></div>
+                          </button>
+                        ))}
+                        {oos.length > 5 && <div style={{ padding:"6px 16px", fontSize:11, color:T.textMuted }}>+{oos.length-5} more out of stock</div>}
+                      </div>
+                    )}
+                    {low.length > 0 && (
+                      <div>
+                        <div style={{ padding:"8px 16px 4px", fontSize:10, fontWeight:700, color:T.textMuted, letterSpacing:"0.05em" }}>LOW STOCK</div>
+                        {low.slice(0,5).map(p => (
+                          <button key={p.id} onClick={() => { setPage("inventory"); setShowNotifs(false); }}
+                            style={{ width:"100%", display:"flex", alignItems:"center", gap:10, padding:"9px 16px", background:"transparent", border:"none", borderBottom:`1px solid ${T.borderSubtle}`, cursor:"pointer", textAlign:"left" }}
+                            onMouseEnter={e=>e.currentTarget.style.background=T.isDark?"rgba(255,255,255,0.05)":"rgba(0,0,0,0.03)"}
+                            onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+                            <div style={{ width:8, height:8, borderRadius:"50%", background:T.amber, flexShrink:0 }}/>
+                            <div style={{ flex:1, minWidth:0 }}><div style={{ fontSize:12, fontWeight:600, color:T.text, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{p.name}</div><div style={{ fontSize:11, color:T.amber }}>Stock: {getStock(p.id)} · Min: {p.minStock||0}</div></div>
+                          </button>
+                        ))}
+                        {low.length > 5 && <div style={{ padding:"6px 16px", fontSize:11, color:T.textMuted }}>+{low.length-5} more low stock</div>}
+                      </div>
+                    )}
+                  </div>
+                </>
               )}
             </div>
           )}
