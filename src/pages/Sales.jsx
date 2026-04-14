@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Plus, X, Eye, Trash2, Send, Edit2, TrendingUp, DollarSign, FileText, Package, Printer, Download } from "lucide-react";
 import { useT } from "../theme";
-import { KCard, GBtn, GIn, GS, Field, Modal, Pager, PeriodBar, SearchInput } from "../components/UI";
+import { KCard, GBtn, DeleteConfirmModal, GIn, GS, Field, Modal, Pager, PeriodBar, SearchInput } from "../components/UI";
 import BillForm from "../components/BillForm";
 import InvoiceModal, { buildHTML } from "../components/InvoiceModal";
 import { uid, today, fmtCur, fmtDate, inRange, calcBillGst, safeDate } from "../utils";
@@ -39,6 +39,7 @@ export default function Sales({ ctx }) {
   const [pg, setPg] = useState(1); const [ps, setPs] = useState(20);
   const [search, setSearch] = useState("");
   const [exp, setExp] = useState({});
+  const [delConfirm, setDelConfirm] = useState(null);
   useEffect(() => setPg(1), [df, dt, vendorF, search, ps]);
 
   const handlePreset = k => { setPreset(k); setDf(getPresetDate(k)); setDt(today()); };
@@ -161,9 +162,12 @@ ${sharedStyle}
       addChangeReq({ entity: "sale", action: "delete", entityId: b.id, entityName: b.billNo, currentData: b, proposedData: null });
       return;
     }
-    if (!window.confirm(`Delete bill ${b.billNo}?`)) return;
+    setDelConfirm(b);
+  };
+  const doDeleteBill = b => {
     saveBills(bills.filter(x => x.id !== b.id));
     saveTransactions(transactions.filter(t => t.billId !== b.id));
+    addLog("deleted", "sale bill", b.billNo);
   };
 
   return <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -310,5 +314,14 @@ ${sharedStyle}
     </Modal>
 
     {invoiceBill && <InvoiceModal bill={invoiceBill} invSettings={invoiceSettings||{}} vendors={vendors} products={products} onClose={() => setInvoiceBill(null)} />}
+
+    <DeleteConfirmModal
+      open={!!delConfirm}
+      onClose={()=>setDelConfirm(null)}
+      onConfirm={()=>doDeleteBill(delConfirm)}
+      user={user}
+      label={`bill ${delConfirm?.billNo}`}
+      extra="All transactions for this bill will also be deleted."
+    />
   </div>;
 }
