@@ -306,7 +306,7 @@ export default function BillForm({ type, bills, onSave, products, vendors, getSt
             return (
               <div key={item.id} style={{ display: "grid", gridTemplateColumns: "1fr 60px 100px 90px 28px", gap: 8, padding: "8px 12px", alignItems: "start", borderTop: `1px solid ${T.borderSubtle}`, overflow: "visible" }}>
                 <div style={{ overflow: "visible" }}>
-                  <ProductSearch value={item.productId} onChange={v => upItem(item.id, "productId", v)} products={products} placeholder={`Product ${i + 1}`} />
+                  <ProductSearch value={item.productId} onChange={v => upItem(item.id, "productId", v)} products={products} getStock={getStock} placeholder={`Product ${i + 1}`} />
                   {stk !== null && (
                     <div style={{ fontSize:11, marginTop: 2, color: stk <= 0 ? T.red : stk <= (pr?.minStock || 5) ? T.amber : T.textMuted }}>
                       Stock: {stk}{type === "sale" && stk < Number(item.qty || 0) ? " " : ""}
