@@ -117,13 +117,19 @@ export default function Returns({ ctx }) {
       };
     });
     if (editTxn) {
-      // Update mode: replace the single existing transaction
+      // Update mode: replace ALL transactions in this return group
+      const editGroupId = editTxn.returnId || editTxn.id;
+      const oldIds = new Set(transactions.filter(t => 
+        (t.returnId && t.returnId === editGroupId) || t.id === editTxn.id
+      ).map(t => t.id));
+
       if (isManager) {
-        addChangeReq({ entity: "return", action: "update", entityId: editTxn.id, entityName: editTxn.type, currentData: editTxn, proposedData: { ...editTxn, ...newTxns[0], id: editTxn.id } });
+        addChangeReq({ entity: "return", action: "update", entityId: editTxn.id, entityName: editTxn.type, currentData: editTxn, proposedData: newTxns });
       } else {
-        const updated = { ...editTxn, ...newTxns[0], id: editTxn.id };
-        saveTransactions(transactions.map(x => x.id === editTxn.id ? updated : x));
-        addLog("edited", "return", updated.type);
+        // Remove old group, add new transactions
+        const remaining = transactions.filter(t => !oldIds.has(t.id));
+        saveTransactions([...newTxns, ...remaining]);
+        addLog("edited", "return", `${newTxns.length} item(s)`);
       }
     } else if (isManager) {
       // Manager: batch all items into ONE approval request
@@ -331,7 +337,7 @@ export default function Returns({ ctx }) {
                   <td className="td">
                     <div style={{ display:"flex", gap:3 }}>
                       <button className="btn-ghost" onClick={() => setExp(p=>({...p,[gKey]:!p[gKey]}))} style={{ padding:"3px 6px" }} title="View"><Eye size={13}/></button>
-                      {isAdmin && group.length === 1 && <button className="btn-ghost" onClick={() => { setEditTxn(first); setReturnType(first.type==="purchase_return"?"purchase_return":"sales_return"); setForm({ date:first.date, vendorId:first.vendorId||"", gstType:first.gstType||"cgst_sgst", notes:first.notes||"", items:[{ id:uid(), productId:first.productId, qty:first.qty, price:first.price||"", isDamaged:first.isDamaged||false }] }); setModal(true); }} style={{ padding:"3px 6px" }} title="Edit"><Edit2 size={13}/></button>}
+                      {isAdmin && <button className="btn-ghost" onClick={() => { setEditTxn(first); setReturnType(first.type==="purchase_return"?"purchase_return":"sales_return"); setForm({ date:first.date, vendorId:first.vendorId||"", gstType:first.gstType||"cgst_sgst", notes:first.notes||"", items:group.map(t=>({ id:uid(), productId:t.productId, qty:t.qty, price:t.price||"", isDamaged:t.isDamaged||false })) }); setModal(true); }} style={{ padding:"3px 6px" }} title="Edit"><Edit2 size={13}/></button>}
                       <button className="btn-danger" onClick={e=>{e.stopPropagation(); setDelConfirmRet(group);}} style={{ padding:"3px 6px" }}><Trash2 size={11}/></button>
                     </div>
                   </td>
@@ -465,7 +471,7 @@ export default function Returns({ ctx }) {
               return (
                 <div key={item.id} style={{ display: "grid", gridTemplateColumns: "1fr 70px 100px 70px 32px", gap: 8, padding: "8px 12px", alignItems: "center", borderTop: `1px solid ${T.borderSubtle}` }}>
                   <div>
-                    <ProductSearch value={item.productId} onChange={v => upItem(item.id, "productId", v)} products={products} placeholder={`Product ${i + 1}…`} />
+                    <ProductSearch value={item.productId} onChange={v => upItem(item.id, "productId", v)} products={products} getStock={getStock} placeholder={`Product ${i + 1}…`} />
                     {stk !== null && <div style={{ fontSize:11, marginTop:2, color:T.textMuted }}>Stock: {stk}</div>}
                   </div>
                   <GIn type="number" min="1" value={item.qty} onChange={e => upItem(item.id, "qty", e.target.value)} />
