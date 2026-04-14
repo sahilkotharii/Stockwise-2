@@ -48,9 +48,7 @@ export default function Transactions({ ctx }) {
   const confirmDelete = (target) => { setDelConfirm({ mode: 'single', target }); setDelPass(""); setDelErr(""); };
   const confirmDeleteBulk = () => { setDelConfirm({ mode: 'bulk', target: [...sel] }); setDelPass(""); setDelErr(""); };
   const executeDelete = () => {
-    if (!delPass) { setDelErr("Enter your password"); return; }
-    const me = user;
-    if (delPass !== me.password) { setDelErr("Incorrect password"); return; }
+    if (!delConfirm) return;
     if (delConfirm.mode === 'single') {
       const t = delConfirm.target;
       const updated = transactions.filter(x => x.id !== t.id);
