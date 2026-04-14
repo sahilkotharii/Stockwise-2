@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { X, Download, Trash2 } from "lucide-react";
 import { useT } from "../theme";
-import { GBtn, Pager, PeriodBar, SearchInput } from "../components/UI";
+import { GBtn, Pager, PeriodBar, SearchInput, DeleteConfirmModal } from "../components/UI";
 import { fmtCur, fmtDate, inRange, toCSV, dlCSV } from "../utils";
 
 export default function Transactions({ ctx }) {
@@ -116,11 +116,10 @@ export default function Transactions({ ctx }) {
           <thead>
             <tr style={{ background: T.isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.025)" }}>
               <th className="th" style={{ width: 36 }}><input type="checkbox" className="cb" checked={allSel} onChange={tgAll} /></th>
-              {["Date", "Product", "Type", "Qty", "Price", "Value", "Vendor", "By", "Bill Ref"].map((h, i) => (
-                <th key={i} className="th" style={{ textAlign: ["Qty", "Price", "Value"].includes(h) ? "right" : "left" }}>{h.toUpperCase()}</th>
+              {["Date", "Product", "Type", "Qty", "Rate", "Taxable", "GST", "Value", "Vendor", "By", "Bill No"].map((h, i) => (
+                <th key={i} className="th" style={{ textAlign: ["Qty","Rate","Taxable","GST","Value"].includes(h) ? "right" : "left" }}>{h.toUpperCase()}</th>
               ))}
-              <th className="th" />
-            </tr>
+<th className="th" /></tr>
           </thead>
           <tbody>
             {paged.map(t => {
@@ -142,19 +141,30 @@ export default function Transactions({ ctx }) {
                       {typeLabel} {t.isDamaged ? "" : ""}
                     </span>
                   </td>
-                  <td className="td r" style={{ fontWeight: 700 }}>{t.qty}</td>
-                  <td className="td r m">{fmtCur(t.price)}</td>
-                  <td className="td r" style={{ fontWeight: 600, color: t.type === "sale" ? T.green : t.type === "purchase" ? T.blue : T.textSub }}>
-                    {fmtCur(Number(t.qty) * Number(t.effectivePrice || t.price))}
+                  <td className="td r" style={{ fontWeight: 700, color:T.text }}>{t.qty}</td>
+                  <td className="td r m" style={{ color:T.textSub }}>{fmtCur(Number(t.effectivePrice||t.price||0))}</td>
+                  {(() => {
+                    const rate = Number(t.gstRate||0);
+                    const ep = Number(t.effectivePrice||t.price||0);
+                    const qty = Number(t.qty||0);
+                    const taxable = rate > 0 ? ep * 100/(100+rate) : ep;
+                    const gstAmt = t.gstAmount || (qty * ep - qty * taxable);
+                    return <>
+                      <td className="td r m" style={{ color:T.textSub }}>{fmtCur(qty*taxable)}</td>
+                      <td className="td r m" style={{ color:T.amber }}>{gstAmt>0?fmtCur(gstAmt):"—"}</td>
+                    </>;
+                  })()}
+                  <td className="td r" style={{ fontWeight:600, color:t.type==="sale"?T.green:t.type==="purchase"?T.blue:T.textSub }}>
+                    {fmtCur(Number(t.qty)*Number(t.effectivePrice||t.price||0))}
                   </td>
-                  <td className="td m" style={{ fontSize: 11 }}>{v?.name || "—"}</td>
-                  <td className="td m" style={{ fontSize:11 }}>{t.userName || "—"}</td>
-                  <td className="td m" style={{ fontSize:11, fontFamily: "monospace" }}>{t.billId ? "📄" : "—"}</td>
+                  <td className="td m" style={{ fontSize:11 }}>{v?.name||"—"}</td>
+                  <td className="td m" style={{ fontSize:11 }}>{t.userName||"—"}</td>
+                  <td className="td m" style={{ fontSize:11, fontWeight:600, color:T.accent }}>{
+                    t.billId ? (bills.find(b=>b.id===t.billId)?.billNo || "—") : "—"
+                  }</td>
                   {user.role === "admin" && (
                     <td className="td">
-                      <button className="btn-danger" onClick={() => { if (window.confirm("Delete?")) saveTransactions(transactions.filter(x => x.id !== t.id)); }} style={{ padding: "3px 7px" }}>
-                        <Trash2 size={11} />
-                      </button>
+                      <button className="btn-danger" onClick={() => confirmDelete(t)} style={{ padding: "3px 7px" }}><Trash2 size={11} /></button>
                     </td>
                   )}
                 </tr>
@@ -166,27 +176,14 @@ export default function Transactions({ ctx }) {
       </div>
       <Pager total={fil.length} page={pg} ps={ps} setPage={setPg} setPs={setPs} />
     </div>
-    {delConfirm && (
-      <div onClick={() => setDelConfirm(null)} style={{ position:"fixed", inset:0, zIndex:400, background:"rgba(0,0,0,0.5)", backdropFilter:"blur(6px)", display:"flex", alignItems:"center", justifyContent:"center", padding:16 }}>
-        <div className="glass-strong spring-in" onClick={e=>e.stopPropagation()} style={{ width:"100%", maxWidth:380, borderRadius:T.radiusXl, padding:24, boxShadow:T.shadowXl }}>
-          <div style={{ fontFamily:T.displayFont, fontWeight:700, fontSize:16, color:T.text, marginBottom:6 }}>Confirm Delete</div>
-          <div style={{ fontSize:13, color:T.textSub, marginBottom:16 }}>
-            {delConfirm.mode === 'single' ? "This will delete the transaction" : `Delete ${delConfirm.target.length} transaction(s)`}
-            {delConfirm.mode === 'single' && delConfirm.target.billId ? " and its parent bill." : "."}
-            {" "}This cannot be undone.
-          </div>
-          <div style={{ fontSize:12, fontWeight:700, color:T.textMuted, marginBottom:6, letterSpacing:"0.05em" }}>ENTER YOUR PASSWORD TO CONFIRM</div>
-          <input className="inp" type="password" value={delPass} onChange={e=>{setDelPass(e.target.value);setDelErr("");}}
-            placeholder="Your login password" autoFocus
-            onKeyDown={e => e.key==="Enter" && executeDelete()}
-            style={{ marginBottom: delErr?6:12 }} />
-          {delErr && <div style={{ fontSize:12, color:T.red, marginBottom:10 }}>{delErr}</div>}
-          <div style={{ display:"flex", gap:8, justifyContent:"flex-end" }}>
-            <button className="btn-ghost" onClick={()=>setDelConfirm(null)} style={{ padding:"8px 16px", fontSize:13 }}>Cancel</button>
-            <button className="btn-copper" onClick={executeDelete} style={{ padding:"8px 16px", fontSize:13 }}>Delete</button>
-          </div>
-        </div>
-      </div>
-    )}
+
+    <DeleteConfirmModal
+      open={!!delConfirm}
+      onClose={() => { setDelConfirm(null); setDelPass(""); setDelErr(""); }}
+      onConfirm={executeDelete}
+      user={user}
+      label={delConfirm?.mode === "single" ? "this transaction" : `${delConfirm?.target?.length} transactions`}
+      extra={delConfirm?.mode === "single" && delConfirm?.target?.billId ? "This will also delete the parent bill." : ""}
+    />
   </div>;
 }
