@@ -24,7 +24,7 @@ function getPresetDate(preset) {
 
 export default function Returns({ ctx }) {
   const T = useT();
-  const { transactions, saveTransactions, products, vendors, getStock, user, addLog, addChangeReq } = ctx;
+  const { transactions, saveTransactions, products, vendors, getStock, user, addLog, addChangeReq, invoiceSettings } = ctx;
   const isAdmin = user.role === "admin";
   const isManager = user.role === "manager";
 
@@ -40,6 +40,7 @@ export default function Returns({ ctx }) {
   const tgRet = id => setSelRets(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
   const [exp, setExp] = useState({});
   const [delConfirmRet, setDelConfirmRet] = useState(null);
+  const [delConfirmBulkRet, setDelConfirmBulkRet] = useState(null);
   const [viewTxn, setViewTxn] = useState(null);
   const [editTxn, setEditTxn] = useState(null);
   useEffect(() => setPg(1), [df, dt, typeFilter, search, ps]);
@@ -77,6 +78,18 @@ export default function Returns({ ctx }) {
     if (valid.length === 0) { alert("Add at least one product"); return; }
     if (!form.vendorId) { alert("Select a vendor"); return; }
 
+    // Generate bill number from series settings
+    const isSalesRet = returnType !== "purchase_return";
+    const prefix = isSalesRet
+      ? (invoiceSettings?.salesRetSeries || "SR-")
+      : (invoiceSettings?.purRetSeries || "PR-");
+    const startNum = Number(isSalesRet
+      ? (invoiceSettings?.salesRetSeriesStart || 1)
+      : (invoiceSettings?.purRetSeriesStart || 1));
+    const existingCount = transactions.filter(t =>
+      isSalesRet ? t.type === "return" : t.type === "purchase_return"
+    ).filter(t => t.billNo?.startsWith(prefix)).length;
+    const returnBillNo = prefix + String(startNum + existingCount).padStart(4, "0");
     const batchId = uid(); // groups all items from this return submission
     const newTxns = valid.map(item => {
       const pr = products.find(p => p.id === item.productId);
@@ -85,6 +98,7 @@ export default function Returns({ ctx }) {
       return {
         id: uid(),
         returnId: batchId,
+        billNo: returnBillNo,
         productId: item.productId,
         type: returnType === "purchase_return" ? "purchase_return" : "return",
         qty: Number(item.qty),
@@ -131,8 +145,7 @@ export default function Returns({ ctx }) {
       addChangeReq({ entity: "return", action: "delete", entityId: t.id, entityName: `${t.type} - ${products.find(p=>p.id===t.productId)?.name||t.productId}`, currentData: t, proposedData: null });
       return;
     }
-    if (!window.confirm("Delete this return entry?")) return;
-    saveTransactions(transactions.filter(x => x.id !== t.id));
+    setDelConfirmRet(t);
   };
 
   // ── All return transactions ──────────────────────────────────────────────
@@ -259,10 +272,7 @@ export default function Returns({ ctx }) {
               );
               setSelRets(new Set());
             } else {
-              if (!window.confirm(`Delete ${selRets.size} return entries? This cannot be undone.`)) return;
-              const toDelete = new Set(selRets);
-              saveTransactions(transactions.filter(t => !toDelete.has(t.id)));
-              setSelRets(new Set());
+              setDelConfirmBulkRet([...selRets]);
             }
           }} icon={<Trash2 size={13} />}>{isManager ? "Request Delete" : "Delete Selected"}</GBtn>
           <button onClick={()=>setSelRets(new Set())} style={{marginLeft:"auto",background:"none",border:"none",cursor:"pointer",fontSize:11,color:T.textMuted}}>Clear</button>
@@ -514,12 +524,24 @@ export default function Returns({ ctx }) {
     {/* View Return Detail Modal */}
 
 
+
+
     <DeleteConfirmModal
       open={!!delConfirmRet}
-      onClose={()=>setDelConfirmRet(null)}
-      onConfirm={()=>{ saveTransactions(transactions.filter(t=>!(delConfirmRet||[]).some(g=>g.id===t.id))); }}
+      onClose={() => setDelConfirmRet(null)}
+      onConfirm={() => {
+        const ids = Array.isArray(delConfirmRet) ? delConfirmRet.map(g=>g.id) : [delConfirmRet.id];
+        saveTransactions(transactions.filter(t => !ids.includes(t.id)));
+      }}
       user={user}
-      label={delConfirmRet?.length > 1 ? `${delConfirmRet.length} return entries` : "this return entry"}
+      label={Array.isArray(delConfirmRet) ? `${delConfirmRet.length} return entries` : "this return entry"}
+    />
+    <DeleteConfirmModal
+      open={!!delConfirmBulkRet}
+      onClose={() => setDelConfirmBulkRet(null)}
+      onConfirm={() => { const s = new Set(delConfirmBulkRet||[]); saveTransactions(transactions.filter(t=>!s.has(t.id))); setSelRets(new Set()); }}
+      user={user}
+      label={`${(delConfirmBulkRet||[]).length} return entries`}
     />
   </div>;
 }
