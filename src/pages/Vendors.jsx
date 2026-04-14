@@ -1,3 +1,17 @@
+// Auto-fetch city+state from Indian pincode
+async function fetchPincodeData(pin) {
+  if (!pin || pin.length !== 6) return null;
+  try {
+    const r = await fetch(`https://api.postalpincode.in/pincode/${pin}`);
+    const d = await r.json();
+    if (d?.[0]?.Status === "Success" && d[0].PostOffice?.length) {
+      const po = d[0].PostOffice[0];
+      return { city: po.District || po.Name, state: po.State };
+    }
+  } catch {}
+  return null;
+}
+
 import React, { useState, useMemo } from "react";
 import { Plus, Edit2, Trash2, Send, Search } from "lucide-react";
 import { useT } from "../theme";
