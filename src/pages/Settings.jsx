@@ -127,7 +127,7 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
     {tab === "users" && isAdmin && <div className="glass" style={{ padding: 20, borderRadius: T.radius }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
         <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text }}>User Accounts</div>
-        <GBtn sz="sm" onClick={() => { setUForm({ role: "sales" }); setEu(null); setUModal(true); }} icon={<Plus size={13} />}>Add User</GBtn>
+        <GBtn sz="sm" onClick={() => { setUForm({ role: "manager" }); setEu(null); setUModal(true); }} icon={<Plus size={13} />}>Add User</GBtn>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {users.map(u => <div key={u.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 14px", borderRadius: T.radius, background: T.isDark ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.5)", border: `1px solid ${T.borderSubtle}` }}>
@@ -174,6 +174,38 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
       <div className="glass" style={{ padding: 20, borderRadius: T.radius }}>
         <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 14, color: T.text, marginBottom: 8 }}>Purchase Bills</div>
         <div style={{ fontSize: 12, color: T.textMuted }}>Purchase bill numbers are entered manually from the vendor's invoice. No series needed.</div>
+      </div>
+      <div className="glass" style={{ padding: 20, borderRadius: T.radius }}>
+        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 4 }}>↩ Sales Return Series</div>
+        <div style={{ fontSize: 12, color: T.textMuted, marginBottom: 16 }}>Auto-number for sales return entries.</div>
+        <div className="fgrid">
+          <Field label="Series Prefix" req>
+            <GIn value={invForm.salesRetSeries || ""} onChange={e => setInvForm(p => ({...p, salesRetSeries: e.target.value}))} placeholder="e.g. SR- or SRET-" />
+          </Field>
+          <Field label="Starting Number">
+            <GIn type="number" min="1" value={invForm.salesRetSeriesStart || 1} onChange={e => setInvForm(p => ({...p, salesRetSeriesStart: e.target.value}))} />
+          </Field>
+        </div>
+        <div style={{ padding: "10px 14px", borderRadius: T.radius, background: T.accentBg, border: `1px solid ${T.accent}20`, fontSize: 12, color: T.accent, marginTop: 8 }}>
+          Preview: <strong>{invForm.salesRetSeries || "SR-"}{String(Number(invForm.salesRetSeriesStart || 1)).padStart(4, "0")}</strong>
+        </div>
+        <div style={{ display:"flex", justifyContent:"flex-end", marginTop:14 }}><GBtn onClick={() => { saveInvoiceSettings(invForm); alert("Saved!"); }} icon={<Check size={13} />}>Save</GBtn></div>
+      </div>
+      <div className="glass" style={{ padding: 20, borderRadius: T.radius }}>
+        <div style={{ fontFamily: T.displayFont, fontWeight: 700, fontSize: 15, color: T.text, marginBottom: 4 }}>↩ Purchase Return Series</div>
+        <div style={{ fontSize: 12, color: T.textMuted, marginBottom: 16 }}>Auto-number for purchase return entries.</div>
+        <div className="fgrid">
+          <Field label="Series Prefix" req>
+            <GIn value={invForm.purRetSeries || ""} onChange={e => setInvForm(p => ({...p, purRetSeries: e.target.value}))} placeholder="e.g. PR- or PRET-" />
+          </Field>
+          <Field label="Starting Number">
+            <GIn type="number" min="1" value={invForm.purRetSeriesStart || 1} onChange={e => setInvForm(p => ({...p, purRetSeriesStart: e.target.value}))} />
+          </Field>
+        </div>
+        <div style={{ padding: "10px 14px", borderRadius: T.radius, background: T.accentBg, border: `1px solid ${T.accent}20`, fontSize: 12, color: T.accent, marginTop: 8 }}>
+          Preview: <strong>{invForm.purRetSeries || "PR-"}{String(Number(invForm.purRetSeriesStart || 1)).padStart(4, "0")}</strong>
+        </div>
+        <div style={{ display:"flex", justifyContent:"flex-end", marginTop:14 }}><GBtn onClick={() => { saveInvoiceSettings(invForm); alert("Saved!"); }} icon={<Check size={13} />}>Save</GBtn></div>
       </div>
     </div>}
 
@@ -593,11 +625,7 @@ export default function Settings({ ctx, sheetsUrl, setSheetsUrl, testStatus, onT
         <Field label="Role" cl="s2">
           <GS value={uForm.role || "manager"} onChange={e => uf("role", e.target.value)}>
             <option value="admin">Admin (Full Access)</option>
-            <option value="manager">Manager (All pages + Approvals)</option>
-            <option value="sales">Sales Person (Sales, Inventory, Returns, Vendors)</option>
-            <option value="purchase">Purchase Person (Purchase, Vendors, Inventory)</option>
-            <option value="accountant">Accountant (Sales, Purchase, Returns, P&L, Transactions)</option>
-            <option value="production">Production (Products, Inventory, Reports)</option>
+            <option value="manager">Manager (Restricted — set pages in Access Control)</option>
           </GS>
         </Field>
       </div>
