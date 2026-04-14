@@ -5,7 +5,7 @@ import { useT } from "../theme";
 const ITEM_H = 52;
 const VISIBLE = 4;
 
-export default function ProductSearch({ value, onChange, products, placeholder }) {
+export default function ProductSearch({ value, onChange, products, placeholder, getStock }) {
   const T = useT();
   const selected = products.find(p => p.id === value);
 
@@ -92,7 +92,7 @@ export default function ProductSearch({ value, onChange, products, placeholder }
                 onMouseLeave={e => e.currentTarget.style.background = p.id === value ? T.accentBg : "transparent"}>
                 <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{p.name}</div>
                 <div style={{ fontSize: 11, color: T.textMuted, marginTop: 2 }}>
-                  {p.sku}{p.gstRate > 0 ? ` · GST ${p.gstRate}%` : ""} · MRP ₹{Number(p.mrp || 0).toLocaleString("en-IN")} · Stock: {p.stock ?? ""}
+                  {p.sku}{p.gstRate > 0 ? ` · GST ${p.gstRate}%` : ""} · MRP ₹{Number(p.mrp || 0).toLocaleString("en-IN")}{getStock ? ` · Stock: ${getStock(p.id)}` : ""}
                 </div>
               </div>
             ))}
