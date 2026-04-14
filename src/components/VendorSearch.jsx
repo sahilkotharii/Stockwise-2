@@ -8,11 +8,11 @@ export default function VendorSearch({ value, onChange, vendors = [], placeholde
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   const inputRef = useRef(null);
-  const [rect, setRect] = React.useState(null);
+  const [dropPos, setDropPos] = useState({ top: 0, left: 0, width: 200 });
   const selected = vendors.find(v => v.id === value);
 
   const filtered = useMemo(() => {
-    const q = (query || "").toLowerCase();
+    const q = (query || "").toLowerCase().trim();
     if (!q) return vendors.slice(0, 40);
     return vendors.filter(v =>
       (v.name || "").toLowerCase().includes(q) ||
@@ -21,26 +21,29 @@ export default function VendorSearch({ value, onChange, vendors = [], placeholde
     ).slice(0, 50);
   }, [query, vendors]);
 
-  // Close on outside click/touch
+  const updatePos = () => {
+    if (inputRef.current) {
+      const r = inputRef.current.getBoundingClientRect();
+      setDropPos({ top: r.bottom + 4, left: r.left, width: r.width });
+    }
+  };
+
   useEffect(() => {
-    const h = e => {
+    const close = e => {
       if (ref.current && !ref.current.contains(e.target)) {
-        setOpen(false);
-        setQuery("");
+        setOpen(false); setQuery("");
       }
     };
-    document.addEventListener("mousedown", h);
-    document.addEventListener("touchstart", h);
+    document.addEventListener("mousedown", close);
+    document.addEventListener("touchstart", close);
     return () => {
-      document.removeEventListener("mousedown", h);
-      document.removeEventListener("touchstart", h);
+      document.removeEventListener("mousedown", close);
+      document.removeEventListener("touchstart", close);
     };
   }, []);
 
-  const selectItem = (id) => {
-    onChange(id);
-    setOpen(false);
-    setQuery("");
+  const selectItem = id => {
+    onChange(id); setOpen(false); setQuery("");
     inputRef.current?.blur();
   };
 
@@ -54,43 +57,25 @@ export default function VendorSearch({ value, onChange, vendors = [], placeholde
           style={{ paddingLeft: 26 }}
           value={open ? query : (selected ? selected.name : "")}
           placeholder={placeholder}
-          onChange={e => { setQuery(e.target.value); setOpen(true); }}
-          onFocus={() => {
-            setQuery("");
-            setOpen(true);
-            if (inputRef.current) {
-              const r = inputRef.current.getBoundingClientRect();
-              setRect({ top: r.bottom + window.scrollY, left: r.left + window.scrollX, width: r.width });
-            }
-          }}
-          onInput={() => {
-            if (inputRef.current) {
-              const r = inputRef.current.getBoundingClientRect();
-              setRect({ top: r.bottom + window.scrollY, left: r.left + window.scrollX, width: r.width });
-            }
-          }}
           autoComplete="off"
+          onChange={e => { setQuery(e.target.value); if (!open) { updatePos(); setOpen(true); } }}
+          onFocus={() => { setQuery(""); updatePos(); setOpen(true); }}
         />
         {value && !open && (
-          <button
-            type="button"
-            onClick={() => { onChange(""); setQuery(""); }}
-            style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: T.textMuted, padding: 2, fontSize: 14, lineHeight: 1 }}
-          >×</button>
+          <button type="button" onClick={() => { onChange(""); setQuery(""); }}
+            style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: T.textMuted, padding: 2, fontSize: 16, lineHeight: 1 }}>×</button>
         )}
       </div>
       {open && (
-        <div className="spring-down" style={{ position: "fixed", top: rect ? rect.top + 3 : 0, left: rect ? rect.left : 0, width: rect ? rect.width : 200, zIndex: 9999, background: T.surfaceStrong, border: `1px solid ${T.borderSubtle}`, borderRadius: T.radius, boxShadow: T.shadowLg, maxHeight: 260, overflowY: "auto" }}>
-          {vendors.length === 0 && <div style={{ padding: "12px", fontSize: 12, color: T.textMuted }}>No vendors yet — add one in Vendors page</div>}
-          {vendors.length > 0 && filtered.length === 0 && <div style={{ padding: "10px 12px", fontSize: 12, color: T.textMuted }}>No vendors match "{query}"</div>}
+        <div style={{ position: "fixed", top: dropPos.top, left: dropPos.left, width: dropPos.width, zIndex: 9999, background: T.surfaceStrong, border: `1px solid ${T.accent}40`, borderRadius: T.radius, boxShadow: T.shadowXl, maxHeight: 240, overflowY: "auto" }}>
+          {vendors.length === 0 && <div style={{ padding: 12, fontSize: 12, color: T.textMuted }}>No vendors yet</div>}
+          {vendors.length > 0 && filtered.length === 0 && <div style={{ padding: "10px 12px", fontSize: 12, color: T.textMuted }}>No match for "{query}"</div>}
           {filtered.map(v => (
-            <div
-              key={v.id}
-              onClick={() => selectItem(v.id)}
-              style={{ padding: "9px 12px", cursor: "pointer", borderBottom: `1px solid ${T.borderSubtle}`, background: v.id === value ? T.accentBg : "transparent", transition: "background .1s" }}
-              onMouseEnter={e => { if (v.id !== value) e.currentTarget.style.background = T.isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)"; }}
-              onMouseLeave={e => { if (v.id !== value) e.currentTarget.style.background = "transparent"; }}
-            >
+            <div key={v.id}
+              onMouseDown={e => { e.preventDefault(); selectItem(v.id); }}
+              style={{ padding: "9px 12px", cursor: "pointer", borderBottom: `1px solid ${T.borderSubtle}`, background: v.id === value ? T.accentBg : "transparent" }}
+              onMouseEnter={e => e.currentTarget.style.background = T.isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.05)"}
+              onMouseLeave={e => e.currentTarget.style.background = v.id === value ? T.accentBg : "transparent"}>
               <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{v.name}</div>
               <div style={{ fontSize: 11, color: T.textMuted, marginTop: 1 }}>
                 {[v.city, v.state].filter(Boolean).join(", ")}{v.gstin ? ` · ${v.gstin}` : ""}
