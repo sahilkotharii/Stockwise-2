@@ -1,3 +1,16 @@
+async function fetchPincodeData(pin) {
+  if (!pin || String(pin).length !== 6) return null;
+  try {
+    const r = await fetch(`https://api.postalpincode.in/pincode/${pin}`);
+    const d = await r.json();
+    if (d?.[0]?.Status === "Success" && d[0].PostOffice?.length) {
+      const po = d[0].PostOffice[0];
+      return { city: po.District || po.Name, state: po.State };
+    }
+  } catch {}
+  return null;
+}
+
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import { Plus, X, FileText, Search, ChevronDown, ChevronUp, Truck } from "lucide-react";
 import { useT } from "../theme";
@@ -70,10 +83,16 @@ export default function BillForm({ type, bills, onSave, products, vendors, getSt
   const [discType, setDiscType] = useState(existingBill?.discType || "percent");
   const [notes, setNotes] = useState(existingBill?.notes || "");
   const [gstType, setGstType] = useState(existingBill?.gstType || "cgst_sgst");
+  const [gstAutoSet, setGstAutoSet] = useState(false);
   const [paymentMode, setPaymentMode] = useState(existingBill?.paymentMode || "");
   const [purchaseInvoiceNo, setPurchaseInvoiceNo] = useState(existingBill?.purchaseInvoiceNo || "");
   // Ship-to (for sales)
   const [shipTo, setShipTo] = useState(existingBill?.shipTo || "");
+  const [shipAddr, setShipAddr] = useState(() => {
+    // Parse existing shipTo string or default to empty
+    return { addr1: "", addr2: "", city: "", state: "", pincode: "" };
+  });
+  const upShipAddr = (k, v) => setShipAddr(p => ({...p, [k]: v}));
   const [shipToSameAsBill, setShipToSameAsBill] = useState(!existingBill?.shipTo || existingBill?.shipToSameAsBill !== false);
   // Eway bill
   const [ewayBill, setEwayBill] = useState(existingBill?.ewayBill || false);
@@ -168,7 +187,7 @@ export default function BillForm({ type, bills, onSave, products, vendors, getSt
       type, date, vendorId,
       gstType,
       billToAddress,
-      shipTo: type === "sale" ? (shipToSameAsBill ? billToAddress : shipTo) : "",
+      shipTo: type === "sale" ? (shipToSameAsBill ? billToAddress : [shipAddr.addr1, shipAddr.addr2, shipAddr.city, shipAddr.state, shipAddr.pincode].filter(Boolean).join(", ")) : "",
       shipToSameAsBill: type === "sale" ? shipToSameAsBill : true,
       ewayBill: type === "sale" ? ewayBill : false,
       ewayBillNo: type === "sale" && ewayBill ? ewayBillNo : "",
@@ -267,6 +286,7 @@ export default function BillForm({ type, bills, onSave, products, vendors, getSt
         </div>
         <span style={{ fontSize: 11, color: gstType === "igst" ? T.blue : T.green }}>
           {gstType === "igst" ? "Full GST as IGST on invoice" : "GST split CGST 50% + SGST 50%"}
+          {gstAutoSet && <span style={{ marginLeft:6, color:T.textMuted }}>(auto-detected)</span>}
         </span>
       </div>
 
