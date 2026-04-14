@@ -205,8 +205,9 @@ select option{background:${T.isDark?"#1a1a1a":"#fff"};color:${T.text}}
   .filter-wrap{gap:6px!important}
   .filter-wrap>*{min-width:0;flex-shrink:1}
   .filter-wrap input[type="date"]{flex:1 1 100px!important;min-width:80px!important}
-  .bill-item-row{grid-template-columns:1fr 55px 85px 75px 28px!important;gap:4px!important;padding:6px 8px!important}
+  .bill-item-row{grid-template-columns:1fr 32px!important;gap:4px!important;padding:6px 8px 2px!important}
   .bill-item-hdr{display:none!important}
+  .bill-item-sub{display:grid!important;grid-template-columns:70px 90px 90px 60px!important;gap:4px!important;padding:2px 8px 6px 8px!important}
   .hide-mob{display:none!important}
   table{font-size:12px!important}
   .td{padding:8px 10px!important}
