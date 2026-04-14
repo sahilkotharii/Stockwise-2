@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Plus, Search, X, Eye, Trash2, RotateCcw, Package, Truck, AlertTriangle, Edit2 } from "lucide-react";
 import { useT } from "../theme";
-import { KCard, GBtn, GIn, GS, GTa, Field, Modal, Pager, PeriodBar, SearchInput } from "../components/UI";
+import { KCard, GBtn, GIn, GS, GTa, Field, Modal, Pager, PeriodBar, SearchInput, DeleteConfirmModal } from "../components/UI";
 import { ProductSearch } from "../components/BillForm";
 import VendorSearch from "../components/VendorSearch";
 import { uid, today, fmtCur, fmtDate, inRange } from "../utils";
@@ -39,6 +39,7 @@ export default function Returns({ ctx }) {
   const [selRets, setSelRets] = useState(new Set());
   const tgRet = id => setSelRets(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
   const [exp, setExp] = useState({});
+  const [delConfirmRet, setDelConfirmRet] = useState(null);
   const [viewTxn, setViewTxn] = useState(null);
   const [editTxn, setEditTxn] = useState(null);
   useEffect(() => setPg(1), [df, dt, typeFilter, search, ps]);
@@ -322,7 +323,7 @@ export default function Returns({ ctx }) {
                     <div style={{ display:"flex", gap:3 }}>
                       <button className="btn-ghost" onClick={() => setExp(p=>({...p,[gKey]:!p[gKey]}))} style={{ padding:"3px 6px" }} title="View"><Eye size={13}/></button>
                       {isAdmin && group.length === 1 && <button className="btn-ghost" onClick={() => { setEditTxn(first); setReturnType(first.type==="purchase_return"?"purchase_return":"sales_return"); setForm({ date:first.date, vendorId:first.vendorId||"", gstType:first.gstType||"cgst_sgst", notes:first.notes||"", items:[{ id:uid(), productId:first.productId, qty:first.qty, price:first.price||"", isDamaged:first.isDamaged||false }] }); setModal(true); }} style={{ padding:"3px 6px" }} title="Edit"><Edit2 size={13}/></button>}
-                      <button className="btn-danger" onClick={e=>{e.stopPropagation(); if(!window.confirm(`Delete this return entry?`))return; saveTransactions(transactions.filter(t=>!group.some(g=>g.id===t.id)));}} style={{ padding:"3px 6px" }}><Trash2 size={11}/></button>
+                      <button className="btn-danger" onClick={e=>{e.stopPropagation(); setDelConfirmRet(group);}} style={{ padding:"3px 6px" }}><Trash2 size={11}/></button>
                     </div>
                   </td>
                 </tr>
@@ -512,5 +513,13 @@ export default function Returns({ ctx }) {
     </Modal>
     {/* View Return Detail Modal */}
 
+
+    <DeleteConfirmModal
+      open={!!delConfirmRet}
+      onClose={()=>setDelConfirmRet(null)}
+      onConfirm={()=>{ saveTransactions(transactions.filter(t=>!(delConfirmRet||[]).some(g=>g.id===t.id))); }}
+      user={user}
+      label={delConfirmRet?.length > 1 ? `${delConfirmRet.length} return entries` : "this return entry"}
+    />
   </div>;
 }
