@@ -21,34 +21,11 @@ export default function BillForm({ type, bills, onSave, products, vendors, getSt
   const [notes, setNotes] = useState(existingBill?.notes || "");
   const [gstType, setGstType] = useState(existingBill?.gstType || "cgst_sgst");
   const [gstAutoSet, setGstAutoSet] = useState(false);
-
-  // ── Auto-detect GST type from company state vs vendor/ship-to state ────
-  useEffect(() => {
-    if (isEdit) return; // don't override on edit
-    const companyState = normaliseState(invoiceSettings?.state);
-    if (!companyState) return; // company state not set in settings
-
-    const vendor = (vendors||[]).find(v => v.id === vendorId);
-    if (!vendor) { setGstAutoSet(false); return; }
-
-    // For sales with different ship-to address, use ship-to state
-    let compareState = normaliseState(vendor.state);
-    if (type === "sale" && !shipToSameAsBill && shipAddr.state) {
-      compareState = normaliseState(shipAddr.state);
-    }
-
-    if (!compareState) { setGstAutoSet(false); return; }
-
-    const isInterState = companyState !== compareState;
-    setGstType(isInterState ? "igst" : "cgst_sgst");
-    setGstAutoSet(true);
-  }, [vendorId, vendors, invoiceSettings?.state, shipToSameAsBill, shipAddr.state, type, isEdit]);
   const [paymentMode, setPaymentMode] = useState(existingBill?.paymentMode || "");
   const [purchaseInvoiceNo, setPurchaseInvoiceNo] = useState(existingBill?.purchaseInvoiceNo || "");
   // Ship-to (for sales)
   const [shipTo, setShipTo] = useState(existingBill?.shipTo || "");
   const [shipAddr, setShipAddr] = useState(() => {
-    // Parse existing shipTo string or default to empty
     return { addr1: "", addr2: "", city: "", state: "", pincode: "" };
   });
   const upShipAddr = (k, v) => setShipAddr(p => ({...p, [k]: v}));
@@ -65,6 +42,27 @@ export default function BillForm({ type, bills, onSave, products, vendors, getSt
       price: i.price, gstRate: Number(i.gstRate || 0), isDamaged: i.isDamaged || false
     })) || [{ id: uid(), productId: "", qty: 1, price: "", gstRate: 0, isDamaged: false }]
   );
+
+  // ── Auto-detect GST type from company state vs vendor/ship-to state ────
+  useEffect(() => {
+    if (isEdit) return;
+    const companyState = normaliseState(invoiceSettings?.state);
+    if (!companyState) return;
+
+    const vendor = (vendors||[]).find(v => v.id === vendorId);
+    if (!vendor) { setGstAutoSet(false); return; }
+
+    let compareState = normaliseState(vendor.state);
+    if (type === "sale" && !shipToSameAsBill && shipAddr.state) {
+      compareState = normaliseState(shipAddr.state);
+    }
+
+    if (!compareState) { setGstAutoSet(false); return; }
+
+    const isInterState = companyState !== compareState;
+    setGstType(isInterState ? "igst" : "cgst_sgst");
+    setGstAutoSet(true);
+  }, [vendorId, vendors, invoiceSettings?.state, shipToSameAsBill, shipAddr.state, type, isEdit]);
 
   // Auto-populate shipTo from bill address when vendor changes (for sales)
   useEffect(() => {
