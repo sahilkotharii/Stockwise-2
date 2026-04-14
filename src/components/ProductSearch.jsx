@@ -7,25 +7,32 @@ const VISIBLE = 4;
 
 export default function ProductSearch({ value, onChange, products, placeholder }) {
   const T = useT();
-  const [query, setQuery] = useState("");
+  const selected = products.find(p => p.id === value);
+
+  // Single source of truth: what's shown in the input
+  const [inputVal, setInputVal] = useState(selected?.name || "");
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   const inputRef = useRef(null);
-  const openRef = useRef(false);
   const [dropPos, setDropPos] = useState({ top: 0, left: 0, width: 200 });
-  const selected = products.find(p => p.id === value);
 
-  useEffect(() => { openRef.current = open; }, [open]);
+  // Sync display when parent changes the selected product externally
+  useEffect(() => {
+    if (!open) {
+      setInputVal(selected?.name || "");
+    }
+  }, [value, selected, open]);
 
   const filtered = useMemo(() => {
-    const q = (query || "").toLowerCase().trim();
+    if (!open) return [];
+    const q = (inputVal || "").toLowerCase().trim();
     if (!q) return products.slice(0, 50);
     return products.filter(p =>
       (p.name || "").toLowerCase().includes(q) ||
       (p.sku || "").toLowerCase().includes(q) ||
       (p.alias || "").toLowerCase().includes(q)
     ).slice(0, 50);
-  }, [query, products]);
+  }, [inputVal, products, open]);
 
   const updatePos = () => {
     if (inputRef.current) {
@@ -35,18 +42,26 @@ export default function ProductSearch({ value, onChange, products, placeholder }
   };
 
   useEffect(() => {
-    const close = e => { if (ref.current && !ref.current.contains(e.target)) { setOpen(false); setQuery(""); } };
+    const close = e => {
+      if (ref.current && !ref.current.contains(e.target)) {
+        setOpen(false);
+        setInputVal(selected?.name || "");
+      }
+    };
     document.addEventListener("mousedown", close);
     document.addEventListener("touchstart", close);
     return () => { document.removeEventListener("mousedown", close); document.removeEventListener("touchstart", close); };
-  }, []);
+  }, [selected]);
 
   const handleFocus = () => {
-    if (!openRef.current) {
-      setQuery("");
-      updatePos();
-      setOpen(true);
-    }
+    setInputVal("");
+    updatePos();
+    setOpen(true);
+  };
+
+  const handleChange = e => {
+    setInputVal(e.target.value);
+    if (!open) { updatePos(); setOpen(true); }
   };
 
   return (
@@ -54,14 +69,14 @@ export default function ProductSearch({ value, onChange, products, placeholder }
       <div style={{ position: "relative" }}>
         <Search size={11} style={{ position: "absolute", left: 9, top: "50%", transform: "translateY(-50%)", color: T.textMuted, pointerEvents: "none" }} />
         <input ref={inputRef} className="inp" style={{ paddingLeft: 26 }}
-          value={open ? query : (selected ? selected.name : "")}
+          value={inputVal}
           placeholder={placeholder || "Search product…"}
           autoComplete="off"
-          onChange={e => { setQuery(e.target.value); if (!open) { updatePos(); setOpen(true); } }}
+          onChange={handleChange}
           onFocus={handleFocus}
         />
         {value && !open && (
-          <button type="button" onClick={() => onChange("")}
+          <button type="button" onClick={() => { onChange(""); setInputVal(""); }}
             style={{ position:"absolute", right:8, top:"50%", transform:"translateY(-50%)", background:"none", border:"none", cursor:"pointer", color:T.textMuted, fontSize:16, lineHeight:1 }}>×</button>
         )}
       </div>
@@ -71,7 +86,7 @@ export default function ProductSearch({ value, onChange, products, placeholder }
             ? <div style={{ padding: "12px", fontSize: 12, color: T.textMuted }}>No products found</div>
             : filtered.map(p => (
               <div key={p.id}
-                onMouseDown={e => { e.preventDefault(); onChange(p.id); setOpen(false); setQuery(""); }}
+                onMouseDown={e => { e.preventDefault(); onChange(p.id); setInputVal(p.name); setOpen(false); }}
                 style={{ padding: "8px 12px", cursor: "pointer", borderBottom: `1px solid ${T.borderSubtle}`, background: p.id === value ? T.accentBg : "transparent", minHeight: ITEM_H }}
                 onMouseEnter={e => e.currentTarget.style.background = T.isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.05)"}
                 onMouseLeave={e => e.currentTarget.style.background = p.id === value ? T.accentBg : "transparent"}>
