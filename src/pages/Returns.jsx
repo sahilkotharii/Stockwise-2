@@ -4,7 +4,7 @@ import { useT } from "../theme";
 import { KCard, GBtn, GIn, GS, GTa, Field, Modal, Pager, PeriodBar, SearchInput, DeleteConfirmModal } from "../components/UI";
 import ProductSearch from "../components/ProductSearch";
 import VendorSearch from "../components/VendorSearch";
-import { uid, today, fmtCur, fmtDate, inRange, getPresetDate, normaliseState } from "../utils";
+import { uid, today, fmtCur, fmtDate, inRange, getPresetDate, normaliseState, safeNum } from "../utils";
 
 const PRESETS = [
   { k: "30d", l: "30d" }, { k: "90d", l: "90d" }, { k: "6m", l: "6M" }, { k: "1y", l: "1Y" }
@@ -367,7 +367,7 @@ export default function Returns({ ctx }) {
                                     <td style={{ padding:"5px 8px", color:T.textMuted }}>{pr2?.unit||"pcs"}</td>
                                     <td style={{ padding:"5px 8px", textAlign:"right", color:T.textSub }}>{fmtCur(mrp)}</td>
                                     <td style={{ padding:"5px 8px", textAlign:"right", color:T.textSub }}>{fmtCur(t.price||0)}</td>
-                                    <td style={{ padding:"5px 8px", textAlign:"right", color:T.amber }}>{t.gstRate?t.gstRate+"%":"—"}</td>
+                                    <td style={{ padding:"5px 8px", textAlign:"right", color:T.amber }}>{safeNum(t.gstRate)>0?safeNum(t.gstRate)+"%":"—"}</td>
                                     <td style={{ padding:"5px 8px", textAlign:"right", fontWeight:700, color:typeColor }}>{fmtCur(val)}</td>
                                     <td style={{ padding:"5px 8px" }}>{t.isDamaged?<span style={{color:T.amber,fontWeight:700,fontSize:11}}>YES</span>:<span style={{color:T.textMuted,fontSize:11}}>—</span>}</td>
                                   </tr>
