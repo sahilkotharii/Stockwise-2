@@ -37,6 +37,20 @@ export function normaliseState(s) {
   return s.trim().toLowerCase().replace(/[\s&]+/g, "").replace(/andaman.*nicobar/i,"andamannicobar");
 }
 
+// ── Safe number extractor — Google Sheets sometimes returns numbers as dates ──
+export function safeNum(v) {
+  if (v === null || v === undefined || v === "") return 0;
+  if (typeof v === "number") return isNaN(v) ? 0 : v;
+  if (typeof v === "string") {
+    // If it looks like a date (e.g. "1900-01-04"), return 0
+    if (/^\d{4}-\d{2}-\d{2}/.test(v)) return 0;
+    const n = Number(v);
+    return isNaN(n) ? 0 : n;
+  }
+  if (v instanceof Date) return 0; // Sheets date misinterpretation
+  return 0;
+}
+
 // ── Date range filter ────────────────────────────────────────────────────────
 export const inRange = (d, f, t) => {
   if (!f && !t) return true;
