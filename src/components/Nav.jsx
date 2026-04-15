@@ -19,7 +19,7 @@ export const ALL_NAV = [
 // Pages each role can access (admin = all)
 const ROLE_PAGES = {
   admin:      null, // null = all
-  manager:    ["dashboard","sales","purchase","returns","inventory","reports","pnl","products","vendors","transactions","approvals","settings"],
+  manager:    ["dashboard","sales","purchase","returns","inventory","reports","pnl","products","vendors","transactions","settings"],
   sales:      ["dashboard","sales","inventory","returns","vendors","settings"],
   purchase:   ["dashboard","purchase","vendors","inventory","settings"],
   accountant: ["dashboard","sales","purchase","returns","inventory","pnl","transactions","settings"],
