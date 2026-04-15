@@ -85,7 +85,7 @@ export default function Dashboard({ ctx }) {
                 <div style={{ display:"flex", flexWrap:"wrap", gap:4, marginTop:4, paddingLeft:4 }}>
                   {oos.map(p => (
                     <span key={p.id} style={{ fontSize:11, padding:"3px 8px", borderRadius:T.radiusFull, background:`${T.red}15`, color:T.red, fontWeight:600, border:`1px solid ${T.red}25` }}>
-                      {p.alias || p.name}
+                      {p.name}
                     </span>
                   ))}
                 </div>
@@ -102,7 +102,7 @@ export default function Dashboard({ ctx }) {
                 <div style={{ display:"flex", flexWrap:"wrap", gap:4, marginTop:4, paddingLeft:4 }}>
                   {lowStock.map(p => (
                     <span key={p.id} style={{ fontSize:11, padding:"3px 8px", borderRadius:T.radiusFull, background:`${T.amber}15`, color:T.amber, fontWeight:600, border:`1px solid ${T.amber}25` }}>
-                      {p.alias || p.name} <span style={{ opacity:0.7 }}>({getStock(p.id)})</span>
+                      {p.name} <span style={{ opacity:0.7 }}>({getStock(p.id)})</span>
                     </span>
                   ))}
                 </div>
