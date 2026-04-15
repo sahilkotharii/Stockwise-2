@@ -16,14 +16,15 @@ export default function PnL({ ctx }) {
 
   const inP = d => { const s = safeDate(d); return s && s >= df && s <= dt; };
 
-  // ── Pre-index transactions ────────────────────────────────────────────────
   const txnsByProduct = useMemo(() => {
     const m = {};
     transactions.forEach(t => { if (!m[t.productId]) m[t.productId] = []; m[t.productId].push(t); });
     return m;
   }, [transactions]);
 
-  // ── Bills in period ───────────────────────────────────────────────────────
+  // ── Helper: lookup purchase price (cost) for a product ─────────────────────
+  const ppOf = pid => safeNum(products.find(p => p.id === pid)?.purchasePrice);
+
   const saleBills = useMemo(() => bills.filter(b => b.type === "sale"     && inP(b.date)), [bills, df, dt]);
   const purBills  = useMemo(() => bills.filter(b => b.type === "purchase" && inP(b.date)), [bills, df, dt]);
   const retTxns   = useMemo(() => transactions.filter(t => t.type === "return"           && inP(t.date)), [transactions, df, dt]);
@@ -32,88 +33,74 @@ export default function PnL({ ctx }) {
   // ── REVENUE ───────────────────────────────────────────────────────────────
   const grossSalesInclGst = useMemo(() => saleBills.reduce((s,b)=>s+safeNum(b.total),0), [saleBills]);
   const gstOnSales        = useMemo(() => saleBills.reduce((s,b)=>s+(calcBillGst(b)||0),0), [saleBills]);
-  const grossSalesExclGst = (grossSalesInclGst||0) - (gstOnSales||0);
+  const grossSalesExclGst = grossSalesInclGst - gstOnSales;
 
-  // Sale returns — value, GST, and net
   const salesReturnValue  = useMemo(() => retTxns.reduce((s,t)=>s+sQty(t)*sPrice(t),0), [retTxns]);
   const salesReturnGst    = useMemo(() => retTxns.reduce((s,t)=>{
     const rate = sGst(t) || safeNum(products.find(p=>p.id===t.productId)?.gstRate);
     return s + sQty(t) * sPrice(t) * rate / (100+rate);
   }, 0), [retTxns, products]);
-  const salesReturnExclGst = (salesReturnValue||0) - (salesReturnGst||0);
+  const salesReturnExclGst = salesReturnValue - salesReturnGst;
 
-  const netSalesInclGst = (grossSalesInclGst||0) - (salesReturnValue||0);
-  const netSalesExclGst = (grossSalesExclGst||0) - (salesReturnExclGst||0);
+  // ── Sales returns valued AT COST (purchase price) for inventory section ────
+  const salesReturnAtCost = useMemo(() =>
+    retTxns.reduce((s,t) => s + sQty(t) * ppOf(t.productId), 0)
+  , [retTxns, products]);
+
+  const netSalesExclGst = grossSalesExclGst - salesReturnExclGst;
 
   // ── PURCHASES ─────────────────────────────────────────────────────────────
   const totalPurchaseInclGst = useMemo(() => purBills.reduce((s,b)=>s+safeNum(b.total),0), [purBills]);
   const purchasesExclGst     = useMemo(() => purBills.reduce((s,b)=>s+safeNum(b.subtotal),0), [purBills]);
   const gstOnPurchases       = totalPurchaseInclGst - purchasesExclGst;
 
-  // Purchase returns — value, GST, and net
   const purReturnValue       = useMemo(() => purRetTxns.reduce((s,t)=>s+sQty(t)*sPrice(t),0), [purRetTxns]);
   const purReturnGst         = useMemo(() => purRetTxns.reduce((s,t)=>{
     const rate = sGst(t) || safeNum(products.find(p=>p.id===t.productId)?.gstRate);
     return s + sQty(t) * sPrice(t) * rate / 100;
   }, 0), [purRetTxns, products]);
-  const purReturnExclGst     = (purReturnValue||0) - (purReturnGst||0);
+  const purReturnExclGst     = purReturnValue - purReturnGst;
+  const netPurchases         = purchasesExclGst - purReturnExclGst;
 
-  const netPurchases         = (purchasesExclGst||0) - (purReturnExclGst||0);
-
-  // ── COGS ─────────────────────────────────────────────────────────────────
-  const openingStock = useMemo(() => {
-    const stockAt = (pid, before) =>
-      (txnsByProduct[pid] || []).filter(t => {
+  // ── STOCK — uses transaction-level qty counting ───────────────────────────
+  const stockValAt = (upTo, strictBefore) => {
+    return products.reduce((s, pr) => {
+      const qty = (txnsByProduct[pr.id] || []).filter(t => {
         const d = safeDate(t.date);
         if (!d) return false;
-        const type = t.type || "";
-        if (type === "opening") return d <= before;
-        return d < before;
-      }).reduce((s, t) => {
-        const type = t.type || "";
-        if (["opening","purchase","return"].includes(type))      return s + sQty(t);
-        if (["sale","damaged","purchase_return"].includes(type)) return s - sQty(t);
-        return s;
+        if (t.type === "opening") return d <= upTo;
+        return strictBefore ? d < upTo : d <= upTo;
+      }).reduce((sq, t) => {
+        if (["opening","purchase","return"].includes(t.type))      return sq + sQty(t);
+        if (["sale","damaged","purchase_return"].includes(t.type)) return sq - sQty(t);
+        return sq;
       }, 0);
-    return products.reduce((s,pr) => s + Math.max(0, stockAt(pr.id, df)) * safeNum(pr.purchasePrice), 0);
-  }, [products, txnsByProduct, df]);
+      return s + Math.max(0, qty) * safeNum(pr.purchasePrice);
+    }, 0);
+  };
 
-  const closingStock = useMemo(() => {
-    const stockAt = (pid, upTo) =>
-      (txnsByProduct[pid] || []).filter(t => {
-        const d = safeDate(t.date);
-        if (!d) return false;
-        return d <= upTo;
-      }).reduce((s, t) => {
-        const type = t.type || "";
-        if (["opening","purchase","return"].includes(type))      return s + sQty(t);
-        if (["sale","damaged","purchase_return"].includes(type)) return s - sQty(t);
-        return s;
-      }, 0);
-    return products.reduce((s,pr) => s + Math.max(0, stockAt(pr.id, dt)) * safeNum(pr.purchasePrice), 0);
-  }, [products, txnsByProduct, dt]);
+  const openingStock = useMemo(() => stockValAt(df, true), [products, txnsByProduct, df]);
+  const closingStock = useMemo(() => stockValAt(dt, false), [products, txnsByProduct, dt]);
 
-  const cogs        = (openingStock||0) + (netPurchases||0) - (closingStock||0);
-  const grossProfit = (netSalesExclGst||0) - (cogs||0);
-  const margin      = netSalesExclGst > 0 ? ((grossProfit/netSalesExclGst)*100) : 0;
+  const cogs        = openingStock + netPurchases - closingStock;
+  const grossProfit = netSalesExclGst - cogs;
+  const margin      = netSalesExclGst > 0 ? (grossProfit/netSalesExclGst*100) : 0;
 
   const exportCSV = () => dlCSV(toCSV([
     { item:"Gross Sales (incl. GST)",   value: grossSalesInclGst  },
     { item:"GST on Sales",              value: gstOnSales         },
     { item:"Gross Sales (excl. GST)",   value: grossSalesExclGst  },
-    { item:"Sales Returns (incl. GST)", value: salesReturnValue   },
+    { item:"Sales Returns (sell price)",value: salesReturnValue   },
     { item:"Sales Return GST",          value: salesReturnGst     },
-    { item:"Sales Returns (excl. GST)", value: salesReturnExclGst },
+    { item:"Sales Returns (at cost)",   value: salesReturnAtCost  },
     { item:"Net Sales (excl. GST)",     value: netSalesExclGst    },
-    { item:"Total Purchase (incl. GST)",value: totalPurchaseInclGst},
     { item:"Purchases (excl. GST)",     value: purchasesExclGst   },
     { item:"GST on Purchases",          value: gstOnPurchases     },
-    { item:"Purchase Returns (incl GST)",value: purReturnValue    },
-    { item:"Purchase Return GST",       value: purReturnGst       },
     { item:"Purchase Returns (excl GST)",value: purReturnExclGst  },
+    { item:"Purchase Return GST",       value: purReturnGst       },
     { item:"Net Purchases (excl. GST)", value: netPurchases       },
-    { item:"Opening Stock",             value: openingStock       },
-    { item:"Closing Stock",             value: closingStock       },
+    { item:"Opening Stock (at cost)",   value: openingStock       },
+    { item:"Closing Stock (at cost)",   value: closingStock       },
     { item:"COGS",                      value: cogs               },
     { item:"Gross Profit",              value: grossProfit        },
     { item:"Gross Margin %",            value: margin.toFixed(1)+"%"},
@@ -134,12 +121,10 @@ export default function PnL({ ctx }) {
     </>
   );
 
-  const dataStatus = `${saleBills.length} sale bills · ${purBills.length} purchase bills · ${retTxns.length} sale returns · ${purRetTxns.length} purchase returns`;
+  const dataStatus = `${saleBills.length} sales · ${purBills.length} purchases · ${retTxns.length} sale returns · ${purRetTxns.length} purchase returns`;
 
   return (
     <div style={{display:"flex",flexDirection:"column",gap:16}}>
-
-      {/* Header */}
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}}>
         <div>
           <div style={{fontFamily:T.displayFont,fontWeight:700,fontSize:18,color:T.text}}>Business Summary</div>
@@ -148,7 +133,6 @@ export default function PnL({ ctx }) {
         <GBtn v="ghost" sz="sm" onClick={exportCSV} icon={<Download size={13}/>}>Export CSV</GBtn>
       </div>
 
-      {/* Date filter */}
       <div className="glass" style={{padding:"12px 16px",borderRadius: T.radius}}>
         <div className="filter-wrap">
           <span style={{fontSize:11,fontWeight:700,color:T.textMuted}}>PERIOD</span>
@@ -161,99 +145,76 @@ export default function PnL({ ctx }) {
         </div>
       </div>
 
-      {/* KPI Cards */}
       <div className="kgrid">
         {[
           {label:"Total Sales",   value:grossSalesInclGst, sub:"incl. GST",        icon:TrendingUp,  color:T.green},
           {label:"Net Sales",     value:netSalesExclGst,   sub:"excl. GST",         icon:DollarSign,  color:T.accent},
           {label:"Total Purchase",value:totalPurchaseInclGst,sub:"incl. GST",      icon:ShoppingCart,color:T.blue},
           {label:"Gross Profit",  value:grossProfit,       sub:`${margin.toFixed(1)}% margin`, icon:TrendingDown,color:grossProfit>=0?T.green:T.red},
-          {label:"Closing Stock", value:closingStock,      sub:"ex-GST · at cost",  icon:Package,     color:T.amber},
+          {label:"Closing Stock", value:closingStock,      sub:"at cost price",     icon:Package,     color:T.amber},
         ].map((k,i)=>(
           <KCard key={i} label={k.label} value={fmtCur(k.value)} sub={k.sub} icon={k.icon} color={k.color} />
         ))}
       </div>
 
-      {/* Two-column table layout */}
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(300px,1fr))",gap:14}}>
-
-        {/* P&L Table */}
+        {/* P&L */}
         <div className="glass" style={{padding:20,borderRadius:T.radius}}>
           <div style={{fontFamily:T.displayFont,fontWeight:700,fontSize:15,color:T.text,marginBottom:12}}>Profit & Loss</div>
-          <table style={{width:"100%",borderCollapse:"collapse"}}>
-            <tbody>
-              <Row label="SALES" bold/>
-              <Row label="Gross Sales (incl. GST)"  value={grossSalesInclGst}    indent={1} color={T.green}/>
-              <Row label="Less: GST on Sales"       value={-gstOnSales}          indent={1} color={T.textMuted}/>
-              <Row label="Gross Sales (excl. GST)"  value={grossSalesExclGst}    indent={1} bold/>
-              <Row label="Less: Sales Returns"      value={-salesReturnValue}    indent={1} color={T.red}/>
-              <Row label="  of which GST"           value={salesReturnGst}       indent={2} color={T.textMuted} sub="GST credited back to customer"/>
-              <Row label="Net Sales (excl. GST)"    value={netSalesExclGst}      bold color={T.green} separator/>
+          <table style={{width:"100%",borderCollapse:"collapse"}}><tbody>
+            <Row label="SALES" bold/>
+            <Row label="Gross Sales (incl. GST)"  value={grossSalesInclGst}    indent={1} color={T.green}/>
+            <Row label="Less: GST on Sales"       value={-gstOnSales}          indent={1} color={T.textMuted}/>
+            <Row label="Gross Sales (excl. GST)"  value={grossSalesExclGst}    indent={1} bold/>
+            <Row label="Less: Sales Returns"      value={-salesReturnExclGst}  indent={1} color={T.red}/>
+            <Row label="  GST credited back"      value={salesReturnGst}       indent={2} color={T.textMuted}/>
+            <Row label="Net Sales (excl. GST)"    value={netSalesExclGst}      bold color={T.green} separator/>
 
-              <Row label="COST OF GOODS SOLD" bold/>
-              <Row label="Opening Stock"            value={openingStock}         indent={1}/>
-              <Row label="Add: Purchases (excl. GST)" value={purchasesExclGst}  indent={1} color={T.blue}/>
-              <Row label="Less: Purchase Returns"   value={-purReturnExclGst}    indent={1} color={T.textMuted}/>
-              <Row label="  of which GST"           value={purReturnGst}         indent={2} color={T.textMuted} sub="GST reversed from vendor"/>
-              <Row label="Less: Closing Stock"      value={-closingStock}        indent={1} color={T.textMuted}/>
-              <Row label="Total COGS"               value={cogs}                 bold color={T.red} separator/>
+            <Row label="COST OF GOODS SOLD" bold/>
+            <Row label="Opening Stock (at cost)"  value={openingStock}         indent={1}/>
+            <Row label="Add: Purchases (ex-GST)"  value={purchasesExclGst}     indent={1} color={T.blue}/>
+            <Row label="Less: Purchase Returns"   value={-purReturnExclGst}    indent={1} color={T.textMuted}/>
+            <Row label="Less: Closing Stock"      value={-closingStock}        indent={1} color={T.textMuted}/>
+            <Row label="Total COGS"               value={cogs}                 bold color={T.red} separator/>
 
-              <Row label="GROSS PROFIT"             value={grossProfit}          bold color={grossProfit>=0?T.green:T.red} separator/>
-              <Row label="Gross Margin"             value={margin.toFixed(1)+"%"} indent={1} color={T.textMuted}/>
-            </tbody>
-          </table>
+            <Row label="GROSS PROFIT"             value={grossProfit}          bold color={grossProfit>=0?T.green:T.red} separator/>
+            <Row label="Gross Margin"             value={margin.toFixed(1)+"%"} indent={1} color={T.textMuted}/>
+          </tbody></table>
         </div>
 
-        {/* Inventory & Purchase Summary */}
         <div style={{display:"flex",flexDirection:"column",gap:14}}>
+          {/* Inventory — uses purchase price for sales returns */}
           <div className="glass" style={{padding:20,borderRadius:T.radius}}>
-            <div style={{fontFamily:T.displayFont,fontWeight:700,fontSize:15,color:T.text,marginBottom:12}}>Inventory</div>
-            <table style={{width:"100%",borderCollapse:"collapse"}}>
-              <tbody>
-                <Row label="Opening Stock Value"     value={openingStock}           indent={1}/>
-                <Row label="Add: Purchases (ex-GST)" value={purchasesExclGst}      indent={1} color={T.blue}/>
-                <Row label="Less: Purchase Returns"  value={-purReturnExclGst}      indent={1} color={T.red}/>
-                <Row label="Add: Sales Returns"      value={salesReturnExclGst}     indent={1} color={T.green}/>
-                <Row label="Less: Cost of Goods Sold" value={-cogs}                indent={1} color={T.red}/>
-                <Row label="Closing Stock Value"     value={closingStock}           bold color={T.accent} separator/>
-                <Row label="Stock Movement"          value={closingStock-openingStock} indent={1} color={closingStock>=openingStock?T.green:T.red}/>
-              </tbody>
-            </table>
+            <div style={{fontFamily:T.displayFont,fontWeight:700,fontSize:15,color:T.text,marginBottom:12}}>Inventory (at cost)</div>
+            <table style={{width:"100%",borderCollapse:"collapse"}}><tbody>
+              <Row label="Opening Stock"             value={openingStock}       indent={1}/>
+              <Row label="Add: Purchases (ex-GST)"   value={purchasesExclGst}  indent={1} color={T.blue}/>
+              <Row label="Less: Purchase Returns"    value={-purReturnExclGst}  indent={1} color={T.red}/>
+              <Row label="Add: Sales Returns (cost)" value={salesReturnAtCost}  indent={1} color={T.green} sub="valued at purchase price"/>
+              <Row label="Less: COGS"                value={-cogs}             indent={1} color={T.red}/>
+              <Row label="Closing Stock"             value={closingStock}       bold color={T.accent} separator/>
+              <Row label="Movement"                  value={closingStock-openingStock} indent={1} color={closingStock>=openingStock?T.green:T.red}/>
+            </tbody></table>
           </div>
 
-          <div className="glass" style={{padding:20,borderRadius:T.radius}}>
-            <div style={{fontFamily:T.displayFont,fontWeight:700,fontSize:15,color:T.text,marginBottom:12}}>Purchase Summary</div>
-            <table style={{width:"100%",borderCollapse:"collapse"}}>
-              <tbody>
-                <Row label="Total Paid (incl. GST)" value={totalPurchaseInclGst} bold color={T.blue}/>
-                <Row label="Cost (excl. GST)"       value={purchasesExclGst}  indent={1}/>
-                <Row label="GST Paid"               value={gstOnPurchases}    indent={1} color={T.amber}/>
-                <Row label="Purchase Returns (incl)" value={purReturnValue}   indent={1} color={T.red}/>
-                <Row label="  GST component"         value={purReturnGst}     indent={2} color={T.textMuted}/>
-                <Row label="Net Purchases (excl. GST)" value={netPurchases}  bold separator/>
-              </tbody>
-            </table>
-          </div>
-
+          {/* GST Summary */}
           <div className="glass" style={{padding:20,borderRadius:T.radius}}>
             <div style={{fontFamily:T.displayFont,fontWeight:700,fontSize:15,color:T.text,marginBottom:12}}>GST Summary</div>
-            <table style={{width:"100%",borderCollapse:"collapse"}}>
-              <tbody>
-                <Row label="GST Collected (on Sales)"       value={gstOnSales}      indent={1} color={T.green}/>
-                <Row label="Less: Sale Return GST"          value={-salesReturnGst}  indent={1} color={T.red}/>
-                <Row label="Net GST Collected"              value={gstOnSales - salesReturnGst} bold separator/>
-                <Row label="GST Paid (on Purchases)"        value={gstOnPurchases}  indent={1} color={T.blue}/>
-                <Row label="Less: Purchase Return GST"      value={-purReturnGst}   indent={1} color={T.red}/>
-                <Row label="Net GST Paid"                   value={gstOnPurchases - purReturnGst} bold separator/>
-                <Row label="Approx. GST Liability"          value={(gstOnSales - salesReturnGst) - (gstOnPurchases - purReturnGst)} bold color={T.accent} separator/>
-              </tbody>
-            </table>
+            <table style={{width:"100%",borderCollapse:"collapse"}}><tbody>
+              <Row label="GST Collected (Sales)"        value={gstOnSales}      indent={1} color={T.green}/>
+              <Row label="Less: Sale Return GST"        value={-salesReturnGst}  indent={1} color={T.red}/>
+              <Row label="Net GST Collected"            value={gstOnSales - salesReturnGst} bold separator/>
+              <Row label="GST Paid (Purchases)"         value={gstOnPurchases}  indent={1} color={T.blue}/>
+              <Row label="Less: Purchase Return GST"    value={-purReturnGst}   indent={1} color={T.red}/>
+              <Row label="Net GST Paid"                 value={gstOnPurchases - purReturnGst} bold separator/>
+              <Row label="Approx. GST Liability"        value={(gstOnSales - salesReturnGst) - (gstOnPurchases - purReturnGst)} bold color={T.accent} separator/>
+            </tbody></table>
           </div>
         </div>
       </div>
 
       <div style={{padding:"10px 14px",borderRadius: T.radius,background:T.amberBg,fontSize:11,color:T.amber,border:`1px solid ${T.amber}30`}}>
-         This is an indicative summary only. For certified accounts or GST filing, please consult your CA with the full CSV export.
+         Indicative summary only. For GST filing or certified accounts, consult your CA with the CSV export.
       </div>
     </div>
   );
