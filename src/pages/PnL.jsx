@@ -183,18 +183,18 @@ export default function PnL({ ctx }) {
         </div>
 
         <div style={{display:"flex",flexDirection:"column",gap:14}}>
-          {/* Inventory — uses purchase price for sales returns */}
+          {/* Inventory — closing stock already includes returned units */}
           <div className="glass" style={{padding:20,borderRadius:T.radius}}>
             <div style={{fontFamily:T.displayFont,fontWeight:700,fontSize:15,color:T.text,marginBottom:12}}>Inventory (at cost)</div>
             <table style={{width:"100%",borderCollapse:"collapse"}}><tbody>
               <Row label="Opening Stock"             value={openingStock}       indent={1}/>
               <Row label="Add: Purchases (ex-GST)"   value={purchasesExclGst}  indent={1} color={T.blue}/>
               <Row label="Less: Purchase Returns"    value={-purReturnExclGst}  indent={1} color={T.red}/>
-              <Row label="Add: Sales Returns (cost)" value={salesReturnAtCost}  indent={1} color={T.green} sub="valued at purchase price"/>
               <Row label="Less: COGS"                value={-cogs}             indent={1} color={T.red}/>
               <Row label="Closing Stock"             value={closingStock}       bold color={T.accent} separator/>
               <Row label="Movement"                  value={closingStock-openingStock} indent={1} color={closingStock>=openingStock?T.green:T.red}/>
             </tbody></table>
+            <div style={{fontSize:10,color:T.textMuted,marginTop:8}}>Sales returns are already reflected in closing stock (returned units counted back in).</div>
           </div>
 
           {/* GST Summary */}
